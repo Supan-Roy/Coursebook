@@ -28,9 +28,16 @@ export function initFloatingElementInteraction() {
         const translateY = Math.sin(angle) * pushDistance;
         
         element.style.transform = `translate(${translateX}px, ${translateY}px)`;
+        
+        // Calculate glow intensity based on proximity (closer = more glow)
+        const glowIntensity = Math.max(0, 1 - distance / interactionRadius);
+        const shadowSpread = Math.round(glowIntensity * 50);
+        
+        element.style.filter = `drop-shadow(0 0 ${shadowSpread * 0.6}px rgba(100, 200, 255, ${glowIntensity * 0.9})) drop-shadow(0 0 ${shadowSpread}px rgba(100, 150, 255, ${glowIntensity * 0.6}))`;
       } else {
         // Return to original position
         element.style.transform = 'translate(0, 0)';
+        element.style.filter = 'none';
       }
     });
   };

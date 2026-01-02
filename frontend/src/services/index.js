@@ -21,6 +21,16 @@ export const authService = {
     return response.data;
   },
 
+  async getCurrentUser() {
+    const response = await api.get('/auth/me/');
+    return response.data;
+  },
+
+  async updateProfile(data) {
+    const response = await api.patch('/auth/me/', data);
+    return response.data;
+  },
+
   logout() {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
@@ -34,11 +44,33 @@ export const authService = {
 export const courseService = {
   async getAll() {
     const response = await api.get('/courses/');
+    console.log('courseService.getAll() raw response:', response);
+    console.log('courseService.getAll() response.data:', response.data);
+    console.log('Is array?:', Array.isArray(response.data));
+    
+    // API returns either:
+    // - Direct array: [...]
+    // - Paginated object: {count, next, previous, results: [...]}
+    if (Array.isArray(response.data)) {
+      console.log('Returning as array');
+      return response.data;
+    }
+    console.log('Returning results or data');
+    return response.data.results || response.data;
+  },
+
+  async getById(id) {
+    const response = await api.get(`/courses/${id}/`);
     return response.data;
   },
 
   async create(data) {
     const response = await api.post('/courses/', data);
+    return response.data;
+  },
+
+  async update(id, data) {
+    const response = await api.patch(`/courses/${id}/`, data);
     return response.data;
   },
 
@@ -51,6 +83,29 @@ export const materialService = {
   async getAll(courseId = null) {
     const params = courseId ? { course_id: courseId } : {};
     const response = await api.get('/materials/', { params });
+    // API returns either:
+    // - Direct array: [...]
+    // - Paginated object: {count, next, previous, results: [...]}
+    if (Array.isArray(response.data)) {
+      return response.data;
+    }
+    return response.data.results || response.data;
+  },
+
+  async getByCourse(courseId) {
+    const response = await api.get(`/materials/?course_id=${courseId}`);
+    if (Array.isArray(response.data)) {
+      return response.data;
+    }
+    return response.data.results || response.data;
+  },
+
+  async upload(formData) {
+    const response = await api.post('/materials/upload-material/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return response.data;
   },
 

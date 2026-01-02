@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { initFloatingElementInteraction } from '../utils/floatingElementInteraction';
+import CoursebookTextLogo from '../components/CoursebookTextLogo';
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -76,14 +77,17 @@ export default function RegisterPage() {
         <div className="w-full max-w-md">
           <div className="glass-card rounded-2xl p-8">
             <div className="text-center mb-6">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Coursebook</h1>
-              <p className="text-sm text-gray-600">Create your account</p>
+              <div className="flex justify-center items-center mb-4 relative">
+                <img src="/coursebook.svg" alt="Coursebook" className="absolute w-12 h-12" style={{ left: '20px' }} />
+                <CoursebookTextLogo className="w-64 h-16" />
+              </div>
+              <p className="text-sm text-gray-400">Create your account</p>
             </div>
 
         <form className="space-y-4" onSubmit={handleSubmit}>
           {error && (
-            <div className="rounded-lg bg-red-50 border border-red-200 p-3">
-              <p className="text-sm text-red-700">{error}</p>
+            <div className="rounded-lg bg-red-500/10 border-2 border-red-500 p-3">
+              <p className="text-sm text-red-400 font-medium">{error}</p>
             </div>
           )}
 

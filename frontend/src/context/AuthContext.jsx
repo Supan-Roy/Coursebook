@@ -5,7 +5,27 @@ const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(authService.isAuthenticated());
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadUser();
+    }
+  }, [isAuthenticated]);
+
+  const loadUser = async () => {
+    try {
+      const userData = await authService.getCurrentUser();
+      setUser(userData);
+    } catch (error) {
+      console.error('Failed to load user:', error);
+      // If token is invalid, log out
+      if (error.response?.status === 401) {
+        logout();
+      }
+    }
+  };
 
   const login = async (email, password) => {
     setLoading(true);
@@ -41,10 +61,15 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     authService.logout();
     setIsAuthenticated(false);
+    setUser(null);
+  };
+
+  const refreshUser = async () => {
+    await loadUser();
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, loading, login, register, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

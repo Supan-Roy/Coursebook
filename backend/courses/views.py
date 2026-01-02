@@ -15,7 +15,7 @@ class CourseListCreateView(generics.ListCreateAPIView):
         serializer.save(user=self.request.user)
 
 
-class CourseDetailView(generics.RetrieveDestroyAPIView):
+class CourseDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = CourseSerializer
     permission_classes = [permissions.IsAuthenticated]
     lookup_field = "id"
