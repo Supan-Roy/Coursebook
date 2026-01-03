@@ -68,6 +68,20 @@ export default function ProfilePage() {
               <CoursebookTextLogo className="w-48 h-12" isDarkMode={isDarkMode} showUnderline={false} />
             </div>
             <div className="flex items-center gap-4">
+              <button
+                onClick={() => navigate('/dashboard')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                  isDarkMode 
+                    ? 'text-gray-300 hover:text-white hover:bg-gray-900 border border-gray-700' 
+                    : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100 border border-gray-300'
+                }`}
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Back to Dashboard
+              </button>
+              
               <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Welcome, <span className="text-sky-300 font-semibold">{user?.first_name && user?.last_name ? `${user.first_name} ${user.last_name}` : user?.first_name || 'Student'}</span></span>
               
               {/* Theme Toggle */}

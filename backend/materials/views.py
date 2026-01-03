@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from courses.models import Course
+from usage.models import StorageUsage
 from .models import Material
 from .serializers import MaterialSerializer
 
@@ -94,6 +95,11 @@ class MaterialUploadView(APIView):
             storage_key=str(file_path)
         )
         
+        # Update storage usage
+        storage_usage, _ = StorageUsage.objects.get_or_create(user=request.user)
+        storage_usage.used_bytes += file.size
+        storage_usage.save()
+        
         return Response(
             MaterialSerializer(material).data,
             status=status.HTTP_201_CREATED
@@ -125,15 +131,19 @@ class FileUploadView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        # Generate unique semester name based on existing semesters
+        semester_name = self._generate_semester_name(request.user)
+
         # Parse PDF to extract course information
         extracted_courses = self._extract_courses_from_pdf(file)
         
-        # Create courses and organize materials
+        # Create courses with the new semester
         created_courses = []
         for course_data in extracted_courses:
             course, created = Course.objects.get_or_create(
                 user=request.user,
                 code=course_data['code'],
+                semester=semester_name,
                 defaults={'title': course_data.get('title', '')}
             )
             if created:
@@ -174,12 +184,37 @@ class FileUploadView(APIView):
             storage_url=f'/media/uploads/{request.user.id}/{file.name}',
             storage_key=str(file_path)
         )
+        
+        # Update storage usage
+        storage_usage, _ = StorageUsage.objects.get_or_create(user=request.user)
+        storage_usage.used_bytes += file.size
+        storage_usage.save()
 
         return Response({
             'material': MaterialSerializer(material).data,
             'courses_created': [{'code': c.code, 'title': c.title} for c in created_courses],
-            'message': f'File uploaded successfully. {len(created_courses)} course(s) created.'
+            'semester': semester_name,
+            'message': f'File uploaded successfully. {len(created_courses)} course(s) created in {semester_name}.'
         }, status=status.HTTP_201_CREATED)
+
+    def _generate_semester_name(self, user):
+        """Generate a unique semester name for the new upload"""
+        # Get all existing semesters for this user
+        existing_semesters = Course.objects.filter(user=user).values_list('semester', flat=True).distinct()
+        
+        # Use "Semester Name" as base
+        base_semester = "Semester Name"
+        
+        # If base semester doesn't exist, use it
+        if base_semester not in existing_semesters:
+            return base_semester
+        
+        # Otherwise, append a counter
+        counter = 2
+        while f"{base_semester} {counter}" in existing_semesters:
+            counter += 1
+        
+        return f"{base_semester} {counter}"
 
     def _extract_courses_from_pdf(self, pdf_file):
         """Extract course codes and names from PDF using pattern matching"""
@@ -209,7 +244,7 @@ class FileUploadView(APIView):
             
             # Common day names and junk words to filter out
             day_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-            junk_words = ['Day', 'Course', 'Time', 'Slot', 'Room', 'Teacher', 'Lab']
+            junk_words = ['Day', 'Course', 'Time', 'Slot', 'Room', 'Teacher']
             
             for match in matches_with_names:
                 raw_title = match[0].strip()

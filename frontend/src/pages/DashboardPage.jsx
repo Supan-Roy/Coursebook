@@ -2,12 +2,15 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { courseService, materialService, usageService } from '../services';
+import { courseService, materialService, usageService, semesterService } from '../services';
 import CoursebookTextLogo from '../components/CoursebookTextLogo';
 import UploadModal from '../components/UploadModal';
+import ConfirmDialog from '../components/ConfirmDialog';
+import AlertDialog from '../components/AlertDialog';
 
 export default function DashboardPage() {
   const [courses, setCourses] = useState([]);
+  const [semesters, setSemesters] = useState([]);
   const [materials, setMaterials] = useState([]);
   const [usage, setUsage] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -15,10 +18,14 @@ export default function DashboardPage() {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [editingCourse, setEditingCourse] = useState(null);
   const [editFormData, setEditFormData] = useState({ code: '', title: '' });
-  const [semesterName, setSemesterName] = useState(() => {
-    return localStorage.getItem('semesterName') || 'Semester Name';
-  });
-  const [editingSemester, setEditingSemester] = useState(false);
+  const [editingSemester, setEditingSemester] = useState(null);
+  const [editingSemesterName, setEditingSemesterName] = useState('');
+  const [addingCourseToSemester, setAddingCourseToSemester] = useState(null);
+  const [newCourseData, setNewCourseData] = useState({ code: '', title: '' });
+  const [creatingNewSemester, setCreatingNewSemester] = useState(false);
+  const [newSemesterName, setNewSemesterName] = useState('');
+  const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, title: '', message: '', onConfirm: null });
+  const [alertDialog, setAlertDialog] = useState({ isOpen: false, title: '', message: '', type: 'info' });
   const { logout, user } = useAuth();
   const { isDarkMode, toggleTheme } = useTheme();
   const navigate = useNavigate();
@@ -27,24 +34,29 @@ export default function DashboardPage() {
     loadData();
   }, []);
 
-  // Save semester name to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem('semesterName', semesterName);
-  }, [semesterName]);
-
   const loadData = async () => {
     try {
-      const [coursesData, materialsData, usageData] = await Promise.all([
-        courseService.getAll(),
-        materialService.getAll(),
-        usageService.get(),
-      ]);
+      const coursesData = await courseService.getAll();
       console.log('Courses loaded:', coursesData);
-      console.log('Materials loaded:', materialsData);
-      console.log('Usage loaded:', usageData);
       setCourses(coursesData);
+      
+      const materialsData = await materialService.getAll();
+      console.log('Materials loaded:', materialsData);
       setMaterials(materialsData);
+      
+      const usageData = await usageService.get();
+      console.log('Usage loaded:', usageData);
       setUsage(usageData);
+      
+      // Fetch semesters separately - don't fail dashboard if this fails
+      try {
+        const semestersData = await semesterService.getAll();
+        console.log('Semesters loaded:', semestersData);
+        setSemesters(semestersData);
+      } catch (semesterError) {
+        console.warn('Failed to load semesters:', semesterError);
+        setSemesters([]);
+      }
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
     } finally {
@@ -57,26 +69,72 @@ export default function DashboardPage() {
     setShowUploadModal(false);
   };
 
-  const handleDeleteCourse = async (courseId) => {
-    if (window.confirm('Are you sure you want to delete this course?')) {
-      try {
-        await courseService.delete(courseId);
-        loadData();
-      } catch (error) {
-        console.error('Failed to delete course:', error);
-      }
+
+
+  // Group courses by semester
+  const groupedBySemester = courses.reduce((acc, course) => {
+    const semester = course.semester || 'Unnamed Semester';
+    if (!acc[semester]) {
+      acc[semester] = [];
     }
+    acc[semester].push(course);
+    return acc;
+  }, {});
+
+  // Merge database semesters with course-based semesters
+  const semesterNames = new Set();
+  
+  // Add semesters from courses
+  Object.keys(groupedBySemester).forEach(sem => semesterNames.add(sem));
+  
+  // Add semesters from database that don't have courses yet
+  semesters.forEach(sem => semesterNames.add(sem.name));
+  
+  const semesterList = Array.from(semesterNames).sort().reverse(); // Most recent first
+
+  const handleDeleteCourse = async (courseId) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Delete Course',
+      message: 'Are you sure you want to delete this course? This action cannot be undone.',
+      onConfirm: async () => {
+        try {
+          await courseService.delete(courseId);
+          loadData();
+        } catch (error) {
+          console.error('Failed to delete course:', error);
+        }
+        setConfirmDialog({ ...confirmDialog, isOpen: false });
+      }
+    });
   };
 
-  const handleDeleteAllCourses = async () => {
-    try {
-      // Delete all courses
-      const deletePromises = courses.map(course => courseService.delete(course.id));
-      await Promise.all(deletePromises);
-      loadData();
-    } catch (error) {
-      console.error('Failed to delete courses:', error);
-    }
+  const handleDeleteAllCourses = async (semesterName) => {
+    const courseCount = (groupedBySemester[semesterName] || []).length;
+    
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Delete Semester',
+      message: courseCount > 0 
+        ? `Are you sure you want to delete ${semesterName} and all ${courseCount} course${courseCount === 1 ? '' : 's'}? This action cannot be undone.`
+        : `Are you sure you want to delete ${semesterName}? This action cannot be undone.`,
+      onConfirm: async () => {
+        try {
+          // Use the semester delete endpoint which handles both semester and its courses
+          await semesterService.delete(semesterName);
+          loadData();
+        } catch (error) {
+          console.error('Failed to delete semester:', error);
+          setAlertDialog({
+            isOpen: true,
+            title: 'Error',
+            message: 'Failed to delete semester',
+            type: 'error'
+          });
+        }
+        setConfirmDialog({ ...confirmDialog, isOpen: false });
+      }
+    });
   };
 
   const handleUpdateCourse = async (courseId) => {
@@ -93,6 +151,110 @@ export default function DashboardPage() {
   const startEditCourse = (course) => {
     setEditingCourse(course.id);
     setEditFormData({ code: course.code, title: course.title || '' });
+  };
+
+  const handleCreateNewSemester = async () => {
+    if (!newSemesterName.trim()) {
+      setAlertDialog({
+        isOpen: true,
+        title: 'Missing Information',
+        message: 'Please enter a semester name',
+        type: 'warning'
+      });
+      return;
+    }
+
+    try {
+      // Create a blank semester without any courses
+      await semesterService.create({
+        name: newSemesterName.trim(),
+      });
+      setCreatingNewSemester(false);
+      setNewSemesterName('');
+      loadData();
+    } catch (error) {
+      console.error('Failed to create semester:', error);
+      setAlertDialog({
+        isOpen: true,
+        title: 'Error',
+        message: 'Failed to create semester',
+        type: 'error'
+      });
+    }
+  };
+
+  const handleAddNewCourse = async (semesterName) => {
+    if (!newCourseData.code.trim()) {
+      setAlertDialog({
+        isOpen: true,
+        title: 'Missing Information',
+        message: 'Please enter a course code',
+        type: 'warning'
+      });
+      return;
+    }
+
+    try {
+      await courseService.create({
+        code: newCourseData.code.toUpperCase().trim(),
+        title: newCourseData.title.trim(),
+        semester: semesterName,
+      });
+      setAddingCourseToSemester(null);
+      setNewCourseData({ code: '', title: '' });
+      loadData();
+    } catch (error) {
+      console.error('Failed to create course:', error);
+      setAlertDialog({
+        isOpen: true,
+        title: 'Error',
+        message: 'Failed to create course',
+        type: 'error'
+      });
+    }
+  };
+
+  const handleUpdateSemesterName = async (oldName) => {
+    if (!editingSemesterName.trim()) {
+      setEditingSemester(null);
+      return;
+    }
+    
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/courses/update-semester/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+        },
+        body: JSON.stringify({
+          old_semester: oldName,
+          new_semester: editingSemesterName.trim(),
+        }),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        setAlertDialog({
+          isOpen: true,
+          title: 'Error',
+          message: error.detail || 'Failed to update semester name',
+          type: 'error'
+        });
+        return;
+      }
+      
+      setEditingSemester(null);
+      loadData();
+    } catch (error) {
+      console.error('Failed to update semester name:', error);
+      setAlertDialog({
+        isOpen: true,
+        title: 'Error',
+        message: 'Failed to update semester name',
+        type: 'error'
+      });
+    }
   };
 
   const handleLogout = () => {
@@ -225,86 +387,93 @@ export default function DashboardPage() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Storage Usage Card */}
-        {usage && (
-          <div className={`rounded-2xl p-8 mb-8 border transition-colors ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200'}`}>
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className={`text-lg font-bold mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Storage Usage</h2>
-                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Your account storage capacity</p>
-              </div>
-              <span className="text-3xl font-bold text-sky-400">{getStoragePercentage().toFixed(0)}%</span>
-            </div>
-            <div className="space-y-3">
-              <div className={`w-full rounded-full h-3 overflow-hidden border ${isDarkMode ? 'bg-gray-800/50 border-gray-700/50' : 'bg-gray-200 border-gray-300'}`}>
-                <div
-                  className="h-3 rounded-full transition-all duration-300 bg-gradient-to-r from-sky-500 to-cyan-400"
-                  style={{ width: `${Math.min(getStoragePercentage(), 100)}%` }}
-                ></div>
-              </div>
-              <div className={`flex justify-between text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                <span className="text-sky-300 font-semibold">{formatBytes(usage.used_bytes)}</span>
-                <span>{formatBytes(usage.quota_bytes)}</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Courses Section */}
-        <div className={`rounded-2xl p-8 mb-8 border transition-colors ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200'}`}>
-          <div className="flex justify-between items-center mb-6">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                {editingSemester ? (
-                  <input
-                    type="text"
-                    value={semesterName}
-                    onChange={(e) => setSemesterName(e.target.value)}
-                    onBlur={() => setEditingSemester(false)}
-                    onKeyDown={(e) => e.key === 'Enter' && setEditingSemester(false)}
-                    autoFocus
-                    className={`text-2xl font-bold px-2 py-1 rounded border-2 border-sky-500 ${
-                      isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
-                    }`}
-                  />
-                ) : (
-                  <h2 
-                    className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} cursor-pointer hover:text-sky-400 transition-colors`}
-                    onClick={() => setEditingSemester(true)}
+        {/* Create New Semester Section */}
+        <div className={`rounded-2xl p-8 mb-8 border-2 border-dashed transition-colors ${isDarkMode ? 'border-gray-700/50 hover:border-sky-500/50 bg-gray-900/30' : 'border-gray-300 hover:border-sky-400 bg-gray-50'}`}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Create Semester Button */}
+            {creatingNewSemester ? (
+              <div className={`border rounded-xl p-6 transition-all ${isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-white border-gray-200'}`}>
+                <h3 className={`text-lg font-semibold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Create New Semester</h3>
+                <input
+                  type="text"
+                  value={newSemesterName}
+                  onChange={(e) => setNewSemesterName(e.target.value)}
+                  placeholder="Enter semester name (e.g., Fall 2024)"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleCreateNewSemester();
+                    } else if (e.key === 'Escape') {
+                      setCreatingNewSemester(false);
+                      setNewSemesterName('');
+                    }
+                  }}
+                  className={`w-full px-3 py-2 mb-3 rounded-lg border-2 text-sm ${
+                    isDarkMode
+                      ? 'bg-gray-900 border-sky-500 text-white'
+                      : 'bg-white border-sky-400 text-gray-900'
+                  }`}
+                />
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleCreateNewSemester()}
+                    className={`flex-1 px-3 py-2 text-sm font-semibold rounded-lg transition-colors text-white bg-sky-500 hover:bg-sky-600`}
                   >
-                    {semesterName}
-                  </h2>
-                )}
-                <button
-                  onClick={() => setEditingSemester(true)}
-                  className={`p-1 rounded hover:bg-sky-500/10 transition-colors ${isDarkMode ? 'text-gray-400 hover:text-sky-400' : 'text-gray-500 hover:text-sky-500'}`}
-                  title="Edit semester name"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                  </svg>
-                </button>
-                <button
-                  onClick={handleDeleteAllCourses}
-                  className={`p-1 rounded hover:bg-red-500/10 transition-colors ${isDarkMode ? 'text-gray-400 hover:text-red-400' : 'text-gray-500 hover:text-red-500'}`}
-                  title="Delete all courses"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </button>
+                    Create
+                  </button>
+                  <button
+                    onClick={() => {
+                      setCreatingNewSemester(false);
+                      setNewSemesterName('');
+                    }}
+                    className={`flex-1 px-3 py-2 text-sm font-semibold rounded-lg transition-colors ${
+                      isDarkMode
+                        ? 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                        : 'bg-gray-300 hover:bg-gray-400 text-gray-700'
+                    }`}
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
-              <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Manage and explore your courses</p>
-            </div>
-            <button 
+            ) : (
+              <button
+                onClick={() => setCreatingNewSemester(true)}
+                className={`border-2 rounded-xl p-6 transition-all flex flex-col items-center justify-center hover:shadow-xl hover:scale-[1.02] ${isDarkMode ? 'bg-gradient-to-br from-orange-600 to-orange-700 border-orange-500' : 'bg-gradient-to-br from-orange-400 to-orange-500 border-orange-400'}`}
+              >
+                <svg className="w-8 h-8 mb-2 text-white drop-shadow-lg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                <p className="text-sm font-semibold text-white drop-shadow-md">
+                  Create New Semester
+                </p>
+                <p className="text-xs mt-1 text-white/90">
+                  Create blank semester manually
+                </p>
+              </button>
+            )}
+
+            {/* Upload Routine Button */}
+            <button
               onClick={() => setShowUploadModal(true)}
-              className="px-4 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-sky-500 to-cyan-400 hover:from-sky-600 hover:to-cyan-500 rounded-lg transition-all shadow-lg hover:shadow-cyan-500/20 border border-sky-400/30"
+              className={`border-2 rounded-xl p-6 transition-all flex flex-col items-center justify-center hover:shadow-xl hover:scale-[1.02] ${isDarkMode ? 'bg-gradient-to-br from-purple-600 to-purple-700 border-purple-500' : 'bg-gradient-to-br from-purple-400 to-purple-500 border-purple-400'}`}
             >
-              📄 Upload Routine
+              <svg className="w-8 h-8 mb-2 text-white drop-shadow-lg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+              </svg>
+              <p className="text-sm font-semibold text-white drop-shadow-md">
+                Upload Routine
+              </p>
+              <p className="text-xs mt-1 text-white/90">
+                Extract courses from PDF
+              </p>
             </button>
           </div>
+        </div>
 
-          {courses.length === 0 ? (
+        {/* Semesters Section */}
+        {semesterList.length === 0 ? (
+          <div className={`rounded-2xl p-8 mb-8 border transition-colors ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200'}`}>
             <div className={`text-center py-16 border-2 border-dashed rounded-xl ${isDarkMode ? 'border-gray-700' : 'border-gray-300'}`}>
               <svg
                 className={`mx-auto h-12 w-12 ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}
@@ -319,26 +488,85 @@ export default function DashboardPage() {
                   d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
                 />
               </svg>
-              <h3 className={`mt-4 text-lg font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>No courses yet</h3>
-              <p className={`mt-2 text-sm ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>Add your first course to get started</p>
+              <h3 className={`mt-4 text-lg font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>No semesters yet</h3>
+              <p className={`mt-2 text-sm ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>Upload a routine to create your first semester</p>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {courses.map((course) => (
+          </div>
+        ) : (
+          semesterList.map((semesterName) => (
+            <div key={semesterName} className={`rounded-2xl p-8 mb-8 border transition-colors ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200'}`}>
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <div className="flex items-center gap-3 mb-2">
+                    {editingSemester === semesterName ? (
+                      <input
+                        type="text"
+                        value={editingSemesterName}
+                        onChange={(e) => setEditingSemesterName(e.target.value)}
+                        onBlur={() => handleUpdateSemesterName(semesterName)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            handleUpdateSemesterName(semesterName);
+                          } else if (e.key === 'Escape') {
+                            setEditingSemester(null);
+                          }
+                        }}
+                        autoFocus
+                        className={`text-2xl font-bold px-2 py-1 rounded border-2 border-sky-500 ${
+                          isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+                        }`}
+                      />
+                    ) : (
+                      <h2 
+                        className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} cursor-pointer hover:text-sky-400 transition-colors`}
+                        onClick={() => {
+                          setEditingSemester(semesterName);
+                          setEditingSemesterName(semesterName);
+                        }}
+                      >
+                        {semesterName}
+                      </h2>
+                    )}
+                    <button
+                      onClick={() => {
+                        setEditingSemester(semesterName);
+                        setEditingSemesterName(semesterName);
+                      }}
+                      className={`p-1 rounded hover:bg-sky-500/10 transition-colors ${isDarkMode ? 'text-gray-400 hover:text-sky-400' : 'text-gray-500 hover:text-sky-500'}`}
+                      title="Edit semester name"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => handleDeleteAllCourses(semesterName)}
+                      className={`p-1 rounded hover:bg-red-500/10 transition-colors ${isDarkMode ? 'text-gray-400 hover:text-red-400' : 'text-gray-500 hover:text-red-500'}`}
+                      title="Delete all courses in this semester"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
+                  <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                    {(groupedBySemester[semesterName] || []).length} {(groupedBySemester[semesterName] || []).length === 1 ? 'course' : 'courses'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {(groupedBySemester[semesterName] || []).map((course, index) => (
                 <div
                   key={course.id}
-                  className={`group border rounded-xl p-6 transition-all duration-200 backdrop-blur-sm relative ${isDarkMode ? 'border-gray-700/50 hover:border-sky-500/50 bg-gray-900/50' : 'border-sky-200 hover:border-sky-400 bg-sky-50 shadow-sm'}`}
+                  className={`group border-2 rounded-xl p-6 transition-all duration-200 relative shadow-lg hover:shadow-xl hover:scale-[1.02] ${isDarkMode ? 'bg-gradient-to-br from-blue-600 to-blue-700 border-blue-500' : 'bg-gradient-to-br from-blue-400 to-blue-500 border-blue-400'}`}
                 >
                   {/* Action buttons */}
                   {editingCourse !== course.id && (
                     <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={() => startEditCourse(course)}
-                        className={`p-1.5 rounded-lg transition-colors ${
-                          isDarkMode 
-                            ? 'hover:bg-sky-500/20 text-gray-400 hover:text-sky-400' 
-                            : 'hover:bg-sky-100 text-gray-500 hover:text-sky-600'
-                        }`}
+                        className="p-1.5 rounded-lg transition-colors bg-white/20 hover:bg-white/30 text-white backdrop-blur-sm"
                         title="Edit course"
                       >
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -347,11 +575,7 @@ export default function DashboardPage() {
                       </button>
                       <button
                         onClick={() => handleDeleteCourse(course.id)}
-                        className={`p-1.5 rounded-lg transition-colors ${
-                          isDarkMode 
-                            ? 'hover:bg-red-500/20 text-gray-400 hover:text-red-400' 
-                            : 'hover:bg-red-100 text-gray-500 hover:text-red-600'
-                        }`}
+                        className="p-1.5 rounded-lg transition-colors bg-white/20 hover:bg-red-500/80 text-white backdrop-blur-sm"
                         title="Delete course"
                       >
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -368,31 +592,19 @@ export default function DashboardPage() {
                         value={editFormData.code}
                         onChange={(e) => setEditFormData({ ...editFormData, code: e.target.value })}
                         placeholder="Course Code"
-                        className={`w-full px-3 py-2 mb-2 rounded-lg border-2 text-lg font-bold ${
-                          isDarkMode
-                            ? 'bg-gray-800 border-sky-500 text-sky-300'
-                            : 'bg-white border-sky-400 text-sky-600'
-                        }`}
+                        className="w-full px-3 py-2 mb-2 rounded-lg border-2 border-white/30 bg-white/90 text-lg font-bold text-gray-900 placeholder-gray-500"
                       />
                       <input
                         type="text"
                         value={editFormData.title}
                         onChange={(e) => setEditFormData({ ...editFormData, title: e.target.value })}
                         placeholder="Course Title"
-                        className={`w-full px-3 py-2 mb-3 rounded-lg border-2 text-sm ${
-                          isDarkMode
-                            ? 'bg-gray-800 border-sky-500 text-gray-300'
-                            : 'bg-white border-sky-400 text-gray-700'
-                        }`}
+                        className="w-full px-3 py-2 mb-3 rounded-lg border-2 border-white/30 bg-white/90 text-sm text-gray-900 placeholder-gray-500"
                       />
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleUpdateCourse(course.id)}
-                          className={`flex-1 px-3 py-2 text-sm font-semibold rounded-lg transition-colors ${
-                            isDarkMode
-                              ? 'bg-sky-500 hover:bg-sky-600 text-white'
-                              : 'bg-sky-500 hover:bg-sky-600 text-white'
-                          }`}
+                          className="flex-1 px-3 py-2 text-sm font-semibold rounded-lg transition-colors bg-white text-gray-900 hover:bg-gray-100"
                         >
                           Save
                         </button>
@@ -400,6 +612,89 @@ export default function DashboardPage() {
                           onClick={() => {
                             setEditingCourse(null);
                             setEditFormData({ code: '', title: '' });
+                          }}
+                          className="flex-1 px-3 py-2 text-sm font-semibold rounded-lg transition-colors bg-black/20 text-white hover:bg-black/30"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-start justify-between mb-4 pr-12">
+                      <div className="flex-1">
+                        <h3 className="font-bold text-xl mb-1 text-white drop-shadow-md">
+                          {course.code}
+                        </h3>
+                        {course.title && (
+                          <p className="text-sm line-clamp-2 leading-relaxed text-white/90">
+                            {course.title}
+                          </p>
+                        )}
+                      </div>
+                      <div className="text-3xl group-hover:scale-110 transition-transform flex-shrink-0 filter drop-shadow-lg">
+                        📚
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between pt-4 border-t border-white/20">
+                    <span className="text-xs font-medium text-white/80">
+                      {materials.filter((m) => m.course === course.id).length} {materials.filter((m) => m.course === course.id).length === 1 ? 'file' : 'files'}
+                    </span>
+                    <button 
+                      onClick={() => navigate(`/course/${course.id}`)}
+                      className="flex items-center gap-1 text-xs font-semibold text-white/80 hover:text-white transition-colors"
+                    >
+                      View
+                      <svg className="h-3 w-3 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+                {/* Add Course Card */}
+                {addingCourseToSemester === semesterName ? (
+                  <div className={`border-2 border-dashed rounded-xl p-6 transition-all duration-200 ${isDarkMode ? 'border-gray-700 bg-gray-900/30 hover:border-sky-500/50 hover:bg-gray-900/50' : 'border-gray-300 bg-gray-50 hover:border-sky-400 hover:bg-gray-100'}`}>
+                    <div className="space-y-3">
+                      <input
+                        type="text"
+                        value={newCourseData.code}
+                        onChange={(e) => setNewCourseData({ ...newCourseData, code: e.target.value })}
+                        placeholder="Course Code (e.g., CSE313)"
+                        autoFocus
+                        className={`w-full px-3 py-2 rounded-lg border-2 text-lg font-bold ${
+                          isDarkMode
+                            ? 'bg-gray-800 border-sky-500 text-sky-300'
+                            : 'bg-white border-sky-400 text-sky-600'
+                        }`}
+                      />
+                      <input
+                        type="text"
+                        value={newCourseData.title}
+                        onChange={(e) => setNewCourseData({ ...newCourseData, title: e.target.value })}
+                        placeholder="Course Title (optional)"
+                        className={`w-full px-3 py-2 rounded-lg border-2 text-sm ${
+                          isDarkMode
+                            ? 'bg-gray-800 border-sky-500 text-gray-300'
+                            : 'bg-white border-sky-400 text-gray-700'
+                        }`}
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleAddNewCourse(semesterName)}
+                          className={`flex-1 px-3 py-2 text-sm font-semibold rounded-lg transition-colors ${
+                            isDarkMode
+                              ? 'bg-sky-500 hover:bg-sky-600 text-white'
+                              : 'bg-sky-500 hover:bg-sky-600 text-white'
+                          }`}
+                        >
+                          Add
+                        </button>
+                        <button
+                          onClick={() => {
+                            setAddingCourseToSemester(null);
+                            setNewCourseData({ code: '', title: '' });
                           }}
                           className={`flex-1 px-3 py-2 text-sm font-semibold rounded-lg transition-colors ${
                             isDarkMode
@@ -411,48 +706,37 @@ export default function DashboardPage() {
                         </button>
                       </div>
                     </div>
-                  ) : (
-                    <div className="flex items-start justify-between mb-4 pr-12">
-                      <div className="flex-1">
-                        <h3 className={`font-bold text-xl mb-1 ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>
-                          {course.code}
-                        </h3>
-                        {course.title && (
-                          <p className={`text-sm line-clamp-2 leading-relaxed ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                            {course.title}
-                          </p>
-                        )}
-                      </div>
-                      <div className="text-3xl opacity-40 group-hover:opacity-60 transition-opacity flex-shrink-0">
-                        📚
-                      </div>
-                    </div>
-                  )}
-                  <div className={`flex items-center justify-between pt-4 border-t ${isDarkMode ? 'border-gray-700/30' : 'border-gray-200'}`}>
-                    <span className={`text-xs font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                      {materials.filter((m) => m.course === course.id).length} {materials.filter((m) => m.course === course.id).length === 1 ? 'file' : 'files'}
-                    </span>
-                    <button 
-                      onClick={() => navigate(`/course/${course.id}`)}
-                      className={`flex items-center gap-1 text-xs font-semibold group-hover:text-sky-400 transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}
-                    >
-                      View
-                      <svg className="h-3 w-3 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
                   </div>
-                </div>
-              ))}
+                ) : (
+                  <button
+                    onClick={() => setAddingCourseToSemester(semesterName)}
+                    className={`border-2 border-dashed rounded-xl p-6 transition-all duration-200 flex flex-col items-center justify-center h-full hover:shadow-md ${
+                      isDarkMode 
+                        ? 'border-gray-700 hover:border-sky-500/50 bg-gray-900/20 hover:bg-gray-900/40' 
+                        : 'border-gray-300 hover:border-sky-400 bg-gray-50 hover:bg-gray-100'
+                    }`}
+                  >
+                    <svg className={`w-8 h-8 mb-2 ${isDarkMode ? 'text-gray-600 group-hover:text-sky-400' : 'text-gray-400 group-hover:text-sky-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    <p className={`text-sm font-semibold ${isDarkMode ? 'text-gray-400 hover:text-sky-400' : 'text-gray-600 hover:text-sky-600'} transition-colors`}>
+                      Add Course
+                    </p>
+                  </button>
+                )}
+              </div>
             </div>
-          )}
-        </div>
+          ))
+        )}
 
         {/* Recent Materials */}
         <div className={`rounded-2xl p-8 border transition-colors ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200'}`}>
           <h2 className={`text-lg font-bold mb-6 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Recent Files</h2>
 
-          {materials.length === 0 ? (
+          {materials.filter(m => {
+            const course = courses.find(c => c.id === m.course);
+            return course && course.code !== 'ROUTINE';
+          }).length === 0 ? (
             <div className={`text-center py-16 border-2 border-dashed rounded-xl ${isDarkMode ? 'border-gray-700' : 'border-gray-300'}`}>
               <svg
                 className={`mx-auto h-12 w-12 ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}
@@ -472,7 +756,10 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {materials.slice(0, 5).map((material) => (
+              {materials.filter(m => {
+                const course = courses.find(c => c.id === m.course);
+                return course && course.code !== 'ROUTINE';
+              }).slice(0, 5).map((material) => (
                 <div
                   key={material.id}
                   className={`flex items-center justify-between p-4 border rounded-lg transition-all group ${isDarkMode ? 'border-gray-700/30 hover:border-sky-500/30 bg-gray-900/30 hover:bg-gray-900/50' : 'border-gray-200 hover:border-sky-500/30 bg-gray-50 hover:bg-gray-100'}`}
@@ -511,13 +798,168 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
+
+        {/* Storage Usage Card */}
+        {usage && (
+          <div className={`rounded-2xl p-8 mb-8 border transition-colors ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200'}`}>
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className={`text-lg font-bold mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Storage Usage</h2>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Your account storage capacity</p>
+              </div>
+              <span className="text-3xl font-bold text-sky-400">{getStoragePercentage().toFixed(0)}%</span>
+            </div>
+            <div className="space-y-3">
+              <div className={`w-full rounded-full h-3 overflow-hidden border ${isDarkMode ? 'bg-gray-800/50 border-gray-700/50' : 'bg-gray-200 border-gray-300'}`}>
+                <div
+                  className="h-3 rounded-full transition-all duration-300 bg-gradient-to-r from-sky-500 to-cyan-400"
+                  style={{ width: `${Math.min(getStoragePercentage(), 100)}%` }}
+                ></div>
+              </div>
+              <div className={`flex justify-between text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                <span className="text-sky-300 font-semibold">{formatBytes(usage.used_bytes)}</span>
+                <span>{formatBytes(usage.quota_bytes)}</span>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
+
+      {/* Footer */}
+      <footer className={`border-t mt-12 transition-colors ${isDarkMode ? 'border-gray-800 bg-gray-950/50' : 'border-gray-200 bg-gray-100'}`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            {/* About Section */}
+            <div className="md:col-span-2">
+              <div className="flex items-center gap-3 mb-4">
+                <img src="/coursebook.svg" alt="Coursebook" className="w-10 h-10" />
+                <CoursebookTextLogo className="w-48 h-12" isDarkMode={isDarkMode} showUnderline={false} />
+              </div>
+              <p className={`text-sm mb-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                Your all-in-one academic companion for organizing courses, managing study materials, and tracking your academic journey.
+              </p>
+              <div className={`text-sm ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                © 2026 Coursebook. All rights reserved.
+              </div>
+            </div>
+
+            {/* Quick Links */}
+            <div>
+              <h3 className={`font-semibold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Quick Links</h3>
+              <ul className="space-y-2">
+                <li>
+                  <button 
+                    onClick={() => navigate('/dashboard')}
+                    className={`text-sm hover:text-sky-400 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}
+                  >
+                    Dashboard
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    onClick={() => navigate('/privacy-policy')}
+                    className={`text-sm hover:text-sky-400 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}
+                  >
+                    Privacy Policy
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    onClick={() => navigate('/terms-of-service')}
+                    className={`text-sm hover:text-sky-400 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}
+                  >
+                    Terms of Service
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    onClick={() => navigate('/cookie-policy')}
+                    className={`text-sm hover:text-sky-400 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}
+                  >
+                    Cookie Policy
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            {/* Contact & Developer Info */}
+            <div>
+              <h3 className={`font-semibold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Connect</h3>
+              <ul className="space-y-3">
+                <li>
+                  <a 
+                    href="https://github.com/Supan-Roy" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className={`flex items-center gap-2 text-sm hover:text-sky-400 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}
+                  >
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                      <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
+                    </svg>
+                    Supan-Roy
+                  </a>
+                </li>
+                <li>
+                  <a 
+                    href="https://linkedin.com/in/supanroy" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className={`flex items-center gap-2 text-sm hover:text-sky-400 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}
+                  >
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                    </svg>
+                    /supanroy
+                  </a>
+                </li>
+                <li>
+                  <a 
+                    href="mailto:contact@supanroy.com"
+                    className={`flex items-center gap-2 text-sm hover:text-sky-400 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}
+                  >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    contact@supanroy.com
+                  </a>
+                </li>
+              </ul>
+              <div className={`mt-4 pt-4 border-t text-sm ${isDarkMode ? 'border-gray-800 text-gray-500' : 'border-gray-300 text-gray-500'}`}>
+                Developed by <span className="text-sky-400 font-semibold">Supan Roy</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </footer>
 
       {/* Upload Modal */}
       <UploadModal 
         isOpen={showUploadModal} 
         onClose={() => setShowUploadModal(false)}
         onUploadSuccess={handleUploadSuccess}
+      />
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        confirmText="Delete"
+        type="danger"
+        onConfirm={() => {
+          confirmDialog.onConfirm?.();
+          setConfirmDialog({ ...confirmDialog, isOpen: false });
+        }}
+        onCancel={() => setConfirmDialog({ ...confirmDialog, isOpen: false })}
+      />
+
+      {/* Alert Dialog */}
+      <AlertDialog
+        isOpen={alertDialog.isOpen}
+        title={alertDialog.title}
+        message={alertDialog.message}
+        type={alertDialog.type}
+        onClose={() => setAlertDialog({ ...alertDialog, isOpen: false })}
       />
     </div>
   );

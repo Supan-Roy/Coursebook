@@ -4,6 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { courseService, materialService } from '../services';
 import CoursebookTextLogo from '../components/CoursebookTextLogo';
+import ConfirmDialog from '../components/ConfirmDialog';
+import AlertDialog from '../components/AlertDialog';
 
 export default function CourseDetailPage() {
   const { courseId } = useParams();
@@ -12,6 +14,8 @@ export default function CourseDetailPage() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, title: '', message: '', onConfirm: null });
+  const [alertDialog, setAlertDialog] = useState({ isOpen: false, title: '', message: '', type: 'info' });
   const { logout, user } = useAuth();
   const { isDarkMode, toggleTheme } = useTheme();
   const navigate = useNavigate();
@@ -53,21 +57,32 @@ export default function CourseDetailPage() {
       loadCourseData();
     } catch (error) {
       console.error('Failed to upload files:', error);
-      alert('Failed to upload some files. Please try again.');
+      setAlertDialog({
+        isOpen: true,
+        title: 'Upload Error',
+        message: 'Failed to upload some files. Please try again.',
+        type: 'error'
+      });
     } finally {
       setUploading(false);
     }
   };
 
   const handleDeleteMaterial = async (materialId) => {
-    if (window.confirm('Are you sure you want to delete this file?')) {
-      try {
-        await materialService.delete(materialId);
-        loadCourseData();
-      } catch (error) {
-        console.error('Failed to delete material:', error);
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Delete File',
+      message: 'Are you sure you want to delete this file? This action cannot be undone.',
+      onConfirm: async () => {
+        try {
+          await materialService.delete(materialId);
+          loadCourseData();
+        } catch (error) {
+          console.error('Failed to delete material:', error);
+        }
+        setConfirmDialog({ ...confirmDialog, isOpen: false });
       }
-    }
+    });
   };
 
   const handleLogout = () => {
@@ -389,6 +404,29 @@ export default function CourseDetailPage() {
           )}
         </div>
       </main>
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        confirmText="Delete"
+        type="danger"
+        onConfirm={() => {
+          confirmDialog.onConfirm?.();
+          setConfirmDialog({ ...confirmDialog, isOpen: false });
+        }}
+        onCancel={() => setConfirmDialog({ ...confirmDialog, isOpen: false })}
+      />
+
+      {/* Alert Dialog */}
+      <AlertDialog
+        isOpen={alertDialog.isOpen}
+        title={alertDialog.title}
+        message={alertDialog.message}
+        type={alertDialog.type}
+        onClose={() => setAlertDialog({ ...alertDialog, isOpen: false })}
+      />
     </div>
   );
 }

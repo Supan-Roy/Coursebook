@@ -125,3 +125,23 @@ export const usageService = {
     return response.data;
   },
 };
+
+export const semesterService = {
+  async getAll() {
+    const response = await api.get('/courses/semesters/');
+    if (Array.isArray(response.data)) {
+      return response.data;
+    }
+    return response.data.results || response.data || [];
+  },
+
+  async create(data) {
+    const response = await api.post('/courses/semesters/create/', data);
+    return response.data;
+  },
+
+  async delete(name) {
+    const response = await api.delete('/courses/semesters/delete/', { data: { name } });
+    return response.data;
+  },
+};

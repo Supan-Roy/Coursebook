@@ -5,21 +5,37 @@ from django.db import models
 from django.utils.text import slugify
 
 
+class Semester(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="semesters")
+    name = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ("user", "name")
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        return f"{self.name} ({self.user.email})"
+
+
 class Course(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="courses")
     code = models.CharField(max_length=120)
     title = models.CharField(max_length=255, blank=True)
+    semester = models.CharField(max_length=100, blank=True, default="")
     folder_slug = models.SlugField(max_length=140)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         unique_together = (
-            ("user", "code"),
+            ("user", "code", "semester"),
             ("user", "folder_slug"),
         )
-        ordering = ["code"]
+        ordering = ["semester", "code"]
 
     def __str__(self) -> str:
         return f"{self.code} ({self.user.email})"
