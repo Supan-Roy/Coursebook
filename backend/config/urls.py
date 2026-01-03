@@ -27,6 +27,7 @@ class RootView(APIView):
                 "courses": "/api/courses/",
                 "materials": "/api/materials/",
                 "usage": "/api/usage/",
+                "todos": "/api/todos/",
                 "admin": "/admin/"
             }
         })
@@ -40,6 +41,7 @@ urlpatterns = [
     path("api/courses/", include("courses.urls")),
     path("api/materials/", include("materials.urls")),
     path("api/usage/", include("usage.urls")),
+    path("api/todos/", include("todos.urls")),
 ]
 
 # Serve media files in development

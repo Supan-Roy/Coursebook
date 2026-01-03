@@ -7,6 +7,7 @@ import CoursebookTextLogo from '../components/CoursebookTextLogo';
 import UploadModal from '../components/UploadModal';
 import ConfirmDialog from '../components/ConfirmDialog';
 import AlertDialog from '../components/AlertDialog';
+import TodoList from '../components/TodoList';
 
 export default function DashboardPage() {
   const [courses, setCourses] = useState([]);
@@ -14,6 +15,7 @@ export default function DashboardPage() {
   const [materials, setMaterials] = useState([]);
   const [usage, setUsage] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [editingCourse, setEditingCourse] = useState(null);
@@ -26,9 +28,57 @@ export default function DashboardPage() {
   const [newSemesterName, setNewSemesterName] = useState('');
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, title: '', message: '', onConfirm: null });
   const [alertDialog, setAlertDialog] = useState({ isOpen: false, title: '', message: '', type: 'info' });
+  const [activeTab, setActiveTab] = useState(() => {
+    // Load active tab from localStorage, default to 'semesters'
+    return localStorage.getItem('dashboardActiveTab') || 'semesters';
+  });
+  const [semesterOrder, setSemesterOrder] = useState(() => {
+    // Load semester order from localStorage
+    return JSON.parse(localStorage.getItem('semesterOrder') || '[]');
+  });
   const { logout, user } = useAuth();
   const { isDarkMode, toggleTheme } = useTheme();
   const navigate = useNavigate();
+
+  // Persist active tab to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('dashboardActiveTab', activeTab);
+  }, [activeTab]);
+
+  // Persist semester order to localStorage
+  useEffect(() => {
+    localStorage.setItem('semesterOrder', JSON.stringify(semesterOrder));
+  }, [semesterOrder]);
+
+  // Auto-initialize semester order if not set
+  useEffect(() => {
+    if (courses.length > 0 || semesters.length > 0) {
+      const semesterNames = new Set();
+      const groupedBySemester = courses.reduce((acc, course) => {
+        const semester = course.semester || 'Unnamed Semester';
+        if (!acc[semester]) {
+          acc[semester] = [];
+        }
+        acc[semester].push(course);
+        return acc;
+      }, {});
+      
+      Object.keys(groupedBySemester).forEach(sem => semesterNames.add(sem));
+      semesters.forEach(sem => semesterNames.add(sem.name));
+      
+      const allSemesters = Array.from(semesterNames);
+      
+      // Find new semesters (not in current order)
+      const newSemesters = allSemesters.filter(sem => !semesterOrder.includes(sem));
+      const existingSemesters = semesterOrder.filter(sem => allSemesters.includes(sem));
+      
+      // New semesters go to the beginning, existing maintain their order
+      if (newSemesters.length > 0) {
+        const newOrder = [...newSemesters.sort().reverse(), ...existingSemesters];
+        setSemesterOrder(newOrder);
+      }
+    }
+  }, [courses, semesters]);
 
   useEffect(() => {
     loadData();
@@ -36,6 +86,7 @@ export default function DashboardPage() {
 
   const loadData = async () => {
     try {
+      setError(null);
       const coursesData = await courseService.getAll();
       console.log('Courses loaded:', coursesData);
       setCourses(coursesData);
@@ -59,6 +110,7 @@ export default function DashboardPage() {
       }
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
+      setError(`Error loading data: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -90,7 +142,22 @@ export default function DashboardPage() {
   // Add semesters from database that don't have courses yet
   semesters.forEach(sem => semesterNames.add(sem.name));
   
-  const semesterList = Array.from(semesterNames).sort().reverse(); // Most recent first
+  // Create semester list with custom ordering
+  let semesterList = Array.from(semesterNames);
+  
+  // Sort by custom order if available, otherwise use newest first
+  if (semesterOrder.length > 0) {
+    semesterList.sort((a, b) => {
+      const indexA = semesterOrder.indexOf(a);
+      const indexB = semesterOrder.indexOf(b);
+      if (indexA === -1) return 1; // Unknown items go to end
+      if (indexB === -1) return -1;
+      return indexA - indexB;
+    });
+  } else {
+    // Default: newest first (alphabetical reverse)
+    semesterList = semesterList.sort().reverse();
+  }
 
   const handleDeleteCourse = async (courseId) => {
     setConfirmDialog({
@@ -137,6 +204,24 @@ export default function DashboardPage() {
     });
   };
 
+  const handleMoveSemesterUp = (semesterName) => {
+    const currentIndex = semesterOrder.indexOf(semesterName);
+    if (currentIndex > 0) {
+      const newOrder = [...semesterOrder];
+      [newOrder[currentIndex], newOrder[currentIndex - 1]] = [newOrder[currentIndex - 1], newOrder[currentIndex]];
+      setSemesterOrder(newOrder);
+    }
+  };
+
+  const handleMoveSemesterDown = (semesterName) => {
+    const currentIndex = semesterOrder.indexOf(semesterName);
+    if (currentIndex < semesterOrder.length - 1) {
+      const newOrder = [...semesterOrder];
+      [newOrder[currentIndex], newOrder[currentIndex + 1]] = [newOrder[currentIndex + 1], newOrder[currentIndex]];
+      setSemesterOrder(newOrder);
+    }
+  };
+
   const handleUpdateCourse = async (courseId) => {
     try {
       await courseService.update(courseId, editFormData);
@@ -171,6 +256,10 @@ export default function DashboardPage() {
       });
       setCreatingNewSemester(false);
       setNewSemesterName('');
+      
+      // Add new semester to the beginning of the order
+      setSemesterOrder([newSemesterName.trim(), ...semesterOrder]);
+      
       loadData();
     } catch (error) {
       console.error('Failed to create semester:', error);
@@ -281,6 +370,23 @@ export default function DashboardPage() {
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-sky-400 border-t-transparent rounded-full animate-spin mx-auto"></div>
           <p className={`mt-4 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Loading...</p>
+          {error && <p className="mt-2 text-red-500 text-sm">{error}</p>}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={`min-h-screen flex items-center justify-center transition-colors ${isDarkMode ? 'bg-black' : 'bg-gray-50'}`}>
+        <div className="text-center">
+          <p className="text-red-500 text-lg font-semibold">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 bg-sky-500 text-white rounded-lg hover:bg-sky-600"
+          >
+            Reload Page
+          </button>
         </div>
       </div>
     );
@@ -297,7 +403,7 @@ export default function DashboardPage() {
               <CoursebookTextLogo className="w-48 h-12" isDarkMode={isDarkMode} showUnderline={false} />
             </div>
             <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-400">Welcome, <span className="text-sky-300 font-semibold">{user?.first_name && user?.last_name ? `${user.first_name} ${user.last_name}` : user?.first_name || 'Student'}</span></span>
+              <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Welcome, <span className={`font-semibold ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>{user?.first_name && user?.last_name ? `${user.first_name} ${user.last_name}` : user?.first_name || 'Student'}</span></span>
               
               {/* Theme Toggle */}
               <button
@@ -385,8 +491,58 @@ export default function DashboardPage() {
         </div>
       </header>
 
+      {/* Secondary Navigation */}
+      <div className={`border-b sticky top-16 z-10 backdrop-blur-sm transition-colors ${isDarkMode ? 'border-gray-800 bg-black/80' : 'border-gray-200 bg-white/80'}`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex gap-1">
+            <button
+              onClick={() => setActiveTab('semesters')}
+              className={`px-6 py-3 font-medium text-sm transition-all duration-200 border-b-2 ${
+                activeTab === 'semesters'
+                  ? isDarkMode
+                    ? 'text-blue-400 border-blue-400'
+                    : 'text-blue-600 border-blue-600'
+                  : isDarkMode
+                  ? 'text-gray-400 border-transparent hover:text-gray-300'
+                  : 'text-gray-600 border-transparent hover:text-gray-900'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                </svg>
+                Semesters
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('todos')}
+              className={`px-6 py-3 font-medium text-sm transition-all duration-200 border-b-2 ${
+                activeTab === 'todos'
+                  ? isDarkMode
+                    ? 'text-blue-400 border-blue-400'
+                    : 'text-blue-600 border-blue-600'
+                  : isDarkMode
+                  ? 'text-gray-400 border-transparent hover:text-gray-300'
+                  : 'text-gray-600 border-transparent hover:text-gray-900'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                </svg>
+                Todo List
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {activeTab === 'todos' ? (
+          <TodoList isDarkMode={isDarkMode} />
+        ) : (
+          <>
         {/* Create New Semester Section */}
         <div className={`rounded-2xl p-8 mb-8 border-2 border-dashed transition-colors ${isDarkMode ? 'border-gray-700/50 hover:border-sky-500/50 bg-gray-900/30' : 'border-gray-300 hover:border-sky-400 bg-gray-50'}`}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -465,7 +621,7 @@ export default function DashboardPage() {
                 Upload Routine
               </p>
               <p className="text-xs mt-1 text-white/90">
-                Extract courses from PDF
+                Extract courses from PDF or Image
               </p>
             </button>
           </div>
@@ -494,18 +650,21 @@ export default function DashboardPage() {
           </div>
         ) : (
           semesterList.map((semesterName) => (
-            <div key={semesterName} className={`rounded-2xl p-8 mb-8 border transition-colors ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200'}`}>
+            <div 
+              key={semesterName}
+              className={`rounded-2xl p-8 mb-8 border transition-all hover:shadow-lg ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200'}`}
+            >
               <div className="flex justify-between items-center mb-6">
                 <div>
-                  <div className="flex items-center gap-3 mb-2">
-                    {editingSemester === semesterName ? (
-                      <input
-                        type="text"
-                        value={editingSemesterName}
-                        onChange={(e) => setEditingSemesterName(e.target.value)}
-                        onBlur={() => handleUpdateSemesterName(semesterName)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
+                    <div className="flex items-center gap-3 mb-2">
+                      {editingSemester === semesterName ? (
+                        <input
+                          type="text"
+                          value={editingSemesterName}
+                          onChange={(e) => setEditingSemesterName(e.target.value)}
+                          onBlur={() => handleUpdateSemesterName(semesterName)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
                             handleUpdateSemesterName(semesterName);
                           } else if (e.key === 'Escape') {
                             setEditingSemester(null);
@@ -548,6 +707,26 @@ export default function DashboardPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
                     </button>
+                    <button
+                      onClick={() => handleMoveSemesterUp(semesterName)}
+                      disabled={semesterOrder.indexOf(semesterName) === 0}
+                      className={`p-1 rounded transition-colors ${semesterOrder.indexOf(semesterName) === 0 ? 'opacity-40 cursor-not-allowed' : `hover:bg-sky-500/10 ${isDarkMode ? 'text-gray-400 hover:text-sky-400' : 'text-gray-500 hover:text-sky-500'}`}`}
+                      title="Move semester up"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => handleMoveSemesterDown(semesterName)}
+                      disabled={semesterOrder.indexOf(semesterName) === semesterOrder.length - 1}
+                      className={`p-1 rounded transition-colors ${semesterOrder.indexOf(semesterName) === semesterOrder.length - 1 ? 'opacity-40 cursor-not-allowed' : `hover:bg-sky-500/10 ${isDarkMode ? 'text-gray-400 hover:text-sky-400' : 'text-gray-500 hover:text-sky-500'}`}`}
+                      title="Move semester down"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
                   </div>
                   <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                     {(groupedBySemester[semesterName] || []).length} {(groupedBySemester[semesterName] || []).length === 1 ? 'course' : 'courses'}
@@ -557,15 +736,19 @@ export default function DashboardPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {(groupedBySemester[semesterName] || []).map((course, index) => (
-                <div
-                  key={course.id}
-                  className={`group border-2 rounded-xl p-6 transition-all duration-200 relative shadow-lg hover:shadow-xl hover:scale-[1.02] ${isDarkMode ? 'bg-gradient-to-br from-blue-600 to-blue-700 border-blue-500' : 'bg-gradient-to-br from-blue-400 to-blue-500 border-blue-400'}`}
-                >
-                  {/* Action buttons */}
+                  <div
+                    key={course.id}
+                    onClick={() => editingCourse !== course.id && navigate(`/course/${course.id}`)}
+                    className={`group border-2 rounded-xl p-6 transition-all duration-200 relative shadow-lg hover:shadow-xl hover:scale-[1.02] cursor-pointer min-h-[180px] flex flex-col ${isDarkMode ? 'bg-gradient-to-br from-blue-600 to-blue-700 border-blue-500' : 'bg-gradient-to-br from-blue-600 to-blue-700 border-blue-500'}`}
+                  >
+                    {/* Action buttons */}
                   {editingCourse !== course.id && (
-                    <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                       <button
-                        onClick={() => startEditCourse(course)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          startEditCourse(course);
+                        }}
                         className="p-1.5 rounded-lg transition-colors bg-white/20 hover:bg-white/30 text-white backdrop-blur-sm"
                         title="Edit course"
                       >
@@ -574,7 +757,10 @@ export default function DashboardPage() {
                         </svg>
                       </button>
                       <button
-                        onClick={() => handleDeleteCourse(course.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteCourse(course.id);
+                        }}
                         className="p-1.5 rounded-lg transition-colors bg-white/20 hover:bg-red-500/80 text-white backdrop-blur-sm"
                         title="Delete course"
                       >
@@ -620,38 +806,40 @@ export default function DashboardPage() {
                       </div>
                     </div>
                   ) : (
-                    <div className="flex items-start justify-between mb-4 pr-12">
-                      <div className="flex-1">
-                        <h3 className="font-bold text-xl mb-1 text-white drop-shadow-md">
-                          {course.code}
-                        </h3>
-                        {course.title && (
-                          <p className="text-sm line-clamp-2 leading-relaxed text-white/90">
-                            {course.title}
-                          </p>
-                        )}
+                    <>
+                      <div className="flex items-start justify-between mb-4 pr-16">
+                        <div className="flex-1 mr-2">
+                          <h3 className="font-bold text-2xl mb-2 text-white drop-shadow-md">
+                            {course.code}
+                          </h3>
+                          {course.title && (
+                            <p className="text-base line-clamp-2 leading-relaxed text-white/90">
+                              {course.title}
+                            </p>
+                          )}
+                        </div>
+                        <svg className="flex-shrink-0 group-hover:scale-110 transition-transform ml-2" width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M4 19.5C4 18.837 4.26339 18.2011 4.73223 17.7322C5.20107 17.2634 5.83696 17 6.5 17H20" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.9"/>
+                          <path d="M6.5 3H20V21H6.5C5.83696 21 5.20107 20.7366 4.73223 20.2678C4.26339 19.7989 4 19.163 4 18.5V5.5C4 4.83696 4.26339 4.20107 4.73223 3.73223C5.20107 3.26339 5.83696 3 6.5 3Z" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.9"/>
+                          <path d="M9 7H16" stroke="white" strokeWidth="1.5" strokeLinecap="round" opacity="0.7"/>
+                          <path d="M9 11H16" stroke="white" strokeWidth="1.5" strokeLinecap="round" opacity="0.7"/>
+                        </svg>
                       </div>
-                      <div className="text-3xl group-hover:scale-110 transition-transform flex-shrink-0 filter drop-shadow-lg">
-                        📚
+                      <div className="flex items-center justify-between pt-4 border-t border-white/20 mt-auto">
+                        <span className="text-sm font-medium text-white/80">
+                          {materials.filter((m) => m.course === course.id).length} {materials.filter((m) => m.course === course.id).length === 1 ? 'file' : 'files'}
+                        </span>
+                        <div className="flex items-center gap-1 text-sm font-semibold text-white/80">
+                          View
+                          <svg className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </div>
                       </div>
-                    </div>
+                    </>
                   )}
-                  <div className="flex items-center justify-between pt-4 border-t border-white/20">
-                    <span className="text-xs font-medium text-white/80">
-                      {materials.filter((m) => m.course === course.id).length} {materials.filter((m) => m.course === course.id).length === 1 ? 'file' : 'files'}
-                    </span>
-                    <button 
-                      onClick={() => navigate(`/course/${course.id}`)}
-                      className="flex items-center gap-1 text-xs font-semibold text-white/80 hover:text-white transition-colors"
-                    >
-                      View
-                      <svg className="h-3 w-3 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
-                  </div>
                 </div>
-              ))}
+                ))}
 
                 {/* Add Course Card */}
                 {addingCourseToSemester === semesterName ? (
@@ -822,6 +1010,8 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
+        )}
+        </>
         )}
       </main>
 

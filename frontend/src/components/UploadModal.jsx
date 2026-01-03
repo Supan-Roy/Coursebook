@@ -59,10 +59,10 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
         <div className={`flex items-center justify-between p-6 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
           <div>
             <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-              Upload Routine PDF
+              Upload Routine
             </h2>
             <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              Upload your class routine PDF to automatically extract courses
+              Upload your class routine (PDF or Image) to automatically extract courses
             </p>
           </div>
           <button
@@ -183,7 +183,7 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
         {!uploadResult && (
           <div className={`px-6 py-4 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
             <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
-              💡 Tip: The system will automatically scan your routine PDF and create course folders for each subject found.
+              💡 Tip: The system will automatically scan your routine (PDF or Image) and create course folders for each subject found.
             </p>
           </div>
         )}

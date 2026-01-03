@@ -37,9 +37,10 @@ export default function FileUpload({ onUploadSuccess, courseId = null }) {
   };
 
   const handleUpload = async (file) => {
-    // Validate file type
-    if (file.type !== 'application/pdf') {
-      setError('Please upload a PDF file');
+    // Validate file type - accept PDF and images
+    const validTypes = ['application/pdf', 'image/png', 'image/jpeg', 'image/jpg'];
+    if (!validTypes.includes(file.type)) {
+      setError('Please upload a PDF or image file (PNG, JPG, JPEG)');
       return;
     }
 
@@ -101,7 +102,7 @@ export default function FileUpload({ onUploadSuccess, courseId = null }) {
       >
         <input
           type="file"
-          accept=".pdf,application/pdf"
+          accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
           onChange={handleChange}
           disabled={uploading}
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
@@ -134,7 +135,7 @@ export default function FileUpload({ onUploadSuccess, courseId = null }) {
                 <span className="text-sky-400 hover:text-sky-300">Click to upload</span> or drag and drop
               </p>
               <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
-                PDF files only (max 10MB)
+                PDF or Image files (PNG, JPG) • Max 10MB
               </p>
             </>
           )}

@@ -263,33 +263,36 @@ export default function CourseDetailPage() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Course Header */}
-        <div className={`rounded-2xl p-8 mb-8 border ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200 shadow-sm'}`}>
+        <div className={`rounded-2xl p-8 mb-8 border bg-gradient-to-br from-blue-600 to-blue-700 border-blue-500`}>
           <div className="flex items-start justify-between">
             <div>
-              <h1 className={`text-4xl font-bold mb-2 ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>
+              <h1 className={`text-4xl font-bold mb-2 text-white drop-shadow-md`}>
                 {course.code}
               </h1>
               {course.title && (
-                <p className={`text-lg ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                <p className={`text-lg text-white/90`}>
                   {course.title}
                 </p>
               )}
             </div>
-            <div className="text-6xl opacity-40">
-              📚
-            </div>
+            <svg width="56" height="56" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0">
+              <path d="M4 19.5C4 18.837 4.26339 18.2011 4.73223 17.7322C5.20107 17.2634 5.83696 17 6.5 17H20" stroke="white" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" opacity="0.9"/>
+              <path d="M6.5 3H20V21H6.5C5.83696 21 5.20107 20.7366 4.73223 20.2678C4.26339 19.7989 4 19.163 4 18.5V5.5C4 4.83696 4.26339 4.20107 4.73223 3.73223C5.20107 3.26339 5.83696 3 6.5 3Z" stroke="white" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" opacity="0.9"/>
+              <path d="M9 7H16" stroke="white" strokeWidth="1.2" strokeLinecap="round" opacity="0.7"/>
+              <path d="M9 11H16" stroke="white" strokeWidth="1.2" strokeLinecap="round" opacity="0.7"/>
+              <path d="M9 15H14" stroke="white" strokeWidth="1.2" strokeLinecap="round" opacity="0.7"/>
+            </svg>
           </div>
         </div>
 
-        {/* Upload Section */}
-        <div className={`rounded-2xl p-8 mb-8 border ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200 shadow-sm'}`}>
-          <h2 className={`text-xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Upload Materials</h2>
-          <label className={`block w-full p-8 border-2 border-dashed rounded-xl cursor-pointer transition-all ${
+        {/* Upload Button */}
+        <div className="mb-8 flex gap-2">
+          <label className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all cursor-pointer ${
             uploading 
               ? 'opacity-50 cursor-not-allowed' 
               : isDarkMode 
-                ? 'border-gray-700 hover:border-sky-500 hover:bg-gray-900/50' 
-                : 'border-gray-300 hover:border-sky-400 hover:bg-sky-50/50'
+                ? 'bg-sky-500/20 text-sky-400 hover:bg-sky-500/30' 
+                : 'bg-sky-500 text-white hover:bg-sky-600'
           }`}>
             <input
               type="file"
@@ -299,27 +302,10 @@ export default function CourseDetailPage() {
               className="hidden"
               accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.zip,.rar"
             />
-            <div className="text-center">
-              <svg
-                className={`mx-auto h-12 w-12 ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                />
-              </svg>
-              <p className={`mt-2 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                {uploading ? 'Uploading...' : 'Click to upload or drag and drop'}
-              </p>
-              <p className={`mt-1 text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
-                PDF, DOC, DOCX, PPT, PPTX, XLS, XLSX, TXT, ZIP, RAR
-              </p>
-            </div>
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
+            {uploading ? 'Uploading...' : 'Upload Material'}
           </label>
         </div>
 
@@ -352,10 +338,11 @@ export default function CourseDetailPage() {
               {materials.map((material) => (
                 <div
                   key={material.id}
-                  className={`group flex items-center justify-between p-4 rounded-lg border transition-all ${
+                  onClick={() => window.open(`http://127.0.0.1:8000${material.storage_url}`, '_blank')}
+                  className={`group flex items-center justify-between p-4 rounded-lg border transition-all cursor-pointer ${
                     isDarkMode 
-                      ? 'border-gray-700/50 hover:border-sky-500/50 bg-gray-900/30' 
-                      : 'border-gray-200 hover:border-sky-400 bg-gray-50'
+                      ? 'border-gray-700/50 hover:border-sky-500/50 bg-gray-900/30 hover:bg-gray-900/50' 
+                      : 'border-gray-200 hover:border-sky-400 bg-gray-50 hover:bg-gray-100'
                   }`}
                 >
                   <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -374,26 +361,68 @@ export default function CourseDetailPage() {
                   <div className="flex items-center gap-2">
                     <a
                       href={`http://127.0.0.1:8000${material.storage_url}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                      download
+                      onClick={(e) => e.stopPropagation()}
+                      className={`p-2 rounded-lg transition-all ${
                         isDarkMode
-                          ? 'bg-sky-500/20 text-sky-400 hover:bg-sky-500/30'
-                          : 'bg-sky-100 text-sky-600 hover:bg-sky-200'
+                          ? 'hover:bg-sky-500/20 text-gray-400 hover:text-sky-400'
+                          : 'hover:bg-sky-100 text-gray-500 hover:text-sky-600'
                       }`}
+                      title="Download file"
                     >
-                      View
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
                     </a>
                     <button
-                      onClick={() => handleDeleteMaterial(material.id)}
-                      className={`p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-all ${
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        const shareUrl = `http://127.0.0.1:8000${material.storage_url}`;
+                        
+                        if (navigator.share) {
+                          try {
+                            await navigator.share({
+                              title: material.filename,
+                              text: `Check out this file: ${material.filename}`,
+                              url: shareUrl,
+                            });
+                          } catch (err) {
+                            if (err.name !== 'AbortError') {
+                              // Fallback to clipboard if share fails
+                              navigator.clipboard.writeText(shareUrl);
+                              alert('Link copied to clipboard!');
+                            }
+                          }
+                        } else {
+                          // Fallback for browsers that don't support Web Share API
+                          navigator.clipboard.writeText(shareUrl);
+                          alert('Link copied to clipboard!');
+                        }
+                      }}
+                      className={`p-2 rounded-lg transition-all ${
+                        isDarkMode
+                          ? 'hover:bg-green-500/20 text-gray-400 hover:text-green-400'
+                          : 'hover:bg-green-100 text-gray-500 hover:text-green-600'
+                      }`}
+                      title="Share file"
+                    >
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteMaterial(material.id);
+                      }}
+                      className={`p-2 rounded-lg transition-all ${
                         isDarkMode
                           ? 'hover:bg-red-500/20 text-gray-400 hover:text-red-400'
                           : 'hover:bg-red-100 text-gray-500 hover:text-red-600'
                       }`}
                       title="Delete file"
                     >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
                     </button>

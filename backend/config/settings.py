@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     "courses",
     "materials",
     "usage",
+    "todos",
 ]
 
 MIDDLEWARE = [

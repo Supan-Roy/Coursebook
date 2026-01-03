@@ -145,3 +145,27 @@ export const semesterService = {
     return response.data;
   },
 };
+
+export const todoService = {
+  async getAll() {
+    const response = await api.get('/todos/');
+    if (Array.isArray(response.data)) {
+      return response.data;
+    }
+    return response.data.results || response.data || [];
+  },
+
+  async create(data) {
+    const response = await api.post('/todos/', data);
+    return response.data;
+  },
+
+  async update(id, data) {
+    const response = await api.patch(`/todos/${id}/`, data);
+    return response.data;
+  },
+
+  async delete(id) {
+    await api.delete(`/todos/${id}/`);
+  },
+};
