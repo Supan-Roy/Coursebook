@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import { preparationService } from '../../services';
+import Toast from '../Toast';
+import ConfirmDialog from '../ConfirmDialog';
 
 export default function SavedSummaries({ courseId, onLoadSummary, onRefresh }) {
   const { isDarkMode } = useTheme();
@@ -9,6 +11,8 @@ export default function SavedSummaries({ courseId, onLoadSummary, onRefresh }) {
   const [error, setError] = useState('');
   const [selectedSummary, setSelectedSummary] = useState(null);
   const [deleting, setDeleting] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
+  const [toast, setToast] = useState(null);
 
   useEffect(() => {
     loadSummaries();
@@ -34,8 +38,11 @@ export default function SavedSummaries({ courseId, onLoadSummary, onRefresh }) {
   };
 
   const handleDelete = async (summaryId) => {
-    if (!window.confirm('Delete this summary?')) return;
+    setShowDeleteConfirm(summaryId);
+  };
 
+  const confirmDelete = async (summaryId) => {
+    setShowDeleteConfirm(null);
     setDeleting(summaryId);
     try {
       await preparationService.deleteSummary(summaryId);
@@ -43,10 +50,12 @@ export default function SavedSummaries({ courseId, onLoadSummary, onRefresh }) {
       if (selectedSummary?.id === summaryId) {
         setSelectedSummary(null);
       }
+      setToast({ message: 'Summary deleted successfully', type: 'success' });
       onRefresh?.();
     } catch (err) {
       console.error('Failed to delete summary', err);
       setError('Failed to delete summary');
+      setToast({ message: 'Failed to delete summary', type: 'error' });
     } finally {
       setDeleting(null);
     }
@@ -152,6 +161,27 @@ export default function SavedSummaries({ courseId, onLoadSummary, onRefresh }) {
           </div>
         ))}
       </div>
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          duration={3000}
+          onClose={() => setToast(null)}
+        />
+      )}
+
+      {showDeleteConfirm && (
+        <ConfirmDialog
+          title="Delete Summary"
+          message="Are you sure you want to delete this summary? This action cannot be undone."
+          confirmText="Delete"
+          cancelText="Cancel"
+          isDangerous={true}
+          onConfirm={() => confirmDelete(showDeleteConfirm)}
+          onCancel={() => setShowDeleteConfirm(null)}
+        />
+      )}
     </div>
   );
 }

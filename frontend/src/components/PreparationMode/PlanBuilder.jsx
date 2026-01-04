@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTheme } from '../../context/ThemeContext';
+import Toast from '../Toast';
 
 export default function PlanBuilder({ courseCode, onSave }) {
   const { isDarkMode } = useTheme();
@@ -9,6 +10,7 @@ export default function PlanBuilder({ courseCode, onSave }) {
   const [endDate, setEndDate] = useState('');
   const [tasks, setTasks] = useState([]);
   const [newTask, setNewTask] = useState('');
+  const [toast, setToast] = useState(null);
 
   const templates = {
     study: {
@@ -76,11 +78,11 @@ export default function PlanBuilder({ courseCode, onSave }) {
 
   const handleSave = () => {
     if (!title.trim()) {
-      alert('Please enter a plan title');
+      setToast({ message: 'Please enter a plan title', type: 'error' });
       return;
     }
     if (tasks.length === 0) {
-      alert('Please add at least one task');
+      setToast({ message: 'Please add at least one task', type: 'error' });
       return;
     }
 
@@ -307,6 +309,15 @@ export default function PlanBuilder({ courseCode, onSave }) {
           Clear
         </button>
       </div>
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          duration={3000}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 }

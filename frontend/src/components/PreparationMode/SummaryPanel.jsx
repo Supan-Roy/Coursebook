@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import { preparationService } from '../../services';
+import Toast from '../Toast';
+import ConfirmDialog from '../ConfirmDialog';
 
 export default function SummaryPanel({ courseId, selectedFiles, onSave, loadedSummary }) {
   const { isDarkMode } = useTheme();
@@ -11,6 +13,8 @@ export default function SummaryPanel({ courseId, selectedFiles, onSave, loadedSu
   const [error, setError] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [toast, setToast] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Load summary when one is selected from saved summaries
   useEffect(() => {
@@ -22,7 +26,7 @@ export default function SummaryPanel({ courseId, selectedFiles, onSave, loadedSu
 
   const handleSave = async () => {
     if (!summary.trim()) {
-      alert('Please write a summary first');
+      setToast({ message: 'Please write a summary first', type: 'error' });
       return;
     }
 
@@ -58,8 +62,11 @@ export default function SummaryPanel({ courseId, selectedFiles, onSave, loadedSu
   const handleDelete = async () => {
     if (!savedSummaryId) return;
 
-    if (!window.confirm('Delete this summary?')) return;
+    setShowDeleteConfirm(true);
+  };
 
+  const confirmDelete = async () => {
+    setShowDeleteConfirm(false);
     setIsDeleting(true);
     setError('');
 
@@ -104,7 +111,7 @@ export default function SummaryPanel({ courseId, selectedFiles, onSave, loadedSu
 
   const handleDownloadPdf = async () => {
     if (!summary.trim()) {
-      alert('Please write or generate a summary first');
+      setToast({ message: 'Please write or generate a summary first', type: 'error' });
       return;
     }
 
@@ -277,6 +284,27 @@ export default function SummaryPanel({ courseId, selectedFiles, onSave, loadedSu
             ✓ Summary Saved
           </p>
         </div>
+      )}
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          duration={3000}
+          onClose={() => setToast(null)}
+        />
+      )}
+
+      {showDeleteConfirm && (
+        <ConfirmDialog
+          title="Delete Summary"
+          message="Are you sure you want to delete this summary? This action cannot be undone."
+          confirmText="Delete"
+          cancelText="Cancel"
+          isDangerous={true}
+          onConfirm={confirmDelete}
+          onCancel={() => setShowDeleteConfirm(false)}
+        />
       )}
     </div>
   );

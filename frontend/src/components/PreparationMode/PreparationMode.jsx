@@ -4,6 +4,7 @@ import FileSelector from './FileSelector';
 import SummaryPanel from './SummaryPanel';
 import QuizGenerator from './QuizGenerator';
 import SavedSummaries from './SavedSummaries';
+import Toast from '../Toast';
 
 export default function PreparationMode({ materials, courseCode, courseId, onClose }) {
   const { isDarkMode } = useTheme();
@@ -12,6 +13,7 @@ export default function PreparationMode({ materials, courseCode, courseId, onClo
   const [selectedAction, setSelectedAction] = useState(null); // 'summary' or 'quiz'
   const [loadedSummary, setLoadedSummary] = useState(null);
   const [refreshSummaries, setRefreshSummaries] = useState(0);
+  const [toast, setToast] = useState(null);
 
   const handleSelectFile = (file) => {
     setSelectedFiles([...selectedFiles, file]);
@@ -23,7 +25,10 @@ export default function PreparationMode({ materials, courseCode, courseId, onClo
 
   const handleSave = (data) => {
     console.log('Saved:', data);
-    alert('✅ ' + (data.type === 'summary' ? 'Summary saved!' : 'Quiz completed!'));
+    setToast({
+      message: data.type === 'summary' ? 'Summary saved successfully!' : 'Quiz completed!',
+      type: 'success'
+    });
     setRefreshSummaries(r => r + 1);
     setStep(1);
     setSelectedFiles([]);
@@ -41,9 +46,18 @@ export default function PreparationMode({ materials, courseCode, courseId, onClo
   };
 
   return (
-    <div className={`fixed inset-0 z-50 overflow-y-auto ${isDarkMode ? 'bg-black/50' : 'bg-white/50'}`} style={{ backdropFilter: 'blur(4px)' }}>
-      <div className="min-h-screen p-4 flex items-center justify-center">
-        <div className={`w-full max-w-2xl rounded-2xl border shadow-2xl transition-colors ${isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-white border-gray-200'}`}>
+    <>
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          duration={3000}
+          onClose={() => setToast(null)}
+        />
+      )}
+      <div className={`fixed inset-0 z-50 overflow-y-auto ${isDarkMode ? 'bg-black/50' : 'bg-white/50'}`} style={{ backdropFilter: 'blur(4px)' }}>
+        <div className="min-h-screen p-4 flex items-center justify-center">
+          <div className={`w-full max-w-2xl rounded-2xl border shadow-2xl transition-colors ${isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-white border-gray-200'}`}>
           {/* Header */}
           <div className={`border-b p-6 flex justify-between items-center ${isDarkMode ? 'border-gray-800 bg-gray-900/50' : 'border-gray-200 bg-gray-50'}`}>
             <div>
@@ -204,5 +218,6 @@ export default function PreparationMode({ materials, courseCode, courseId, onClo
         </div>
       </div>
     </div>
+    </>
   );
 }
