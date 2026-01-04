@@ -5,6 +5,9 @@ import os
 import sys
 import django
 
+# Fix Unicode encoding for Windows
+sys.stdout.reconfigure(encoding='utf-8')
+
 # Setup Django
 sys.path.insert(0, os.path.dirname(__file__))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
