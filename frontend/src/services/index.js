@@ -1,4 +1,5 @@
 import api from './api';
+import { preparationService } from './preparationService';
 
 export const authService = {
   async register(email, password, first_name, last_name) {
@@ -169,3 +170,5 @@ export const todoService = {
     await api.delete(`/todos/${id}/`);
   },
 };
+
+export { preparationService };

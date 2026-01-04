@@ -1,0 +1,51 @@
+Freshers' Party
+
+Sakib and Alif are freshers. They already created a 'Friends Forever' group. To make their group memorable, they decided to arrange a party in a friends room.
+
+Sakib brought A red balloons from home.
+Alif borrowed B blue balloons from his roommate.
+
+They decorated the room, but they needed 2 extra balloons. However, it was managed by buying from nearby shop. Their friend Anik suggested it would look nice if the balloons were arranged on the 3 walls of the room.
+
+Can you help them figure out how many balloons will go on each wall?
+
+
+Input
+A single line containing two integers: A and B
+A — the number of red balloons Sakib brought (1 ≤ A ≤ 1000)
+B — the number of blue balloons Alif borrowed (1 ≤ B ≤ 1000)
+
+
+Output
+Print a single integer — the number of balloons that will go on each wall.
+
+
+Constraints
+1 ≤ A, B ≤ 1000
+All calculations use integer division; you can ignore any remainder.
+
+Sample Input 1
+10 3
+Sample Output 1
+5
+
+Sample Input 2
+7 4
+Sample output 2
+4
+
+
+
+#include <bits/stdc++.h>
+using namespace std;
+
+int main() {
+    int A, B;
+    cin >> A >> B;
+
+    int total = A + B + 2;
+    int perWall = total / 3;
+
+    cout << perWall << endl;
+    return 0;
+}

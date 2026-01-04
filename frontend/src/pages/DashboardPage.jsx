@@ -1114,8 +1114,20 @@ export default function DashboardPage() {
                   </a>
                 </li>
               </ul>
-              <div className={`mt-4 pt-4 border-t text-sm ${isDarkMode ? 'border-gray-800 text-gray-500' : 'border-gray-300 text-gray-500'}`}>
-                Developed by <span className="text-sky-400 font-semibold">Supan Roy</span>
+              <div className={`mt-4 pt-4 border-t ${isDarkMode ? 'border-gray-800' : 'border-gray-300'}`}>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                  Developed by <span className="text-sky-400 font-semibold">Supan Roy</span>
+                </p>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                  Visit: <a 
+                    href="https://supanroy.com" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className={`hover:text-sky-400 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}
+                  >
+                    supanroy.com
+                  </a>
+                </p>
               </div>
             </div>
           </div>

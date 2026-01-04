@@ -6,6 +6,7 @@ import { courseService, materialService } from '../services';
 import CoursebookTextLogo from '../components/CoursebookTextLogo';
 import ConfirmDialog from '../components/ConfirmDialog';
 import AlertDialog from '../components/AlertDialog';
+import PreparationMode from '../components/PreparationMode/PreparationMode';
 
 export default function CourseDetailPage() {
   const { courseId } = useParams();
@@ -14,6 +15,7 @@ export default function CourseDetailPage() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showPreparationMode, setShowPreparationMode] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, title: '', message: '', onConfirm: null });
   const [alertDialog, setAlertDialog] = useState({ isOpen: false, title: '', message: '', type: 'info' });
   const { logout, user } = useAuth();
@@ -111,6 +113,13 @@ export default function CourseDetailPage() {
       txt: '📄',
       zip: '📦',
       rar: '📦',
+      png: '🖼️',
+      jpg: '🖼️',
+      jpeg: '🖼️',
+      gif: '🖼️',
+      bmp: '🖼️',
+      svg: '🖼️',
+      webp: '🖼️',
     };
     return icons[ext] || '📄';
   };
@@ -167,6 +176,17 @@ export default function CourseDetailPage() {
             </div>
 
             <div className="flex items-center gap-4">
+              <button
+                onClick={() => setShowPreparationMode(true)}
+                className="hidden sm:flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-all bg-sky-500 text-white hover:bg-sky-600"
+                title="Open Preparation Mode"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C6.5 6.253 2 10.998 2 17s4.5 10.747 10 10.747c5.5 0 10-4.998 10-10.747 0-6.002-4.5-10.747-10-10.747z" />
+                </svg>
+                Preparation Mode
+              </button>
+              
               <span className="text-sm text-gray-400">Welcome, <span className="text-sky-300 font-semibold">{user?.first_name && user?.last_name ? `${user.first_name} ${user.last_name}` : user?.first_name || 'Student'}</span></span>
               
               {/* Theme Toggle */}
@@ -300,7 +320,7 @@ export default function CourseDetailPage() {
               disabled={uploading}
               onChange={handleFileUpload}
               className="hidden"
-              accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.zip,.rar"
+              accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.zip,.rar,.png,.jpg,.jpeg,.gif,.bmp,.svg,.webp"
             />
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
@@ -456,6 +476,16 @@ export default function CourseDetailPage() {
         type={alertDialog.type}
         onClose={() => setAlertDialog({ ...alertDialog, isOpen: false })}
       />
+
+      {/* Preparation Mode */}
+      {showPreparationMode && (
+        <PreparationMode
+          materials={materials}
+          courseCode={course?.code || 'Course'}
+          courseId={course?.id || courseId}
+          onClose={() => setShowPreparationMode(false)}
+        />
+      )}
     </div>
   );
 }

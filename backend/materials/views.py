@@ -18,12 +18,14 @@ if platform.system() == 'Windows':
         os.environ['PATH'] = tesseract_path + os.pathsep + current_path
 
 from django.conf import settings
+from django.shortcuts import get_object_or_404
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from courses.models import Course
 from usage.models import StorageUsage
+from common.text_extraction import extract_text_from_path
 from .models import Material
 from .serializers import MaterialSerializer
 
@@ -52,6 +54,30 @@ class MaterialDetailView(generics.RetrieveDestroyAPIView):
 
     def get_queryset(self):
         return Material.objects.filter(user=self.request.user)
+
+
+class MaterialExtractContentView(APIView):
+    """Return extracted text from a stored material for the authenticated user."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, id):
+        material = get_object_or_404(Material, id=id, user=request.user)
+
+        try:
+            content = extract_text_from_path(material.storage_key, material.content_type)
+        except Exception as exc:  # noqa: BLE001
+            return Response({"detail": f"Failed to extract content: {exc}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        return Response(
+            {
+                "material_id": str(material.id),
+                "filename": material.filename,
+                "content": content,
+                "length": len(content),
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class MaterialUploadView(APIView):
@@ -303,7 +329,6 @@ class FileUploadView(APIView):
             # Remove day names from the beginning or anywhere
             for day in day_names:
                 title = title.replace(day, '').strip()
-            
             # Remove junk words
             words = title.split()
             filtered_words = []

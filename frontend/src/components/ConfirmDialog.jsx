@@ -9,29 +9,50 @@ export default function ConfirmDialog({ isOpen, title, message, confirmText = 'C
     switch (type) {
       case 'danger':
         return {
-          icon: 'M12 9v2m0 4v2m0-10a9 9 0 110 18 9 9 0 010-18zm0 2a7 7 0 110 14 7 7 0 010-14zm0 2a1 1 0 100 2 1 1 0 000-2zm-3 3a1 1 0 112 0 1 1 0 01-2 0zm5 3a1 1 0 100-2 1 1 0 000 2z',
+          icon: (
+            <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2"/>
+              <path d="M15 9L9 15M9 9L15 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+          ),
           bgColor: 'bg-red-500/20',
+          borderColor: 'border-red-500/30',
           textColor: 'text-red-400',
           buttonColor: 'bg-red-500 hover:bg-red-600',
         };
       case 'success':
         return {
-          icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
+          icon: (
+            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          ),
           bgColor: 'bg-green-500/20',
+          borderColor: 'border-green-500/30',
           textColor: 'text-green-400',
           buttonColor: 'bg-green-500 hover:bg-green-600',
         };
       case 'info':
         return {
-          icon: 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+          icon: (
+            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          ),
           bgColor: 'bg-blue-500/20',
+          borderColor: 'border-blue-500/30',
           textColor: 'text-blue-400',
           buttonColor: 'bg-blue-500 hover:bg-blue-600',
         };
       default: // warning
         return {
-          icon: 'M12 8v4m0 4v.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+          icon: (
+            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4v.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          ),
           bgColor: 'bg-yellow-500/20',
+          borderColor: 'border-yellow-500/30',
           textColor: 'text-yellow-400',
           buttonColor: 'bg-yellow-500 hover:bg-yellow-600',
         };
@@ -50,10 +71,8 @@ export default function ConfirmDialog({ isOpen, title, message, confirmText = 'C
       >
         {/* Icon */}
         <div className="flex justify-center pt-6">
-          <div className={`w-16 h-16 rounded-full flex items-center justify-center ${styles.bgColor}`}>
-            <svg className={`w-8 h-8 ${styles.textColor}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={styles.icon} />
-            </svg>
+          <div className={`w-16 h-16 rounded-full flex items-center justify-center border-2 ${styles.bgColor} ${styles.borderColor} ${styles.textColor}`}>
+            {styles.icon}
           </div>
         </div>
 
