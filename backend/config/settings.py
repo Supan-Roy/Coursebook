@@ -148,5 +148,7 @@ LOGGING = {
 
 # Google Gemini API Configuration
 # Get your free API key from: https://aistudio.google.com/apikey
-GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
-# Free tier: 1,500 requests/day, 15 requests/minute
+# Support both single key (legacy) and multiple keys (for quota rotation)
+GEMINI_API_KEYS = [k.strip() for k in os.environ.get('GEMINI_API_KEYS', '').split(',') if k.strip()]
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')  # Legacy single key fallback
+# Free tier per key: 1,500 requests/day, 15 requests/minute

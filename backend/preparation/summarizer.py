@@ -264,56 +264,70 @@ def summarize_text(text: str, *, ratio: float = 0.15, min_sentences: int = 2) ->
         >>> text = "Introduction. Key concept. Methods here. Results show..."
         >>> summary = summarize_text(text, ratio=0.20)
     """
-    if not text or len(text.strip()) < 100:
-        logger.debug("Text too short, returning as-is")
-        return text.strip()
-    
-    # Clean text
-    text = _extract_text_basic(text)
-    
-    # Detect sections
-    sections = _detect_sections(text)
-    
-    # Process each section
-    summary_parts = []
-    for section_name, section_text in sections:
-        sentences = _split_sentences(section_text)
+    try:
+        if not text or len(text.strip()) < 100:
+            logger.debug("Text too short, returning as-is")
+            return text.strip()
         
-        if not sentences:
-            continue
+        logger.debug(f"Starting summarization of {len(text)} chars, {len(text.split())} words")
         
-        # Score sentences within this section
-        scored = _compute_tf_idf_scores(sentences)
+        # Clean text
+        text = _extract_text_basic(text)
         
-        if not scored:
-            continue
+        # Detect sections
+        sections = _detect_sections(text)
+        logger.debug(f"Detected {len(sections)} sections")
         
-        # Select top N sentences
-        num_to_keep = max(min_sentences, int(len(sentences) * ratio))
-        num_to_keep = min(num_to_keep, len(sentences))
-        
-        top_indices = sorted(scored, key=lambda x: x[1], reverse=True)[:num_to_keep]
-        top_indices = sorted(top_indices, key=lambda x: x[0])  # Restore original order
-        
-        # Build section summary
-        section_summary_sentences = []
-        for idx, _ in top_indices:
-            sent = sentences[idx]
-            # Apply light cleanup
-            sent = _cleanup_sentence(sent)
-            section_summary_sentences.append(sent)
-        
-        # Only include section if it has content
-        if section_summary_sentences:
-            # Format: section header (if not "Introduction" or generic) + sentences
-            if section_name not in ["Introduction", "Document"] and len(section_name) < 50:
-                summary_parts.append(f"\n{section_name}:")
+        # Process each section
+        summary_parts = []
+        for section_name, section_text in sections:
+            sentences = _split_sentences(section_text)
             
-            summary_parts.extend(section_summary_sentences)
+            if not sentences:
+                continue
+            
+            # Score sentences within this section
+            scored = _compute_tf_idf_scores(sentences)
+            
+            if not scored:
+                continue
+            
+            # Select top N sentences
+            num_to_keep = max(min_sentences, int(len(sentences) * ratio))
+            num_to_keep = min(num_to_keep, len(sentences))
+            
+            top_indices = sorted(scored, key=lambda x: x[1], reverse=True)[:num_to_keep]
+            top_indices = sorted(top_indices, key=lambda x: x[0])  # Restore original order
+            
+            # Build section summary
+            section_summary_sentences = []
+            for idx, _ in top_indices:
+                sent = sentences[idx]
+                # Apply light cleanup
+                sent = _cleanup_sentence(sent)
+                section_summary_sentences.append(sent)
+            
+            # Only include section if it has content
+            if section_summary_sentences:
+                # Format: section header (if not "Introduction" or generic) + sentences
+                if section_name not in ["Introduction", "Document"] and len(section_name) < 50:
+                    summary_parts.append(f"\n{section_name}:")
+                
+                summary_parts.extend(section_summary_sentences)
+        
+        summary = " ".join(summary_parts).strip()
+        logger.info(f"Summary generated: {len(summary)} chars, {len(summary.split())} words")
+        
+        if not summary:
+            logger.warning("Summary is empty after processing, returning first 500 chars of original text")
+            return text[:500].strip()
+        
+        return summary
     
-    summary = " ".join(summary_parts)
-    logger.debug(f"Summary generated: {len(summary.split())} words")
-    return summary.strip()
+    except Exception as e:
+        logger.error(f"Error in summarize_text: {e}", exc_info=True)
+        # Return first portion of text as fallback
+        return text[:500].strip() if text else ""
 
 
 

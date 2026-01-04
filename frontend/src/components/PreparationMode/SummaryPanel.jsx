@@ -26,7 +26,7 @@ export default function SummaryPanel({ courseId, selectedFiles, onSave, loadedSu
 
   const handleSave = async () => {
     if (!summary.trim()) {
-      setToast({ message: 'Please write a summary first', type: 'error' });
+      setToast({ message: 'Please write notes first', type: 'error' });
       return;
     }
 
@@ -41,12 +41,15 @@ export default function SummaryPanel({ courseId, selectedFiles, onSave, loadedSu
           content: summary,
         });
       } else {
-        // Create new summary
+        // Create new summary with material filenames in title
+        const materialNames = selectedFiles.map(f => f.filename).join(', ');
+        const summaryTitle = materialNames || 'Summary';
+        
         payload = await preparationService.createSummary({
           course: courseId,
           materials: selectedFiles.map((f) => f.id),
           content: summary,
-          title: 'Summary',
+          title: summaryTitle,
         });
         setSavedSummaryId(payload.id);
       }
@@ -98,12 +101,18 @@ export default function SummaryPanel({ courseId, selectedFiles, onSave, loadedSu
         materials: selectedFiles.map((f) => f.id),
       });
 
-      setSummary(response.summary || '');
+      if (!response || !response.summary) {
+        throw new Error('No summary received from server');
+      }
+
+      setSummary(response.summary);
       // Reset saved ID when generating new summary
       // so it prompts to save as a new/updated version
     } catch (err) {
       console.error('Failed to generate summary', err);
-      setError('Failed to generate summary. Please try again.');
+      const errorMsg = err.response?.data?.detail || err.message || 'Failed to generate notes. Please try again.';
+      setError(errorMsg);
+      setToast({ message: errorMsg, type: 'error' });
     } finally {
       setIsGenerating(false);
     }
@@ -111,7 +120,7 @@ export default function SummaryPanel({ courseId, selectedFiles, onSave, loadedSu
 
   const handleDownloadPdf = async () => {
     if (!summary.trim()) {
-      setToast({ message: 'Please write or generate a summary first', type: 'error' });
+      setToast({ message: 'Please write or generate notes first', type: 'error' });
       return;
     }
 
@@ -120,7 +129,7 @@ export default function SummaryPanel({ courseId, selectedFiles, onSave, loadedSu
       const materialNames = selectedFiles.map(f => f.filename).join(', ');
       await preparationService.downloadSummaryPdf({
         text: summary,
-        title: `Summary - ${materialNames}`,
+        title: `Notes - ${materialNames}`,
         courseCode: '',
       });
     } catch (err) {
@@ -141,11 +150,11 @@ export default function SummaryPanel({ courseId, selectedFiles, onSave, loadedSu
 
       <div className="space-y-2">
         <label className={`block text-sm font-bold ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
-          Your Summary
+          Your Notes
         </label>
         <div className="flex items-center justify-between gap-3 mb-1">
           <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-            Auto-generate from selected materials or type your own.
+            AI-generate detailed study notes from selected materials or write your own.
           </p>
           <button
             type="button"
@@ -161,13 +170,13 @@ export default function SummaryPanel({ courseId, selectedFiles, onSave, loadedSu
                   : 'border-sky-400 text-sky-600 hover:bg-sky-50'
             }`}
           >
-            {isGenerating ? 'Generating…' : 'Generate summary'}
+            {isGenerating ? 'Generating…' : 'Generate notes'}
           </button>
         </div>
         <textarea
           value={summary}
           onChange={(e) => setSummary(e.target.value)}
-          placeholder="Write your summary or quick notes here. Include key concepts, formulas, and important points..."
+          placeholder="Write or generate detailed study notes here. Include key concepts, explanations, examples, and important points..."
           className={`w-full h-64 p-4 rounded-lg border transition-colors resize-none ${
             isDarkMode
               ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/30'

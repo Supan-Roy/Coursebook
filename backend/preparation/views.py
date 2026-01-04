@@ -105,39 +105,58 @@ class SummaryGenerateView(APIView):
 
         combined_text = "\n".join(aggregated_text_parts).strip()
         if not combined_text:
+            logger.error("No text could be extracted from materials: %s", [m.filename for m in materials])
             return Response({"detail": "No text could be extracted from the selected materials."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Try Gemini API first, fallback to rule-based if unavailable
-        gemini = get_gemini_service()
-        summary = None
-        used_ai = False
+        try:
+            # Try Gemini API first, fallback to rule-based if unavailable
+            gemini = get_gemini_service()
+            summary = None
+            used_ai = False
+            
+            if gemini.enabled:
+                logger.info("Attempting to generate summary with Gemini API")
+                max_words = int(len(combined_text.split()) * 0.15)  # ~15% of source
+                result = gemini.generate_summary(combined_text, max_words=max_words, style='detailed')
+                if result['success']:
+                    summary = result['summary']
+                    used_ai = True
+                    logger.info("Successfully generated summary with Gemini API")
+                else:
+                    logger.warning("Gemini API failed: %s, falling back to rule-based", result['error'])
+            
+            # Fallback to rule-based summarizer if Gemini unavailable or failed
+            if summary is None:
+                logger.info("Using rule-based summarizer")
+                summary = summarize_text(combined_text, ratio=0.15)
+            
+            # Ensure summary is not None
+            if summary is None or summary == "":
+                logger.error("Summary generation failed - both Gemini and fallback returned None/empty")
+                return Response(
+                    {"detail": "Failed to generate summary from materials"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+            
+            logger.info(f"Returning summary with {len(summary)} characters, ai_generated={used_ai}")
+            
+            return Response(
+                {
+                    "course": str(course.id),
+                    "materials": [str(m.id) for m in materials],
+                    "summary": summary,
+                    "source_length": len(combined_text),
+                    "ai_generated": used_ai,
+                },
+                status=status.HTTP_200_OK,
+            )
         
-        if gemini.enabled:
-            logger.info("Attempting to generate summary with Gemini API")
-            max_words = int(len(combined_text.split()) * 0.15)  # ~15% of source
-            result = gemini.generate_summary(combined_text, max_words=max_words, style='detailed')
-            if result['success']:
-                summary = result['summary']
-                used_ai = True
-                logger.info("Successfully generated summary with Gemini API")
-            else:
-                logger.warning("Gemini API failed: %s, falling back to rule-based", result['error'])
-        
-        # Fallback to rule-based summarizer if Gemini unavailable or failed
-        if summary is None:
-            logger.info("Using rule-based summarizer")
-            summary = summarize_text(combined_text, ratio=0.15)
-        
-        return Response(
-            {
-                "course": str(course.id),
-                "materials": [str(m.id) for m in materials],
-                "summary": summary,
-                "source_length": len(combined_text),
-                "ai_generated": used_ai,
-            },
-            status=status.HTTP_200_OK,
-        )
+        except Exception as e:
+            logger.error(f"Unexpected error in summary generation: {e}", exc_info=True)
+            return Response(
+                {"detail": f"Internal error generating summary: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class QuizGenerateView(APIView):

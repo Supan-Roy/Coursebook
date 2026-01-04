@@ -23,9 +23,10 @@ export const preparationService = {
     return response.data;
   },
 
-  async updateSummary(summaryId, { content }) {
+  async updateSummary(summaryId, { content, title }) {
     const response = await api.patch(`/preparation/summaries/${summaryId}/`, {
       content,
+      title,
     });
     return response.data;
   },

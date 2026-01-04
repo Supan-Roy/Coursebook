@@ -7,50 +7,136 @@ Provides high-quality AI-powered:
 - Content analysis
 
 Free tier: 1,500 requests/day, 15 requests/minute
+Implements rate limiting and quota management to avoid exceeding limits.
 """
 
 import os
 import logging
-import google.generativeai as genai
+import time
+from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 from django.conf import settings
+from django.core.cache import cache
 
 logger = logging.getLogger(__name__)
 
+try:
+    import google.generativeai as genai
+    GENAI_AVAILABLE = True
+except ImportError:
+    GENAI_AVAILABLE = False
+    logger.warning("google.generativeai not installed")
+
+
+class RateLimiter:
+    """Manages API rate limiting to prevent quota issues."""
+    
+    REQUESTS_PER_DAY = 1000  # Conservative limit (actual is 1500/day)
+    REQUESTS_PER_MINUTE = 10  # Conservative limit (actual is 15/min)
+    
+    @staticmethod
+    def get_cache_key(key_type):
+        """Generate cache key for rate limiting."""
+        return f"gemini_rate_{key_type}_{datetime.now().strftime('%Y%m%d')}"
+    
+    @staticmethod
+    def check_day_limit():
+        """Check if daily quota is available."""
+        cache_key = RateLimiter.get_cache_key('day')
+        count = cache.get(cache_key, 0)
+        
+        if count >= RateLimiter.REQUESTS_PER_DAY:
+            logger.warning(f"Daily API quota exceeded: {count}/{RateLimiter.REQUESTS_PER_DAY}")
+            return False
+        
+        return True
+    
+    @staticmethod
+    def check_minute_limit():
+        """Check if minute quota is available."""
+        cache_key = RateLimiter.get_cache_key('minute')
+        count = cache.get(cache_key, 0)
+        
+        if count >= RateLimiter.REQUESTS_PER_MINUTE:
+            logger.warning(f"Per-minute API quota exceeded: {count}/{RateLimiter.REQUESTS_PER_MINUTE}")
+            return False
+        
+        return True
+    
+    @staticmethod
+    def increment_counters():
+        """Increment request counters."""
+        # Daily counter
+        day_key = RateLimiter.get_cache_key('day')
+        cache.set(day_key, cache.get(day_key, 0) + 1, 86400)
+        
+        # Minute counter
+        minute_key = RateLimiter.get_cache_key('minute')
+        cache.set(minute_key, cache.get(minute_key, 0) + 1, 60)
+
 
 class GeminiService:
-    """Service for interacting with Google Gemini API."""
+    """Service for interacting with Google Gemini API with rate limiting."""
     
     def __init__(self):
-        """Initialize Gemini API with API key from settings."""
-        api_key = getattr(settings, 'GEMINI_API_KEY', os.environ.get('GEMINI_API_KEY'))
-        if not api_key:
-            logger.warning("GEMINI_API_KEY not found in settings or environment")
+        """Initialize Gemini API with API keys from settings (with rotation support)."""
+        if not GENAI_AVAILABLE:
+            logger.warning("google.generativeai not installed - AI features disabled")
             self.enabled = False
             return
         
+        # Support multiple keys for quota rotation
+        self.api_keys = getattr(settings, 'GEMINI_API_KEYS', [])
+        
+        # Fallback to single key if multiple keys not configured
+        if not self.api_keys:
+            single_key = getattr(settings, 'GEMINI_API_KEY', os.environ.get('GEMINI_API_KEY'))
+            if single_key:
+                self.api_keys = [single_key]
+        
+        if not self.api_keys:
+            logger.warning("No Gemini API keys found in settings or environment")
+            self.enabled = False
+            return
+        
+        self.current_key_index = 0
+        
         try:
-            genai.configure(api_key=api_key)
+            # Configure with first key
+            genai.configure(api_key=self.api_keys[0])
             self.model = genai.GenerativeModel('gemini-2.5-flash')
             self.enabled = True
-            logger.info("Gemini API initialized successfully")
+            logger.info(f"Gemini API initialized with {len(self.api_keys)} key(s)")
         except Exception as e:
             logger.error(f"Failed to initialize Gemini API: {e}")
             self.enabled = False
     
+    def _rotate_key(self):
+        """Rotate to next API key."""
+        if len(self.api_keys) <= 1:
+            return
+        
+        self.current_key_index = (self.current_key_index + 1) % len(self.api_keys)
+        current_key = self.api_keys[self.current_key_index]
+        try:
+            genai.configure(api_key=current_key)
+            logger.info(f"Rotated to API key {self.current_key_index + 1}/{len(self.api_keys)}")
+        except Exception as e:
+            logger.error(f"Failed to rotate API key: {e}")
+    
     def generate_summary(
         self,
         text: str,
-        max_words: int = 300,
-        style: str = "concise"
+        max_words: int = 1500,
+        style: str = "detailed"
     ) -> Dict:
         """
-        Generate a summary using Gemini API.
+        Generate detailed study notes using Gemini API with rate limiting.
         
         Args:
-            text: Text to summarize
-            max_words: Maximum words in summary
-            style: Summary style (concise, detailed, bullet_points)
+            text: Text to create notes from
+            max_words: Maximum words in notes (default 1500 for detailed explanation)
+            style: Notes style (detailed, concise, bullet_points)
             
         Returns:
             {
@@ -68,60 +154,131 @@ class GeminiService:
                 'error': 'Gemini API not configured'
             }
         
-        try:
-            # Build prompt based on style
-            if style == "bullet_points":
-                prompt = f"""Summarize the following text in clear bullet points (maximum {max_words} words total):
-
-{text}
-
-Provide a well-structured summary with:
-- Key concepts and main ideas
-- Important definitions
-- Critical points to remember
-
-Summary:"""
-            elif style == "detailed":
-                prompt = f"""Provide a comprehensive summary of the following text (maximum {max_words} words):
-
-{text}
-
-Include:
-- Main concepts and ideas
-- Important details and context
-- Key takeaways
-
-Summary:"""
-            else:  # concise
-                prompt = f"""Provide a concise, clear summary of the following text (maximum {max_words} words):
-
-{text}
-
-Focus on the most important information and key concepts.
-
-Summary:"""
-            
-            # Generate summary
-            response = self.model.generate_content(prompt)
-            summary = response.text.strip()
-            word_count = len(summary.split())
-            
-            logger.info(f"Generated summary: {word_count} words")
-            
-            return {
-                'success': True,
-                'summary': summary,
-                'word_count': word_count,
-                'error': None
-            }
-            
-        except Exception as e:
-            logger.error(f"Error generating summary with Gemini: {e}")
+        # Check rate limits
+        if not RateLimiter.check_day_limit():
             return {
                 'success': False,
                 'summary': '',
                 'word_count': 0,
-                'error': str(e)
+                'error': 'Daily API quota exceeded. Will use fallback generation.'
+            }
+        
+        if not RateLimiter.check_minute_limit():
+            return {
+                'success': False,
+                'summary': '',
+                'word_count': 0,
+                'error': 'Per-minute API quota exceeded. Please try again in a moment.'
+            }
+        
+        try:
+            # Build prompt based on style
+            if style == "bullet_points":
+                prompt = f"""Create comprehensive study notes from the following material in bullet point format:
+
+{text}
+
+Create detailed, well-organized notes that include:
+- All key concepts with clear explanations
+- Important definitions and terminology
+- Main ideas and supporting details
+- Examples and applications
+- Critical points to remember
+- Relationships between concepts
+
+Make the notes thorough and educational, as if explaining the material to a student who wants to deeply understand the topic.
+
+Notes:"""
+            elif style == "concise":
+                prompt = f"""Create focused study notes from the following material (around {max_words} words):
+
+{text}
+
+Provide clear, organized notes covering:
+- Main concepts and key ideas
+- Important definitions
+- Essential points to remember
+
+Keep it concise but informative.
+
+Notes:"""
+            else:  # detailed - default
+                prompt = f"""Create comprehensive, detailed study notes from the following material. Explain everything thoroughly as if teaching the content:
+
+{text}
+
+Your notes should:
+- Explain all key concepts in detail with clear, easy-to-understand language
+- Break down complex ideas into simpler components
+- Provide context and background information where helpful
+- Include important definitions and terminology
+- Explain how different concepts relate to each other
+- Highlight critical points and important takeaways
+- Use examples to illustrate concepts when applicable
+- Organize information logically with clear structure
+
+Write the notes as if you're explaining this material to a student who wants to fully understand the topic. Be thorough, educational, and clear. Aim for around {max_words} words but prioritize completeness and clarity over strict word count.
+
+Notes:"""
+            
+            # Try generating with key rotation on quota errors
+            for attempt in range(len(self.api_keys)):
+                try:
+                    response = self.model.generate_content(prompt, request_options={"timeout": 30})
+                    summary = response.text.strip()
+                    word_count = len(summary.split())
+                    
+                    # Increment rate limit counters only on success
+                    RateLimiter.increment_counters()
+                    
+                    logger.info(f"Generated notes: {word_count} words")
+                    
+                    return {
+                        'success': True,
+                        'summary': summary,
+                        'word_count': word_count,
+                        'error': None
+                    }
+                    
+                except Exception as e:
+                    error_msg = str(e)
+                    logger.warning(f"Error on attempt {attempt + 1}/{len(self.api_keys)}: {error_msg}")
+                    
+                    # Check if it's a quota error
+                    if "429" in error_msg or "quota" in error_msg.lower():
+                        if attempt < len(self.api_keys) - 1:
+                            logger.info(f"Quota exceeded, rotating to next API key...")
+                            self._rotate_key()
+                            continue
+                        else:
+                            logger.warning("All API keys exceeded quota")
+                            return {
+                                'success': False,
+                                'summary': '',
+                                'word_count': 0,
+                                'error': 'All API quotas exceeded. Using fallback generation method.'
+                            }
+                    else:
+                        return {
+                            'success': False,
+                            'summary': '',
+                            'word_count': 0,
+                            'error': error_msg
+                        }
+            
+            return {
+                'success': False,
+                'summary': '',
+                'word_count': 0,
+                'error': 'Failed to generate notes with all available keys'
+            }
+        except Exception as outer_e:
+            logger.error(f"Outer exception in generate_summary: {outer_e}")
+            return {
+                'success': False,
+                'summary': '',
+                'word_count': 0,
+                'error': f'Error generating notes: {str(outer_e)}'
             }
     
     def generate_quiz(
@@ -131,7 +288,7 @@ Summary:"""
         difficulty: str = "medium"
     ) -> Dict:
         """
-        Generate quiz questions using Gemini API.
+        Generate quiz questions using Gemini API with rate limiting.
         
         Args:
             text: Source material for quiz
@@ -152,6 +309,23 @@ Summary:"""
                 'questions': [],
                 'count': 0,
                 'error': 'Gemini API not configured'
+            }
+        
+        # Check rate limits
+        if not RateLimiter.check_day_limit():
+            return {
+                'success': False,
+                'questions': [],
+                'count': 0,
+                'error': 'Daily API quota exceeded. Will use fallback generation.'
+            }
+        
+        if not RateLimiter.check_minute_limit():
+            return {
+                'success': False,
+                'questions': [],
+                'count': 0,
+                'error': 'Per-minute API quota exceeded. Please try again in a moment.'
             }
         
         try:
@@ -188,36 +362,74 @@ ANSWER: [A/B/C/D]
 
 Generate the questions now:"""
             
-            response = self.model.generate_content(prompt)
-            quiz_text = response.text.strip()
+            # Try generating with key rotation on quota errors
+            for attempt in range(len(self.api_keys)):
+                try:
+                    response = self.model.generate_content(prompt, request_options={"timeout": 30})
+                    quiz_text = response.text.strip()
+                    
+                    # Parse the response into structured questions
+                    questions = self._parse_quiz_response(quiz_text)
+                    
+                    if not questions:
+                        return {
+                            'success': False,
+                            'questions': [],
+                            'count': 0,
+                            'error': 'Failed to parse quiz questions'
+                        }
+                    
+                    # Increment rate limit counters only on success
+                    RateLimiter.increment_counters()
+                    
+                    logger.info(f"Generated {len(questions)} quiz questions")
+                    
+                    return {
+                        'success': True,
+                        'questions': questions,
+                        'count': len(questions),
+                        'error': None
+                    }
+                    
+                except Exception as e:
+                    error_msg = str(e)
+                    logger.warning(f"Error on attempt {attempt + 1}/{len(self.api_keys)}: {error_msg}")
+                    
+                    # Check if it's a quota error
+                    if "429" in error_msg or "quota" in error_msg.lower():
+                        if attempt < len(self.api_keys) - 1:
+                            logger.info(f"Quota exceeded, rotating to next API key...")
+                            self._rotate_key()
+                            continue
+                        else:
+                            logger.warning("All API keys exceeded quota")
+                            return {
+                                'success': False,
+                                'questions': [],
+                                'count': 0,
+                                'error': 'All API quotas exceeded. Using fallback generation method.'
+                            }
+                    else:
+                        return {
+                            'success': False,
+                            'questions': [],
+                            'count': 0,
+                            'error': error_msg
+                        }
             
-            # Parse the response into structured questions
-            questions = self._parse_quiz_response(quiz_text)
-            
-            if not questions:
-                return {
-                    'success': False,
-                    'questions': [],
-                    'count': 0,
-                    'error': 'Failed to parse quiz questions'
-                }
-            
-            logger.info(f"Generated {len(questions)} quiz questions")
-            
-            return {
-                'success': True,
-                'questions': questions,
-                'count': len(questions),
-                'error': None
-            }
-            
-        except Exception as e:
-            logger.error(f"Error generating quiz with Gemini: {e}")
             return {
                 'success': False,
                 'questions': [],
                 'count': 0,
-                'error': str(e)
+                'error': 'Failed to generate quiz with all available keys'
+            }
+        except Exception as outer_e:
+            logger.error(f"Outer exception in generate_quiz: {outer_e}")
+            return {
+                'success': False,
+                'questions': [],
+                'count': 0,
+                'error': f'Error generating quiz: {str(outer_e)}'
             }
     
     def _parse_quiz_response(self, text: str) -> List[Dict]:
