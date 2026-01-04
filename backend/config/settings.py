@@ -145,3 +145,8 @@ LOGGING = {
         "level": "INFO",
     },
 }
+
+# Google Gemini API Configuration
+# Get your free API key from: https://aistudio.google.com/apikey
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
+# Free tier: 1,500 requests/day, 15 requests/minute
