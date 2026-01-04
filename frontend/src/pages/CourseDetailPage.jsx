@@ -212,7 +212,7 @@ export default function CourseDetailPage() {
       <header className={`border-b backdrop-blur-sm sticky top-0 z-50 ${isDarkMode ? 'border-gray-800 bg-black/80' : 'border-gray-200 bg-white/80'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/dashboard')}>
               <button
                 onClick={() => navigate('/dashboard')}
                 className={`p-2 rounded-lg transition-all border ${isDarkMode ? 'text-gray-400 hover:text-white hover:bg-gray-900 border-gray-700 hover:border-sky-500/50' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 border-gray-300 hover:border-sky-500/50'}`}
@@ -222,8 +222,8 @@ export default function CourseDetailPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
-              <img src="/coursebook.svg" alt="Coursebook" className="w-10 h-10" />
-              <CoursebookTextLogo className="w-48 h-12" isDarkMode={isDarkMode} showUnderline={false} />
+              <img src="/coursebook.svg" alt="Coursebook" className="w-10 h-10 hover:opacity-80 transition-opacity" />
+              <CoursebookTextLogo className="w-48 h-12 hover:opacity-80 transition-opacity" isDarkMode={isDarkMode} showUnderline={false} />
             </div>
 
             <div className="flex items-center gap-4">
@@ -504,10 +504,10 @@ export default function CourseDetailPage() {
           )}
         </div>
 
-        {/* Saved Summaries */}
+        {/* Saved Notes */}
         <div className={`rounded-2xl p-8 border ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200 shadow-sm'}`}>
           <h2 className={`text-xl font-bold mb-6 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-            📝 Saved Summaries ({summaries.length})
+            📝 Saved Notes ({summaries.length})
           </h2>
 
           {summaries.length === 0 ? (
@@ -525,8 +525,8 @@ export default function CourseDetailPage() {
                   d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                 />
               </svg>
-              <h3 className={`mt-4 text-lg font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>No summaries yet</h3>
-              <p className={`mt-2 text-sm ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>Create summaries from your materials in Preparation Mode</p>
+              <h3 className={`mt-4 text-lg font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>No notes yet</h3>
+              <p className={`mt-2 text-sm ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>Create detailed study notes from your materials in Preparation Mode</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -563,7 +563,7 @@ export default function CourseDetailPage() {
                             ? 'hover:bg-blue-500/20 text-gray-400 hover:text-blue-400'
                             : 'hover:bg-blue-100 text-gray-500 hover:text-blue-600'
                         }`}
-                        title="Edit summary"
+                        title="Edit notes"
                       >
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -594,7 +594,7 @@ export default function CourseDetailPage() {
         </div>
       </main>
 
-      {/* View Summary Modal */}
+      {/* View Notes Modal */}
       {selectedSummary && !editingSummary && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backdropFilter: 'blur(4px)' }}>
           <div className={`absolute inset-0 ${isDarkMode ? 'bg-black/60' : 'bg-black/30'}`} onClick={() => setSelectedSummary(null)} />
@@ -614,18 +614,45 @@ export default function CourseDetailPage() {
                     {selectedSummary.word_count} words • {new Date(selectedSummary.created_at).toLocaleDateString()}
                   </p>
                 </div>
-                <button
-                  onClick={() => setSelectedSummary(null)}
-                  className={`p-2 rounded-lg transition-colors ${
-                    isDarkMode
-                      ? 'text-gray-400 hover:bg-gray-800 hover:text-white'
-                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                  }`}
-                >
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={async () => {
+                      try {
+                        await preparationService.downloadSummaryPdf({
+                          text: selectedSummary.content,
+                          title: selectedSummary.title,
+                          courseCode: course.course_code,
+                        });
+                        setToast({ message: 'PDF downloaded successfully', type: 'success' });
+                      } catch (err) {
+                        console.error('Failed to download PDF', err);
+                        setToast({ message: 'Failed to download PDF', type: 'error' });
+                      }
+                    }}
+                    className={`p-2 rounded-lg transition-colors ${
+                      isDarkMode
+                        ? 'text-gray-400 hover:bg-gray-800 hover:text-sky-400'
+                        : 'text-gray-600 hover:bg-gray-100 hover:text-sky-600'
+                    }`}
+                    title="Download as PDF"
+                  >
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => setSelectedSummary(null)}
+                    className={`p-2 rounded-lg transition-colors ${
+                      isDarkMode
+                        ? 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                    }`}
+                  >
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -638,7 +665,7 @@ export default function CourseDetailPage() {
         </div>
       )}
 
-      {/* Edit Summary Modal */}
+      {/* Edit Notes Modal */}
       {editingSummary && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backdropFilter: 'blur(4px)' }}>
           <div className={`absolute inset-0 ${isDarkMode ? 'bg-black/60' : 'bg-black/30'}`} onClick={() => setEditingSummary(null)} />
@@ -650,7 +677,7 @@ export default function CourseDetailPage() {
           }`}>
             <div className={`border-b p-6 ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
               <h2 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                Edit Summary
+                Edit Notes
               </h2>
             </div>
 
@@ -750,6 +777,7 @@ export default function CourseDetailPage() {
           courseCode={course?.code || 'Course'}
           courseId={course?.id || courseId}
           onClose={() => setShowPreparationMode(false)}
+          onSave={loadCourseData}
         />
       )}
     </div>

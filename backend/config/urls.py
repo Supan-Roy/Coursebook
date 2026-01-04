@@ -43,6 +43,7 @@ urlpatterns = [
     path("api/usage/", include("usage.urls")),
     path("api/todos/", include("todos.urls")),
     path("api/preparation/", include("preparation.urls")),
+    path("api/toolkit/", include("toolkit.urls")),
 ]
 
 # Serve media files in development

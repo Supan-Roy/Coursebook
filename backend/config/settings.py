@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     "usage",
     "todos",
     "preparation",
+    "toolkit",
 ]
 
 MIDDLEWARE = [

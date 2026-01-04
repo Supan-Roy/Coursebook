@@ -21,11 +21,11 @@ from django.core.cache import cache
 logger = logging.getLogger(__name__)
 
 try:
-    import google.generativeai as genai
+    import google.genai as genai
     GENAI_AVAILABLE = True
 except ImportError:
     GENAI_AVAILABLE = False
-    logger.warning("google.generativeai not installed")
+    logger.warning("google.genai not installed")
 
 
 class RateLimiter:
@@ -81,7 +81,7 @@ class GeminiService:
     def __init__(self):
         """Initialize Gemini API with API keys from settings (with rotation support)."""
         if not GENAI_AVAILABLE:
-            logger.warning("google.generativeai not installed - AI features disabled")
+            logger.warning("google.genai not installed - AI features disabled")
             self.enabled = False
             return
         

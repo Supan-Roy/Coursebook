@@ -1,5 +1,6 @@
 import api from './api';
 import { preparationService } from './preparationService';
+import { toolkitService } from './toolkitService';
 
 export const authService = {
   async register(email, password, first_name, last_name) {
@@ -171,4 +172,4 @@ export const todoService = {
   },
 };
 
-export { preparationService };
+export { preparationService, toolkitService };

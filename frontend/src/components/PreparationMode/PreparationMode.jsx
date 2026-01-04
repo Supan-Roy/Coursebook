@@ -5,7 +5,7 @@ import SummaryPanel from './SummaryPanel';
 import QuizGenerator from './QuizGenerator';
 import Toast from '../Toast';
 
-export default function PreparationMode({ materials, courseCode, courseId, onClose }) {
+export default function PreparationMode({ materials, courseCode, courseId, onClose, onSave }) {
   const { isDarkMode } = useTheme();
   const [step, setStep] = useState(1); // 1: Select Files, 2: Choose Action
   const [selectedFiles, setSelectedFiles] = useState([]);
@@ -25,13 +25,17 @@ export default function PreparationMode({ materials, courseCode, courseId, onClo
   const handleSave = (data) => {
     console.log('Saved:', data);
     setToast({
-      message: data.type === 'summary' ? 'Summary saved successfully!' : 'Quiz completed!',
+      message: data.type === 'summary' ? 'Notes saved successfully!' : 'Quiz completed!',
       type: 'success'
     });
     setRefreshSummaries(r => r + 1);
     setStep(1);
     setSelectedFiles([]);
     setSelectedAction(null);
+    // Notify parent to refresh notes list
+    if (onSave) {
+      onSave();
+    }
   };
 
   const handleLoadSummary = (summary) => {
@@ -116,7 +120,7 @@ export default function PreparationMode({ materials, courseCode, courseId, onClo
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Summary Option */}
+                  {/* Notes Option */}
                   <button
                     onClick={() => handleActionSelect('summary')}
                     className={`p-6 rounded-xl border-2 transition-all text-left ${
@@ -127,10 +131,10 @@ export default function PreparationMode({ materials, courseCode, courseId, onClo
                   >
                     <div className="text-3xl mb-3">📝</div>
                     <h3 className={`font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                      Summary & Notes
+                      Study Notes
                     </h3>
                     <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                      Write a quick summary or notes based on the selected materials
+                      Generate detailed study notes based on the selected materials
                     </p>
                   </button>
 

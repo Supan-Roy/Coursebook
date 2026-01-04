@@ -8,6 +8,13 @@ import UploadModal from '../components/UploadModal';
 import ConfirmDialog from '../components/ConfirmDialog';
 import AlertDialog from '../components/AlertDialog';
 import TodoList from '../components/TodoList';
+import DocumentToPDF from '../components/Toolkit/DocumentToPDF';
+import AddPageNumbers from '../components/Toolkit/AddPageNumbers';
+import MergePDFs from '../components/Toolkit/MergePDFs';
+import { SplitPDF } from '../components/Toolkit/SplitPDF';
+import SecurePDF from '../components/Toolkit/SecurePDF';
+import CompressPDF from '../components/Toolkit/CompressPDF';
+import { FaFileImport, FaHashtag, FaObjectGroup, FaCut, FaLock, FaCompress } from 'react-icons/fa';
 
 export default function DashboardPage() {
   const [courses, setCourses] = useState([]);
@@ -28,6 +35,12 @@ export default function DashboardPage() {
   const [newSemesterName, setNewSemesterName] = useState('');
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, title: '', message: '', onConfirm: null });
   const [alertDialog, setAlertDialog] = useState({ isOpen: false, title: '', message: '', type: 'info' });
+  const [showDocumentToPDF, setShowDocumentToPDF] = useState(false);
+  const [showAddPageNumbers, setShowAddPageNumbers] = useState(false);
+  const [showMergePDFs, setShowMergePDFs] = useState(false);
+  const [showSplitPDF, setShowSplitPDF] = useState(false);
+  const [showSecurePDF, setShowSecurePDF] = useState(false);
+  const [showCompressPDF, setShowCompressPDF] = useState(false);
   const [activeTab, setActiveTab] = useState(() => {
     // Load active tab from localStorage, default to 'semesters'
     return localStorage.getItem('dashboardActiveTab') || 'semesters';
@@ -533,6 +546,25 @@ export default function DashboardPage() {
                 Todo List
               </div>
             </button>
+            <button
+              onClick={() => setActiveTab('toolkit')}
+              className={`px-6 py-3 font-medium text-sm transition-all duration-200 border-b-2 ${
+                activeTab === 'toolkit'
+                  ? isDarkMode
+                    ? 'text-blue-400 border-blue-400'
+                    : 'text-blue-600 border-blue-600'
+                  : isDarkMode
+                  ? 'text-gray-400 border-transparent hover:text-gray-300'
+                  : 'text-gray-600 border-transparent hover:text-gray-900'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                </svg>
+                Toolkit
+              </div>
+            </button>
           </div>
         </div>
       </div>
@@ -541,6 +573,122 @@ export default function DashboardPage() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {activeTab === 'todos' ? (
           <TodoList isDarkMode={isDarkMode} />
+        ) : activeTab === 'toolkit' ? (
+          <div>
+            {/* Toolkit Section */}
+            <div className="mb-8">
+              <h1 className={`text-3xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Toolkit</h1>
+              <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Convert files and secure your documents with our powerful tools.</p>
+            </div>
+
+            {/* Toolkit Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* PDF Converter */}
+              <div 
+                onClick={() => setShowDocumentToPDF(true)}
+                className={`rounded-2xl p-6 border-2 transition-all hover:shadow-lg cursor-pointer hover:border-sky-400 ${isDarkMode ? 'bg-gray-900/50 border-gray-700 hover:bg-gray-800/70' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center">
+                    <FaFileImport className="w-6 h-6 text-white" />
+                  </div>
+                  <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
+                <h3 className={`font-semibold text-lg mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Document to PDF</h3>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Convert Word, Excel, PowerPoint and more to PDF</p>
+              </div>
+
+              {/* Add Page Numbers */}
+              <div 
+                onClick={() => setShowAddPageNumbers(true)}
+                className={`rounded-2xl p-6 border-2 transition-all hover:shadow-lg cursor-pointer hover:border-sky-400 ${isDarkMode ? 'bg-gray-900/50 border-gray-700 hover:bg-gray-800/70' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center">
+                    <FaHashtag className="w-6 h-6 text-white" />
+                  </div>
+                  <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
+                <h3 className={`font-semibold text-lg mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Add Page Numbers</h3>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Add customizable page numbers to your PDF</p>
+              </div>
+
+              {/* PDF Merger */}
+              <div 
+                onClick={() => setShowMergePDFs(true)}
+                className={`rounded-2xl p-6 border-2 transition-all hover:shadow-lg cursor-pointer hover:border-sky-400 ${isDarkMode ? 'bg-gray-900/50 border-gray-700 hover:bg-gray-800/70' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                    <FaObjectGroup className="w-6 h-6 text-white" />
+                  </div>
+                  <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
+                <h3 className={`font-semibold text-lg mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Merge PDFs</h3>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Combine multiple PDF files into one</p>
+              </div>
+
+              {/* Password Protect PDF */}
+              <div 
+                onClick={() => setShowSecurePDF(true)}
+                className={`rounded-2xl p-6 border-2 transition-all hover:shadow-lg cursor-pointer hover:border-sky-400 ${isDarkMode ? 'bg-gray-900/50 border-gray-700 hover:bg-gray-800/70' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
+                    <FaLock className="w-6 h-6 text-white" />
+                  </div>
+                  <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
+                <h3 className={`font-semibold text-lg mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Secure PDF</h3>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Lock your PDFs with password protection</p>
+              </div>
+
+              {/* PDF Splitter */}
+              <div 
+                onClick={() => setShowSplitPDF(true)}
+                className={`rounded-2xl p-6 border-2 transition-all hover:shadow-lg cursor-pointer hover:border-sky-400 ${isDarkMode ? 'bg-gray-900/50 border-gray-700 hover:bg-gray-800/70' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-yellow-500 to-yellow-600 flex items-center justify-center">
+                    <FaCut className="w-6 h-6 text-white" />
+                  </div>
+                  <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
+                <h3 className={`font-semibold text-lg mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Split PDF</h3>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Extract specific pages from your PDF</p>
+              </div>
+
+              {/* PDF Compressor */}
+              <div 
+                onClick={() => setShowCompressPDF(true)}
+                className={`rounded-2xl p-6 border-2 transition-all hover:shadow-lg cursor-pointer hover:border-sky-400 ${isDarkMode ? 'bg-gray-900/50 border-gray-700 hover:bg-gray-800/70' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
+                    <FaCompress className="w-6 h-6 text-white" />
+                  </div>
+                  <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
+                <h3 className={`font-semibold text-lg mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Compress PDF</h3>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Reduce PDF file size while maintaining quality</p>
+              </div>
+            </div>
+
+            {/* Coming Soon Message */}
+            <div className={`mt-12 p-8 rounded-2xl border-2 border-dashed text-center ${isDarkMode ? 'border-gray-700/50 bg-gray-900/30' : 'border-gray-300 bg-gray-50'}`}>
+              <svg className="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+              </svg>
+              <h3 className={`text-xl font-semibold mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Toolkit Features Coming Soon</h3>
+              <p className={`${isDarkMode ? 'text-gray-500' : 'text-gray-600'}`}>Click on any tool above to explore its features when available</p>
+            </div>
+          </div>
         ) : (
           <>
         {/* Create New Semester Section */}
@@ -1163,6 +1311,36 @@ export default function DashboardPage() {
         type={alertDialog.type}
         onClose={() => setAlertDialog({ ...alertDialog, isOpen: false })}
       />
+
+      {/* Document to PDF Modal */}
+      {showDocumentToPDF && (
+        <DocumentToPDF onClose={() => setShowDocumentToPDF(false)} />
+      )}
+
+      {/* Add Page Numbers Modal */}
+      {showAddPageNumbers && (
+        <AddPageNumbers onClose={() => setShowAddPageNumbers(false)} />
+      )}
+
+      {/* Merge PDFs Modal */}
+      {showMergePDFs && (
+        <MergePDFs onClose={() => setShowMergePDFs(false)} />
+      )}
+
+      {/* Split PDF Modal */}
+      {showSplitPDF && (
+        <SplitPDF onClose={() => setShowSplitPDF(false)} />
+      )}
+
+      {/* Secure PDF Modal */}
+      {showSecurePDF && (
+        <SecurePDF onClose={() => setShowSecurePDF(false)} />
+      )}
+
+      {/* Compress PDF Modal */}
+      {showCompressPDF && (
+        <CompressPDF onClose={() => setShowCompressPDF(false)} />
+      )}
     </div>
   );
 }
