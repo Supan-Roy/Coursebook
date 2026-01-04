@@ -117,9 +117,10 @@ export default function SummaryPanel({ courseId, selectedFiles, onSave, loadedSu
 
     setIsDownloading(true);
     try {
+      const materialNames = selectedFiles.map(f => f.filename).join(', ');
       await preparationService.downloadSummaryPdf({
         text: summary,
-        title: 'Study Summary',
+        title: `Summary - ${materialNames}`,
         courseCode: '',
       });
     } catch (err) {

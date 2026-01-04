@@ -2,22 +2,27 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { courseService, materialService } from '../services';
+import { courseService, materialService, preparationService } from '../services';
 import CoursebookTextLogo from '../components/CoursebookTextLogo';
 import ConfirmDialog from '../components/ConfirmDialog';
 import AlertDialog from '../components/AlertDialog';
 import PreparationMode from '../components/PreparationMode/PreparationMode';
+import Toast from '../components/Toast';
 
 export default function CourseDetailPage() {
   const { courseId } = useParams();
   const [course, setCourse] = useState(null);
   const [materials, setMaterials] = useState([]);
+  const [summaries, setSummaries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showPreparationMode, setShowPreparationMode] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, title: '', message: '', onConfirm: null });
   const [alertDialog, setAlertDialog] = useState({ isOpen: false, title: '', message: '', type: 'info' });
+  const [selectedSummary, setSelectedSummary] = useState(null);
+  const [editingSummary, setEditingSummary] = useState(null);
+  const [toast, setToast] = useState(null);
   const { logout, user } = useAuth();
   const { isDarkMode, toggleTheme } = useTheme();
   const navigate = useNavigate();
@@ -28,12 +33,14 @@ export default function CourseDetailPage() {
 
   const loadCourseData = async () => {
     try {
-      const [courseData, materialsData] = await Promise.all([
+      const [courseData, materialsData, summariesData] = await Promise.all([
         courseService.getById(courseId),
         materialService.getByCourse(courseId),
+        preparationService.listSummaries(courseId),
       ]);
       setCourse(courseData);
       setMaterials(materialsData);
+      setSummaries(Array.isArray(summariesData) ? summariesData : []);
     } catch (error) {
       console.error('Failed to load course data:', error);
     } finally {
@@ -81,6 +88,50 @@ export default function CourseDetailPage() {
           loadCourseData();
         } catch (error) {
           console.error('Failed to delete material:', error);
+        }
+        setConfirmDialog({ ...confirmDialog, isOpen: false });
+      }
+    });
+  };
+
+  const handleViewSummary = (summary) => {
+    setSelectedSummary(summary);
+  };
+
+  const handleEditSummary = (summary) => {
+    setEditingSummary({ ...summary });
+  };
+
+  const handleSaveSummaryEdit = async () => {
+    try {
+      await preparationService.updateSummary(editingSummary.id, {
+        content: editingSummary.content,
+        title: editingSummary.title,
+      });
+      await loadCourseData();
+      setEditingSummary(null);
+      setToast({ message: 'Summary updated successfully', type: 'success' });
+    } catch (error) {
+      console.error('Failed to update summary:', error);
+      setToast({ message: 'Failed to update summary', type: 'error' });
+    }
+  };
+
+  const handleDeleteSummary = async (summaryId) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Delete Summary',
+      message: 'Are you sure you want to delete this summary? This action cannot be undone.',
+      type: 'danger',
+      onConfirm: async () => {
+        try {
+          await preparationService.deleteSummary(summaryId);
+          await loadCourseData();
+          setSelectedSummary(null);
+          setToast({ message: 'Summary deleted successfully', type: 'success' });
+        } catch (error) {
+          console.error('Failed to delete summary:', error);
+          setToast({ message: 'Failed to delete summary', type: 'error' });
         }
         setConfirmDialog({ ...confirmDialog, isOpen: false });
       }
@@ -452,7 +503,222 @@ export default function CourseDetailPage() {
             </div>
           )}
         </div>
+
+        {/* Saved Summaries */}
+        <div className={`rounded-2xl p-8 border ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200 shadow-sm'}`}>
+          <h2 className={`text-xl font-bold mb-6 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+            📝 Saved Summaries ({summaries.length})
+          </h2>
+
+          {summaries.length === 0 ? (
+            <div className={`text-center py-16 border-2 border-dashed rounded-xl ${isDarkMode ? 'border-gray-700' : 'border-gray-300'}`}>
+              <svg
+                className={`mx-auto h-12 w-12 ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
+              </svg>
+              <h3 className={`mt-4 text-lg font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>No summaries yet</h3>
+              <p className={`mt-2 text-sm ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>Create summaries from your materials in Preparation Mode</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {summaries.map((summary) => (
+                <div
+                  key={summary.id}
+                  onClick={() => handleViewSummary(summary)}
+                  className={`p-4 rounded-lg border transition-all cursor-pointer ${
+                    isDarkMode
+                      ? 'border-gray-700 hover:border-sky-500/50 hover:bg-gray-800/50'
+                      : 'border-gray-200 hover:border-sky-400/50 hover:bg-gray-50'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className={`font-semibold text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                        {summary.title}
+                      </p>
+                      <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                        {summary.word_count} words • {new Date(summary.created_at).toLocaleDateString()}
+                      </p>
+                      <p className={`text-xs mt-2 line-clamp-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                        {summary.content}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditSummary(summary);
+                        }}
+                        className={`p-2 rounded-lg transition-all ${
+                          isDarkMode
+                            ? 'hover:bg-blue-500/20 text-gray-400 hover:text-blue-400'
+                            : 'hover:bg-blue-100 text-gray-500 hover:text-blue-600'
+                        }`}
+                        title="Edit summary"
+                      >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteSummary(summary.id);
+                        }}
+                        className={`p-2 rounded-lg transition-all ${
+                          isDarkMode
+                            ? 'hover:bg-red-500/20 text-gray-400 hover:text-red-400'
+                            : 'hover:bg-red-100 text-gray-500 hover:text-red-600'
+                        }`}
+                        title="Delete summary"
+                      >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </main>
+
+      {/* View Summary Modal */}
+      {selectedSummary && !editingSummary && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backdropFilter: 'blur(4px)' }}>
+          <div className={`absolute inset-0 ${isDarkMode ? 'bg-black/60' : 'bg-black/30'}`} onClick={() => setSelectedSummary(null)} />
+          
+          <div className={`relative rounded-xl border shadow-2xl max-w-3xl w-full mx-4 max-h-[80vh] overflow-y-auto ${
+            isDarkMode 
+              ? 'bg-gray-900 border-gray-800' 
+              : 'bg-white border-gray-200'
+          }`}>
+            <div className={`border-b p-6 sticky top-0 ${isDarkMode ? 'border-gray-800 bg-gray-900' : 'border-gray-200 bg-white'}`}>
+              <div className="flex items-start justify-between">
+                <div>
+                  <h2 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                    {selectedSummary.title}
+                  </h2>
+                  <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    {selectedSummary.word_count} words • {new Date(selectedSummary.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setSelectedSummary(null)}
+                  className={`p-2 rounded-lg transition-colors ${
+                    isDarkMode
+                      ? 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  }`}
+                >
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6">
+              <div className={`whitespace-pre-wrap ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                {selectedSummary.content}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Summary Modal */}
+      {editingSummary && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backdropFilter: 'blur(4px)' }}>
+          <div className={`absolute inset-0 ${isDarkMode ? 'bg-black/60' : 'bg-black/30'}`} onClick={() => setEditingSummary(null)} />
+          
+          <div className={`relative rounded-xl border shadow-2xl max-w-3xl w-full mx-4 ${
+            isDarkMode 
+              ? 'bg-gray-900 border-gray-800' 
+              : 'bg-white border-gray-200'
+          }`}>
+            <div className={`border-b p-6 ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
+              <h2 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                Edit Summary
+              </h2>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div>
+                <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                  Title
+                </label>
+                <input
+                  type="text"
+                  value={editingSummary.title}
+                  onChange={(e) => setEditingSummary({ ...editingSummary, title: e.target.value })}
+                  className={`w-full px-4 py-2 rounded-lg border ${
+                    isDarkMode
+                      ? 'bg-gray-800 border-gray-700 text-white'
+                      : 'bg-white border-gray-300 text-gray-900'
+                  }`}
+                />
+              </div>
+
+              <div>
+                <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                  Content
+                </label>
+                <textarea
+                  value={editingSummary.content}
+                  onChange={(e) => setEditingSummary({ ...editingSummary, content: e.target.value })}
+                  rows={15}
+                  className={`w-full px-4 py-3 rounded-lg border ${
+                    isDarkMode
+                      ? 'bg-gray-800 border-gray-700 text-white'
+                      : 'bg-white border-gray-300 text-gray-900'
+                  }`}
+                />
+              </div>
+            </div>
+
+            <div className={`border-t p-4 flex gap-3 justify-end ${isDarkMode ? 'border-gray-800 bg-gray-800/50' : 'border-gray-200 bg-gray-50'}`}>
+              <button
+                onClick={() => setEditingSummary(null)}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  isDarkMode
+                    ? 'bg-gray-700 text-white hover:bg-gray-600'
+                    : 'bg-gray-200 text-gray-900 hover:bg-gray-300'
+                }`}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveSummaryEdit}
+                className="px-4 py-2 rounded-lg font-medium transition-colors text-white bg-sky-600 hover:bg-sky-700"
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          duration={3000}
+          onClose={() => setToast(null)}
+        />
+      )}
 
       {/* Confirm Dialog */}
       <ConfirmDialog
@@ -460,7 +726,7 @@ export default function CourseDetailPage() {
         title={confirmDialog.title}
         message={confirmDialog.message}
         confirmText="Delete"
-        type="danger"
+        type={confirmDialog.type || "danger"}
         onConfirm={() => {
           confirmDialog.onConfirm?.();
           setConfirmDialog({ ...confirmDialog, isOpen: false });

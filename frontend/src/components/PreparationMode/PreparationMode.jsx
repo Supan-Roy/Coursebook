@@ -3,7 +3,6 @@ import { useTheme } from '../../context/ThemeContext';
 import FileSelector from './FileSelector';
 import SummaryPanel from './SummaryPanel';
 import QuizGenerator from './QuizGenerator';
-import SavedSummaries from './SavedSummaries';
 import Toast from '../Toast';
 
 export default function PreparationMode({ materials, courseCode, courseId, onClose }) {
@@ -173,12 +172,6 @@ export default function PreparationMode({ materials, courseCode, courseId, onClo
             {/* Summary Panel */}
             {selectedAction === 'summary' && (
               <div className="space-y-4">
-                <SavedSummaries
-                  courseId={courseId}
-                  onLoadSummary={handleLoadSummary}
-                  onRefresh={() => setRefreshSummaries(r => r + 1)}
-                  key={refreshSummaries}
-                />
                 <SummaryPanel
                   courseId={courseId}
                   selectedFiles={selectedFiles}
