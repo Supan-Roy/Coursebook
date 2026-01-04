@@ -31,7 +31,7 @@ class GeminiService:
         
         try:
             genai.configure(api_key=api_key)
-            self.model = genai.GenerativeModel('gemini-1.5-flash')
+            self.model = genai.GenerativeModel('gemini-2.5-flash')
             self.enabled = True
             logger.info("Gemini API initialized successfully")
         except Exception as e:
@@ -226,11 +226,14 @@ Generate the questions now:"""
         lines = text.split('\n')
         
         current_question = None
-        current_options = []
+        current_options = {}  # Dict to store options with their letters
         current_answer = None
         
-        for line in lines:
-            line = line.strip()
+        i = 0
+        while i < len(lines):
+            line = lines[i].strip()
+            i += 1
+            
             if not line:
                 continue
             
@@ -238,41 +241,52 @@ Generate the questions now:"""
             if line.startswith('Q') and ':' in line:
                 # Save previous question if exists
                 if current_question and current_options and current_answer:
-                    questions.append({
-                        'type': 'mcq',
-                        'question': current_question,
-                        'options': current_options,
-                        'answer': current_answer
-                    })
+                    options_list = [current_options.get(letter, '') for letter in ['A', 'B', 'C', 'D'] if current_options.get(letter)]
+                    if current_answer in options_list:
+                        questions.append({
+                            'type': 'mcq',
+                            'question': current_question,
+                            'options': options_list,
+                            'answer': current_answer
+                        })
                 
                 # Start new question
                 current_question = line.split(':', 1)[1].strip()
-                current_options = []
+                current_options = {}
                 current_answer = None
             
-            # Option line (A), B), C), D))
-            elif line and line[0] in ['A', 'B', 'C', 'D'] and (')' in line or '.' in line):
-                # Extract option text (after A), B), etc.)
-                option_text = line.split(')', 1)[-1].split('.', 1)[-1].strip()
-                current_options.append(option_text)
+            # Option line (A), B), C), D) or A] B] etc.)
+            elif len(line) > 2 and line[0] in ['A', 'B', 'C', 'D'] and (')' in line or ']' in line):
+                letter = line[0]
+                # Extract option text (everything after the letter and punctuation)
+                option_text = line[1:].lstrip('):] ').strip()
+                if option_text:
+                    current_options[letter] = option_text
             
-            # Answer line
-            elif line.startswith('ANSWER:') or line.startswith('Answer:'):
-                answer_letter = line.split(':', 1)[1].strip()[0].upper()
-                # Convert letter to option index
-                if answer_letter in ['A', 'B', 'C', 'D']:
-                    answer_index = ord(answer_letter) - ord('A')
-                    if answer_index < len(current_options):
-                        current_answer = current_options[answer_index]
+            # Answer line (can be "ANSWER: C" or "Answer: C")
+            elif 'ANSWER' in line.upper() and ':' in line:
+                parts = line.split(':', 1)
+                if len(parts) > 1:
+                    answer_part = parts[1].strip()
+                    # Extract the first letter that's A, B, C, or D
+                    for char in answer_part:
+                        if char in ['A', 'B', 'C', 'D']:
+                            answer_letter = char
+                            # Get the answer text from current_options
+                            if answer_letter in current_options:
+                                current_answer = current_options[answer_letter]
+                            break
         
         # Add last question
         if current_question and current_options and current_answer:
-            questions.append({
-                'type': 'mcq',
-                'question': current_question,
-                'options': current_options,
-                'answer': current_answer
-            })
+            options_list = [current_options.get(letter, '') for letter in ['A', 'B', 'C', 'D'] if current_options.get(letter)]
+            if current_answer in options_list:
+                questions.append({
+                    'type': 'mcq',
+                    'question': current_question,
+                    'options': options_list,
+                    'answer': current_answer
+                })
         
         return questions
 
