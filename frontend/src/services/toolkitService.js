@@ -18,6 +18,35 @@ export const toolkitService = {
   },
 
   /**
+   * Convert multiple images to a single PDF
+   * @param {File[]} files - Array of image files
+   * @returns {Promise<Blob>} - Generated PDF blob
+   */
+  async imagesToPDF(files) {
+    const formData = new FormData();
+
+    files.forEach((file) => {
+      formData.append('files', file);
+    });
+
+    const response = await api.post('/toolkit/images-to-pdf/', formData, {
+      responseType: 'blob',
+    });
+
+    // Download the file
+    const url = window.URL.createObjectURL(response.data);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'images_to_pdf.pdf');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+
+    return response.data;
+  },
+
+  /**
    * Add page numbers to PDF
    * @param {File} file - PDF file
    * @param {Object} options - Configuration options
@@ -203,6 +232,84 @@ export const toolkitService = {
    */
   async getSupportedFormats() {
     const response = await api.get('/toolkit/supported-formats/');
+    return response.data;
+  },
+
+  /**
+   * Add watermark to PDF
+   * @param {File} file - PDF file
+   * @param {Object} options - Watermark options
+   * @returns {Promise<Blob>} - Watermarked PDF
+   */
+  async watermarkPDF(file, options) {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('watermark_type', options.type || 'text');
+    
+    if (options.type === 'text') {
+      formData.append('text', options.text || 'WATERMARK');
+      formData.append('font_name', options.fontName || 'helvetica');
+      formData.append('font_size', options.fontSize || 40);
+      formData.append('color', options.color || '000000');
+      formData.append('opacity', options.opacity || 0.3);
+      formData.append('x_position', options.xPosition || 300);
+      formData.append('y_position', options.yPosition || 400);
+      formData.append('rotation', options.rotation || 45);
+    } else if (options.type === 'image') {
+      formData.append('watermark_image', options.image);
+      formData.append('width', options.width || 200);
+      formData.append('height', options.height || 200);
+      formData.append('x_position', options.xPosition || 200);
+      formData.append('y_position', options.yPosition || 300);
+      formData.append('opacity', options.opacity || 0.3);
+    }
+    
+    formData.append('apply_to_all', options.applyToAll ? 'true' : 'false');
+    if (options.pageNumber) {
+      formData.append('page_number', options.pageNumber);
+    }
+    
+    const response = await api.post('/toolkit/watermark-pdf/', formData, {
+      responseType: 'blob',
+    });
+    
+    // Download the file
+    const url = window.URL.createObjectURL(response.data);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `watermarked_${file.name}`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+    
+    return response.data;
+  },
+
+  /**
+   * Edit PDF with annotations (text or highlights)
+   * @param {File} file - PDF file
+   * @param {Array} annotations - Annotation objects
+   * @returns {Promise<Blob>} - Edited PDF
+   */
+  async editPDF(file, annotations) {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('annotations', JSON.stringify(annotations || []));
+
+    const response = await api.post('/toolkit/edit-pdf/', formData, {
+      responseType: 'blob',
+    });
+
+    const url = window.URL.createObjectURL(response.data);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `edited_${file.name}`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+
     return response.data;
   },
 };

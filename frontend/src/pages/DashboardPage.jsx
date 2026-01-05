@@ -14,7 +14,10 @@ import MergePDFs from '../components/Toolkit/MergePDFs';
 import { SplitPDF } from '../components/Toolkit/SplitPDF';
 import SecurePDF from '../components/Toolkit/SecurePDF';
 import CompressPDF from '../components/Toolkit/CompressPDF';
-import { FaFileImport, FaHashtag, FaObjectGroup, FaCut, FaLock, FaCompress } from 'react-icons/fa';
+import ImagesToPDF from '../components/Toolkit/ImagesToPDF';
+import WatermarkPDF from '../components/Toolkit/WatermarkPDF';
+import EditPDF from '../components/Toolkit/EditPDF';
+import { FaFileImport, FaHashtag, FaObjectGroup, FaCut, FaLock, FaCompress, FaImages, FaTint, FaEdit } from 'react-icons/fa';
 
 export default function DashboardPage() {
   const [courses, setCourses] = useState([]);
@@ -41,6 +44,9 @@ export default function DashboardPage() {
   const [showSplitPDF, setShowSplitPDF] = useState(false);
   const [showSecurePDF, setShowSecurePDF] = useState(false);
   const [showCompressPDF, setShowCompressPDF] = useState(false);
+  const [showImagesToPDF, setShowImagesToPDF] = useState(false);
+  const [showWatermarkPDF, setShowWatermarkPDF] = useState(false);
+  const [showEditPDF, setShowEditPDF] = useState(false);
   const [activeTab, setActiveTab] = useState(() => {
     // Load active tab from localStorage, default to 'semesters'
     return localStorage.getItem('dashboardActiveTab') || 'semesters';
@@ -599,6 +605,22 @@ export default function DashboardPage() {
                 <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Convert Word, Excel, PowerPoint and more to PDF</p>
               </div>
 
+              {/* Images to PDF */}
+              <div 
+                onClick={() => setShowImagesToPDF(true)}
+                className={`rounded-2xl p-6 border-2 transition-all hover:shadow-lg cursor-pointer hover:border-sky-400 ${isDarkMode ? 'bg-gray-900/50 border-gray-700 hover:bg-gray-800/70' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center">
+                    <FaImages className="w-6 h-6 text-white" />
+                  </div>
+                  <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
+                <h3 className={`font-semibold text-lg mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Images to PDF</h3>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Combine multiple images into a PDF without extra margins</p>
+              </div>
+
               {/* Add Page Numbers */}
               <div 
                 onClick={() => setShowAddPageNumbers(true)}
@@ -678,6 +700,38 @@ export default function DashboardPage() {
                 <h3 className={`font-semibold text-lg mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Compress PDF</h3>
                 <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Reduce PDF file size while maintaining quality</p>
               </div>
+
+              {/* Watermark PDF */}
+              <div 
+                onClick={() => setShowWatermarkPDF(true)}
+                className={`rounded-2xl p-6 border-2 transition-all hover:shadow-lg cursor-pointer hover:border-sky-400 ${isDarkMode ? 'bg-gray-900/50 border-gray-700 hover:bg-gray-800/70' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
+                    <FaTint className="w-6 h-6 text-white" />
+                  </div>
+                  <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
+                <h3 className={`font-semibold text-lg mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Watermark PDF</h3>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Add text or image watermarks to protect your documents</p>
+              </div>
+
+              {/* Edit / Annotate PDF */}
+              <div 
+                onClick={() => setShowEditPDF(true)}
+                className={`rounded-2xl p-6 border-2 transition-all hover:shadow-lg cursor-pointer hover:border-sky-400 ${isDarkMode ? 'bg-gray-900/50 border-gray-700 hover:bg-gray-800/70' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
+                    <FaEdit className="w-6 h-6 text-white" />
+                  </div>
+                  <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
+                <h3 className={`font-semibold text-lg mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Edit PDF</h3>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Annotate, add text, and highlight content</p>
+              </div>
             </div>
 
             {/* Coming Soon Message */}
@@ -685,7 +739,7 @@ export default function DashboardPage() {
               <svg className="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
               </svg>
-              <h3 className={`text-xl font-semibold mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Toolkit Features Coming Soon</h3>
+              <h3 className={`text-xl font-semibold mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>More Toolkit Features Coming Soon</h3>
               <p className={`${isDarkMode ? 'text-gray-500' : 'text-gray-600'}`}>Click on any tool above to explore its features when available</p>
             </div>
           </div>
@@ -1340,6 +1394,21 @@ export default function DashboardPage() {
       {/* Compress PDF Modal */}
       {showCompressPDF && (
         <CompressPDF onClose={() => setShowCompressPDF(false)} />
+      )}
+
+      {/* Images to PDF Modal */}
+      {showImagesToPDF && (
+        <ImagesToPDF onClose={() => setShowImagesToPDF(false)} />
+      )}
+
+      {/* Watermark PDF Modal */}
+      {showWatermarkPDF && (
+        <WatermarkPDF onClose={() => setShowWatermarkPDF(false)} />
+      )}
+
+      {/* Edit PDF Modal */}
+      {showEditPDF && (
+        <EditPDF onClose={() => setShowEditPDF(false)} />
       )}
     </div>
   );
