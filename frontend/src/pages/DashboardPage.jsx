@@ -7,7 +7,7 @@ import CoursebookTextLogo from '../components/CoursebookTextLogo';
 import UploadModal from '../components/UploadModal';
 import ConfirmDialog from '../components/ConfirmDialog';
 import AlertDialog from '../components/AlertDialog';
-import TodoList from '../components/TodoList';
+import MyPlans from '../components/TodoList';
 import DocumentToPDF from '../components/Toolkit/DocumentToPDF';
 import AddPageNumbers from '../components/Toolkit/AddPageNumbers';
 import MergePDFs from '../components/Toolkit/MergePDFs';
@@ -465,6 +465,26 @@ export default function DashboardPage() {
             {!sidebarCollapsed && <span className="font-medium">Dashboard</span>}
           </button>
 
+          {/* My Plans */}
+          <button
+            onClick={() => setActiveTab('todos')}
+            className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${
+              activeTab === 'todos'
+                ? isDarkMode
+                  ? 'bg-sky-500/20 text-sky-400'
+                  : 'bg-sky-50 text-sky-600'
+                : isDarkMode
+                  ? 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+            }`}
+            title="My Plans"
+          >
+            <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+            </svg>
+            {!sidebarCollapsed && <span className="font-medium">My Plans</span>}
+          </button>
+
           {/* Toolkit */}
           <button
             onClick={() => setActiveTab('toolkit')}
@@ -711,7 +731,7 @@ export default function DashboardPage() {
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                 </svg>
-                Todo List
+                My Plans
               </div>
             </button>
             <button
@@ -740,7 +760,7 @@ export default function DashboardPage() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {activeTab === 'todos' ? (
-          <TodoList isDarkMode={isDarkMode} />
+          <MyPlans isDarkMode={isDarkMode} />
         ) : activeTab === 'toolkit' ? (
           <div>
             {/* Toolkit Section */}

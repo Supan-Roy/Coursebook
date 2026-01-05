@@ -172,4 +172,28 @@ export const todoService = {
   },
 };
 
+export const todoCategoryService = {
+  async getAll() {
+    const response = await api.get('/todos/categories/');
+    if (Array.isArray(response.data)) {
+      return response.data;
+    }
+    return response.data.results || response.data || [];
+  },
+
+  async create(data) {
+    const response = await api.post('/todos/categories/', data);
+    return response.data;
+  },
+
+  async update(id, data) {
+    const response = await api.patch(`/todos/categories/${id}/`, data);
+    return response.data;
+  },
+
+  async delete(id) {
+    await api.delete(`/todos/categories/${id}/`);
+  },
+};
+
 export { preparationService, toolkitService };

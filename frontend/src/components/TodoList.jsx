@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react';
-import { todoService } from '../services';
-import { FiPlus, FiTrash2, FiCheck, FiClock, FiAlertCircle, FiEdit2 } from 'react-icons/fi';
+import { useState, useEffect, useRef } from 'react';
+import { todoService, todoCategoryService } from '../services';
+import { FiPlus, FiTrash2, FiCheck, FiClock, FiAlertCircle, FiEdit2, FiChevronLeft, FiChevronRight, FiX } from 'react-icons/fi';
 import DateTimePicker from './DateTimePicker';
 
-const TodoList = ({ isDarkMode }) => {
+const MyPlans = ({ isDarkMode }) => {
+  const [categories, setCategories] = useState([]);
+  const [activeCategory, setActiveCategory] = useState(null);
   const [todos, setTodos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [newTodo, setNewTodo] = useState({
@@ -15,6 +17,8 @@ const TodoList = ({ isDarkMode }) => {
   });
   const [isAddingTodo, setIsAddingTodo] = useState(false);
   const [editingTodo, setEditingTodo] = useState(null);
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [editingCategoryName, setEditingCategoryName] = useState('');
   const [editFormData, setEditFormData] = useState({
     title: '',
     description: '',
@@ -22,10 +26,37 @@ const TodoList = ({ isDarkMode }) => {
     due_date: '',
     due_time: '',
   });
+  const [showAddCategory, setShowAddCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [deleteMode, setDeleteMode] = useState(false);
+  const [showCompleted, setShowCompleted] = useState(false);
+  const sliderRef = useRef(null);
+  const isDefaultCategory = (category) => ['Academic', 'Personal'].includes(category.name);
 
   useEffect(() => {
-    loadTodos();
+    loadData();
   }, []);
+
+  const loadData = async () => {
+    try {
+      const [categoriesData, todosData] = await Promise.all([
+        todoCategoryService.getAll(),
+        todoService.getAll(),
+      ]);
+      
+      setCategories(categoriesData);
+      setTodos(todosData);
+      
+      // Set active category to first one if exists
+      if (categoriesData.length > 0) {
+        setActiveCategory(categoriesData[0].id);
+      }
+    } catch (error) {
+      console.error('Failed to load data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const loadTodos = async () => {
     try {
@@ -49,6 +80,7 @@ const TodoList = ({ isDarkMode }) => {
         priority: newTodo.priority,
         due_date: newTodo.due_date || null,
         due_time: newTodo.due_time || null,
+        category_id: activeCategory,
       };
       const created = await todoService.create(todoData);
       setTodos([created, ...todos]);
@@ -56,6 +88,69 @@ const TodoList = ({ isDarkMode }) => {
       setIsAddingTodo(false);
     } catch (error) {
       console.error('Failed to create todo:', error);
+    }
+  };
+
+  const handleAddCategory = async () => {
+    if (!newCategoryName.trim()) return;
+    try {
+      const newCategory = await todoCategoryService.create({ name: newCategoryName });
+      setCategories([...categories, newCategory]);
+      setNewCategoryName('');
+      setShowAddCategory(false);
+    } catch (error) {
+      console.error('Failed to create category:', error);
+    }
+  };
+
+  const handleUpdateCategory = async (categoryId) => {
+    const category = categories.find((c) => c.id === categoryId);
+    if (!category || isDefaultCategory(category)) return;
+    if (!editingCategoryName.trim()) return;
+    try {
+      const updated = await todoCategoryService.update(categoryId, { name: editingCategoryName });
+      setCategories(categories.map(c => 
+        c.id === categoryId ? updated : c
+      ));
+      setEditingCategory(null);
+      setEditingCategoryName('');
+    } catch (error) {
+      console.error('Failed to update category:', error);
+    }
+  };
+
+  const handleDeleteCategory = async (categoryId) => {
+    const category = categories.find((c) => c.id === categoryId);
+    if (!category || isDefaultCategory(category)) return;
+    try {
+      // Remove all todos in this category
+      const categoryTodosToDelete = todos.filter(t => t.category_id === categoryId);
+      for (const todo of categoryTodosToDelete) {
+        await todoService.delete(todo.id);
+      }
+      setTodos(todos.filter(t => t.category_id !== categoryId));
+      
+      // Delete the category
+      await todoCategoryService.delete(categoryId);
+      setCategories(categories.filter(c => c.id !== categoryId));
+      
+      // Switch to first category if deleted category was active
+      if (activeCategory === categoryId) {
+        const remainingCategories = categories.filter(c => c.id !== categoryId);
+        setActiveCategory(remainingCategories.length > 0 ? remainingCategories[0].id : null);
+      }
+      setDeleteMode(false);
+    } catch (error) {
+      console.error('Failed to delete category:', error);
+    }
+  };
+
+  const scrollSlider = (direction) => {
+    if (sliderRef.current) {
+      sliderRef.current.scrollBy({
+        left: direction === 'left' ? -200 : 200,
+        behavior: 'smooth',
+      });
     }
   };
 
@@ -163,19 +258,226 @@ const TodoList = ({ isDarkMode }) => {
     );
   }
 
-  const activeTodos = todos.filter((t) => !t.is_completed);
-  const completedTodos = todos.filter((t) => t.is_completed);
+  if (categories.length === 0) {
+    return (
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        <h1 className={`text-3xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+          My Plans
+        </h1>
+        <div className={`text-center py-12 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+          <p className="text-lg mb-4">No categories yet. Create one to get started!</p>
+        </div>
+      </div>
+    );
+  }
+
+  const categoryTodos = todos.filter(t => t.category_id === activeCategory);
+  const activeTodos = categoryTodos.filter((t) => !t.is_completed);
+  const completedTodos = categoryTodos.filter((t) => t.is_completed);
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="max-w-6xl mx-auto px-4 py-8">
       {/* Header */}
       <div className="mb-8">
         <h1 className={`text-3xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-          My Todo List
+          My Plans
         </h1>
         <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-          {activeTodos.length} active, {completedTodos.length} completed
+          {activeTodos.length} active, {completedTodos.length} completed in {categories.find(c => c.id === activeCategory)?.name}
         </p>
+      </div>
+
+      {/* Category Slider */}
+      <div className="mb-8">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => scrollSlider('left')}
+            className={`p-2 rounded-lg transition-all ${
+              isDarkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-gray-200 hover:bg-gray-300'
+            }`}
+          >
+            <FiChevronLeft className="w-5 h-5" />
+          </button>
+
+          <div
+            ref={sliderRef}
+            className="flex-1 overflow-x-auto scrollbar-hide scroll-smooth"
+            style={{ scrollBehavior: 'smooth' }}
+          >
+            <div className="flex gap-3 pb-2">
+              {categories.map(category => {
+                const isActive = activeCategory === category.id;
+                const isDefault = isDefaultCategory(category);
+                const baseClasses = isActive
+                  ? (isDarkMode
+                    ? 'bg-gradient-to-r from-blue-600 to-blue-700'
+                    : 'bg-gradient-to-r from-blue-500 to-blue-600')
+                  : (isDarkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-gray-200 hover:bg-gray-300');
+
+                const handleCategoryClick = () => {
+                  if (deleteMode && !isDefault) {
+                    handleDeleteCategory(category.id);
+                  } else {
+                    setActiveCategory(category.id);
+                  }
+                };
+
+                return (
+                  <div
+                    key={category.id}
+                    className={`flex-shrink-0 relative group overflow-visible ${baseClasses} px-6 py-3 rounded-lg transition-all duration-200 min-w-max ${deleteMode && !isDefault ? 'border-2 border-red-400/70' : ''}`}
+                    onClick={handleCategoryClick}
+                    style={{ cursor: deleteMode && !isDefault ? 'pointer' : 'default' }}
+                  >
+                    {editingCategory === category.id && !isDefault ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={editingCategoryName}
+                          onChange={(e) => setEditingCategoryName(e.target.value)}
+                          autoFocus
+                          className={`px-2 py-1 rounded text-sm border-2 focus:outline-none ${
+                            isDarkMode
+                              ? 'bg-gray-900 border-gray-700 text-white'
+                              : 'bg-white border-gray-300 text-gray-900'
+                          }`}
+                        />
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleUpdateCategory(category.id);
+                          }}
+                          className="text-green-500 hover:text-green-400"
+                        >
+                          <FiCheck className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingCategory(null);
+                          }}
+                          className="text-red-500 hover:text-red-400"
+                        >
+                          <FiX className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveCategory(category.id);
+                          }}
+                          className={`text-lg font-medium transition-all ${
+                            isActive
+                              ? 'text-white'
+                              : (isDarkMode ? 'text-gray-300' : 'text-gray-700')
+                          }`}
+                        >
+                          {category.name}
+                        </button>
+
+                        {/* Tiny rename control on hover (non-default only) */}
+                        {!isDefault && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingCategory(category.id);
+                              setEditingCategoryName(category.name);
+                            }}
+                            className={`opacity-0 group-hover:opacity-100 p-1 rounded absolute top-1 right-1 text-[10px] leading-none border transition-all shadow ${
+                              isDarkMode
+                                ? 'bg-gray-900 border-gray-700 text-blue-300 hover:bg-blue-900/60'
+                                : 'bg-white border-gray-300 text-blue-600 hover:bg-blue-50'
+                            }`}
+                            style={{ zIndex: 16 }}
+                            title="Rename category"
+                          >
+                            <FiEdit2 className="w-3 h-3" />
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              {/* Add More Category Button */}
+              {!showAddCategory ? (
+                <button
+                  onClick={() => setShowAddCategory(true)}
+                  className={`flex-shrink-0 px-6 py-3 rounded-lg border-2 border-dashed transition-all ${
+                    isDarkMode
+                      ? 'border-gray-700 hover:border-gray-600 text-gray-400 hover:text-gray-300 hover:bg-gray-800'
+                      : 'border-gray-400 hover:border-gray-500 text-gray-600 hover:text-gray-700 hover:bg-gray-100'
+                  } min-w-max font-medium flex items-center gap-2`}
+                >
+                  <FiPlus className="w-4 h-4" />
+                  Add Category
+                </button>
+              ) : (
+                <div className={`flex-shrink-0 flex items-center gap-2 px-4 py-3 rounded-lg min-w-max ${
+                  isDarkMode ? 'bg-gray-800' : 'bg-gray-200'
+                }`}>
+                  <input
+                    type="text"
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                    placeholder="Category name..."
+                    autoFocus
+                    className={`px-3 py-1 rounded border-2 focus:outline-none text-sm ${
+                      isDarkMode
+                        ? 'bg-gray-900 border-gray-700 text-white placeholder-gray-500'
+                        : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
+                    }`}
+                  />
+                  <button
+                    onClick={handleAddCategory}
+                    className="text-green-500 hover:text-green-400"
+                  >
+                    <FiCheck className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowAddCategory(false);
+                      setNewCategoryName('');
+                    }}
+                    className="text-red-500 hover:text-red-400"
+                  >
+                    <FiX className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => scrollSlider('right')}
+              className={`p-2 rounded-lg transition-all ${
+                isDarkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-gray-200 hover:bg-gray-300'
+              }`}
+            >
+              <FiChevronRight className="w-5 h-5" />
+            </button>
+
+            <button
+              onClick={() => setDeleteMode((prev) => !prev)}
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all border ${
+                deleteMode
+                  ? isDarkMode
+                    ? 'bg-red-900/40 border-red-500 text-red-300'
+                    : 'bg-red-50 border-red-500 text-red-600'
+                  : isDarkMode
+                    ? 'bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700'
+                    : 'bg-gray-200 border-gray-300 text-gray-700 hover:bg-gray-300'
+              }`}
+              title="Delete a category"
+            >
+              {deleteMode ? 'Select category to delete' : 'Delete category'}
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Add Todo Button */}
@@ -428,52 +730,65 @@ const TodoList = ({ isDarkMode }) => {
 
       {/* Completed Todos */}
       {completedTodos.length > 0 && (
-        <div>
-          <h2 className={`text-xl font-semibold mb-4 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-            Completed
-          </h2>
-          <div className="space-y-3">
-            {completedTodos.map((todo, index) => (
-              <div
-                key={todo.id}
-                className={`p-4 rounded-xl border-2 transition-all duration-200 opacity-60 hover:opacity-100 animate-fadeIn ${
-                  isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'
-                }`}
-                style={{ animationDelay: `${index * 50}ms` }}
-              >
-                <div className="flex items-start gap-4">
-                  <button
-                    onClick={() => toggleComplete(todo)}
-                    className="mt-1 w-6 h-6 rounded-full border-2 border-green-500 bg-green-500 flex items-center justify-center transition-all duration-200"
-                  >
-                    <FiCheck className="w-4 h-4 text-white" />
-                  </button>
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between gap-4 mb-2">
-                      <h3 className={`text-lg font-medium line-through ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                        {todo.title}
-                      </h3>
-                      <button
-                        onClick={() => deleteTodo(todo.id)}
-                        className={`p-2 rounded-lg transition-all duration-200 ${
-                          isDarkMode
-                            ? 'hover:bg-red-900/30 text-red-400'
-                            : 'hover:bg-red-50 text-red-600'
-                        }`}
-                      >
-                        <FiTrash2 className="w-4 h-4" />
-                      </button>
+        <div className="mt-6">
+          <button
+            onClick={() => setShowCompleted(!showCompleted)}
+            className={`w-full flex items-center justify-between px-4 py-3 rounded-lg border-2 transition-all font-semibold ${
+              isDarkMode
+                ? 'border-gray-700 bg-gray-800 text-gray-200 hover:bg-gray-750'
+                : 'border-gray-200 bg-gray-50 text-gray-800 hover:bg-gray-100'
+            }`}
+          >
+            <span>Completed Tasks ({completedTodos.length})</span>
+            <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              {showCompleted ? 'Hide' : 'Show'}
+            </span>
+          </button>
+
+          {showCompleted && (
+            <div className="space-y-3 mt-4">
+              {completedTodos.map((todo, index) => (
+                <div
+                  key={todo.id}
+                  className={`p-4 rounded-xl border-2 transition-all duration-200 opacity-60 hover:opacity-100 animate-fadeIn ${
+                    isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'
+                  }`}
+                  style={{ animationDelay: `${index * 50}ms` }}
+                >
+                  <div className="flex items-start gap-4">
+                    <button
+                      onClick={() => toggleComplete(todo)}
+                      className="mt-1 w-6 h-6 rounded-full border-2 border-green-500 bg-green-500 flex items-center justify-center transition-all duration-200"
+                    >
+                      <FiCheck className="w-4 h-4 text-white" />
+                    </button>
+                    <div className="flex-1">
+                      <div className="flex items-start justify-between gap-4 mb-2">
+                        <h3 className={`text-lg font-medium line-through ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                          {todo.title}
+                        </h3>
+                        <button
+                          onClick={() => deleteTodo(todo.id)}
+                          className={`p-2 rounded-lg transition-all duration-200 ${
+                            isDarkMode
+                              ? 'hover:bg-red-900/30 text-red-400'
+                              : 'hover:bg-red-50 text-red-600'
+                          }`}
+                        >
+                          <FiTrash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                      {todo.description && (
+                        <p className={`text-sm line-through ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}>
+                          {todo.description}
+                        </p>
+                      )}
                     </div>
-                    {todo.description && (
-                      <p className={`text-sm line-through ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}>
-                        {todo.description}
-                      </p>
-                    )}
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -488,4 +803,4 @@ const TodoList = ({ isDarkMode }) => {
   );
 };
 
-export default TodoList;
+export default MyPlans;
