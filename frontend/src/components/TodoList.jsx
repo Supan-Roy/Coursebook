@@ -2,8 +2,16 @@ import { useState, useEffect, useRef } from 'react';
 import { todoService, todoCategoryService } from '../services';
 import { FiPlus, FiTrash2, FiCheck, FiClock, FiAlertCircle, FiEdit2, FiChevronLeft, FiChevronRight, FiX } from 'react-icons/fi';
 import DateTimePicker from './DateTimePicker';
+import notificationService from '../services/notificationService';
 
 const MyPlans = ({ isDarkMode }) => {
+  const NOTIFICATION_PREF_KEY = 'todo_notifications_enabled';
+  // Get today's date in YYYY-MM-DD format
+  const getTodayDate = () => {
+    const today = new Date();
+    return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  };
+
   const [categories, setCategories] = useState([]);
   const [activeCategory, setActiveCategory] = useState(null);
   const [todos, setTodos] = useState([]);
@@ -12,7 +20,7 @@ const MyPlans = ({ isDarkMode }) => {
     title: '',
     description: '',
     priority: 'medium',
-    due_date: '',
+    due_date: getTodayDate(),
     due_time: '',
   });
   const [isAddingTodo, setIsAddingTodo] = useState(false);
@@ -23,19 +31,66 @@ const MyPlans = ({ isDarkMode }) => {
     title: '',
     description: '',
     priority: 'medium',
-    due_date: '',
+    due_date: getTodayDate(),
     due_time: '',
   });
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [deleteMode, setDeleteMode] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const notificationIntervalRef = useRef(null);
   const sliderRef = useRef(null);
   const isDefaultCategory = (category) => ['Academic', 'Personal'].includes(category.name);
 
   useEffect(() => {
+    // Restore notification preference if permission still granted
+    const savedPref = typeof window !== 'undefined' ? localStorage.getItem(NOTIFICATION_PREF_KEY) : null;
+    if (savedPref === 'true' && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+      setNotificationsEnabled(true);
+    }
+
     loadData();
+    return () => {
+      notificationService.clearPeriodicCheck(notificationIntervalRef.current);
+    };
   }, []);
+
+  // Setup notification checking when todos change
+  useEffect(() => {
+    if (notificationsEnabled && todos.length > 0) {
+      // Clear existing interval
+      notificationService.clearPeriodicCheck(notificationIntervalRef.current);
+      // Set up new interval to check every minute
+      notificationIntervalRef.current = notificationService.setupPeriodicCheck(todos, 60);
+    } else {
+      notificationService.clearPeriodicCheck(notificationIntervalRef.current);
+    }
+  }, [notificationsEnabled, todos]);
+
+  const toggleNotifications = async () => {
+    if (notificationsEnabled) {
+      notificationService.clearPeriodicCheck(notificationIntervalRef.current);
+      setNotificationsEnabled(false);
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(NOTIFICATION_PREF_KEY);
+      }
+      return;
+    }
+
+    const permission = await notificationService.requestPermission();
+    if (permission) {
+      setNotificationsEnabled(true);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(NOTIFICATION_PREF_KEY, 'true');
+      }
+      notificationService.show('Notifications Enabled', {
+        body: 'You will receive notifications for due tasks',
+      });
+    } else if (typeof window !== 'undefined') {
+      localStorage.removeItem(NOTIFICATION_PREF_KEY);
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -84,7 +139,7 @@ const MyPlans = ({ isDarkMode }) => {
       };
       const created = await todoService.create(todoData);
       setTodos([created, ...todos]);
-      setNewTodo({ title: '', description: '', priority: 'medium', due_date: '', due_time: '' });
+      setNewTodo({ title: '', description: '', priority: 'medium', due_date: getTodayDate(), due_time: '' });
       setIsAddingTodo(false);
     } catch (error) {
       console.error('Failed to create todo:', error);
@@ -250,6 +305,34 @@ const MyPlans = ({ isDarkMode }) => {
     return `${hour12}:${minutes} ${ampm}`;
   };
 
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '';
+    return new Date(dateStr).toLocaleDateString('en-GB');
+  };
+
+  const getDueDateTime = (todo) => {
+    if (!todo.due_date) return null;
+    const [year, month, day] = todo.due_date.split('-').map((part) => parseInt(part, 10));
+    if (!year || !month || !day) return null;
+
+    const date = new Date(year, month - 1, day);
+    if (todo.due_time) {
+      const [h, m] = todo.due_time.split(':').map((part) => parseInt(part, 10));
+      date.setHours(h || 0, m || 0, 0, 0);
+    } else {
+      // Treat date-only deadlines as end-of-day
+      date.setHours(23, 59, 59, 999);
+    }
+    return date;
+  };
+
+  const isOverdue = (todo) => {
+    if (todo.is_completed) return false;
+    const dueDateTime = getDueDateTime(todo);
+    if (!dueDateTime) return false;
+    return dueDateTime.getTime() < Date.now();
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -278,13 +361,30 @@ const MyPlans = ({ isDarkMode }) => {
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className={`text-3xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-          My Plans
-        </h1>
-        <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-          {activeTodos.length} active, {completedTodos.length} completed in {categories.find(c => c.id === activeCategory)?.name}
-        </p>
+      <div className="mb-8 flex items-start justify-between">
+        <div>
+          <h1 className={`text-3xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+            My Plans
+          </h1>
+          <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+            {activeTodos.length} active, {completedTodos.length} completed in {categories.find(c => c.id === activeCategory)?.name}
+          </p>
+        </div>
+        <button
+          onClick={toggleNotifications}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+            notificationsEnabled
+              ? isDarkMode
+                ? 'bg-green-900/40 border border-green-500 text-green-300'
+                : 'bg-green-50 border border-green-500 text-green-600'
+              : isDarkMode
+                ? 'bg-gray-800 border border-gray-700 text-gray-300 hover:bg-gray-700'
+                : 'bg-gray-200 border border-gray-300 text-gray-700 hover:bg-gray-300'
+          }`}
+          title="Enable notifications for due tasks"
+        >
+          🔔 {notificationsEnabled ? 'Notifications On' : 'Enable Notifications'}
+        </button>
       </div>
 
       {/* Category Slider */}
@@ -713,10 +813,25 @@ const MyPlans = ({ isDarkMode }) => {
                       </p>
                     )}
                     {todo.due_date && (
-                      <div className={`flex items-center gap-1 text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
-                        <FiClock className="w-3 h-3" />
-                        Due: {new Date(todo.due_date).toLocaleDateString()}
-                        {todo.due_time && ` at ${formatTime(todo.due_time)}`}
+                      <div
+                        className={`flex items-center gap-2 flex-wrap text-xs ${
+                          isOverdue(todo)
+                            ? (isDarkMode ? 'text-red-400' : 'text-red-600')
+                            : (isDarkMode ? 'text-gray-500' : 'text-gray-500')
+                        }`}
+                      >
+                        <div className="flex items-center gap-1">
+                          <FiClock className="w-3 h-3" />
+                          <span>
+                            Due: {formatDate(todo.due_date)}
+                            {todo.due_time && ` at ${formatTime(todo.due_time)}`}
+                          </span>
+                        </div>
+                        {isOverdue(todo) && (
+                          <span className="px-2 py-1 rounded-full border text-[11px] font-semibold bg-red-500/10 border-red-500/50 text-red-400">
+                            Overdue
+                          </span>
+                        )}
                       </div>
                     )}
                   </div>
@@ -782,6 +897,13 @@ const MyPlans = ({ isDarkMode }) => {
                         <p className={`text-sm line-through ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}>
                           {todo.description}
                         </p>
+                      )}
+                      {todo.due_date && (
+                        <div className={`flex items-center gap-1 text-xs ${isDarkMode ? 'text-gray-600' : 'text-gray-500'}`}>
+                          <FiClock className="w-3 h-3" />
+                          Due: {formatDate(todo.due_date)}
+                          {todo.due_time && ` at ${formatTime(todo.due_time)}`}
+                        </div>
                       )}
                     </div>
                   </div>

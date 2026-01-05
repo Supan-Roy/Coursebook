@@ -10,12 +10,14 @@ export default function ProfilePage() {
   const { isDarkMode, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const DOB_STORAGE_KEY = 'user_dob';
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
     email: '',
     university: '',
   });
+  const [dob, setDob] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
@@ -28,11 +30,45 @@ export default function ProfilePage() {
         email: user.email || '',
         university: user.university || '',
       });
+      const savedDob = typeof window !== 'undefined' ? localStorage.getItem(DOB_STORAGE_KEY) : '';
+      setDob(savedDob || '');
     }
   }, [user]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const getGreeting = () => {
+    const name = user?.first_name && user?.last_name
+      ? `${user.first_name} ${user.last_name}`
+      : user?.first_name || 'Student';
+
+    const today = new Date();
+    const day = String(today.getDate()).padStart(2, '0');
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const key = `${day}-${month}`;
+
+    const specialDays = {
+      '01-01': 'Happy New Year',
+      '14-04': 'শুভ নববর্ষ',
+      '21-02': 'আন্তর্জাতিক মাতৃভাষা দিবসের শুভেচ্ছা',
+      '26-03': 'Happy Independence Day',
+      '16-12': 'Happy Victory Day',
+    };
+
+    if (specialDays[key]) {
+      return `${specialDays[key]}, ${name}!`;
+    }
+
+    if (dob) {
+      const [year, monthStr, dayStr] = dob.split('-');
+      if (monthStr && dayStr && dayStr.padStart(2, '0') === day && monthStr.padStart(2, '0') === month) {
+        return `Happy Birthday, ${name}!`;
+      }
+    }
+
+    return `Welcome, ${name}`;
   };
 
   const handleSubmit = async (e) => {
@@ -43,6 +79,13 @@ export default function ProfilePage() {
     try {
       await authService.updateProfile(formData);
       await refreshUser();
+      if (typeof window !== 'undefined') {
+        if (dob) {
+          localStorage.setItem(DOB_STORAGE_KEY, dob);
+        } else {
+          localStorage.removeItem(DOB_STORAGE_KEY);
+        }
+      }
       setMessage({ type: 'success', text: 'Profile updated successfully!' });
       setIsEditing(false);
     } catch (error) {
@@ -60,7 +103,13 @@ export default function ProfilePage() {
   return (
     <div className={`min-h-screen transition-colors duration-200 ${isDarkMode ? 'bg-black text-white' : 'bg-gray-50 text-gray-900'}`}>
       {/* Header */}
-      <header className={`border-b sticky top-0 z-20 backdrop-blur-sm transition-colors ${isDarkMode ? 'border-gray-800 bg-black/80' : 'border-gray-200 bg-white/80'}`}>
+      <header
+        className={`border-b sticky top-0 z-20 backdrop-blur-sm shadow bg-gradient-to-r transition-colors ${
+          isDarkMode
+            ? 'from-gray-900 via-gray-800 to-gray-900 border-gray-700'
+            : 'from-gray-100 via-gray-200 to-gray-100 border-gray-300'
+        }`}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/dashboard')}>
@@ -82,7 +131,24 @@ export default function ProfilePage() {
                 Back to Dashboard
               </button>
               
-              <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Welcome, <span className="text-sky-300 font-semibold">{user?.first_name && user?.last_name ? `${user.first_name} ${user.last_name}` : user?.first_name || 'Student'}</span></span>
+              <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                {(() => {
+                  const greeting = getGreeting();
+                  const name = user?.first_name && user?.last_name
+                    ? `${user.first_name} ${user.last_name}`
+                    : user?.first_name || 'Student';
+                  if (greeting.includes(', ')) {
+                    const parts = greeting.split(', ');
+                    const message = parts.slice(0, -1).join(', ');
+                    return (
+                      <>
+                        {message}, <span className={`font-semibold ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>{name}</span>{greeting.endsWith('!') ? '!' : ''}
+                      </>
+                    );
+                  }
+                  return greeting;
+                })()}
+              </span>
               
               {/* Theme Toggle */}
               <button
@@ -250,6 +316,25 @@ export default function ProfilePage() {
                 className={`block w-full px-4 py-3 text-sm border rounded-lg opacity-50 cursor-not-allowed ${isDarkMode ? 'bg-gray-900/50 border-gray-700 text-white placeholder-gray-500' : 'bg-gray-100 border-gray-300 text-gray-900 placeholder-gray-400'}`}
               />
               <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>Email cannot be changed</p>
+            </div>
+
+            {/* Date of Birth (local only) */}
+            <div>
+              <label htmlFor="dob" className={`block text-sm font-semibold mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                Date of Birth
+              </label>
+              <input
+                id="dob"
+                name="dob"
+                type="date"
+                disabled={!isEditing}
+                value={dob}
+                onChange={(e) => setDob(e.target.value)}
+                className={`block w-full px-4 py-3 text-sm border rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent ${isDarkMode ? 'bg-gray-900/50 border-gray-700 text-white placeholder-gray-500' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'}`}
+              />
+              <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                Stored on this device only; used for birthday greetings.
+              </p>
             </div>
 
             {/* University */}

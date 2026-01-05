@@ -6,6 +6,7 @@ const AnalogTimePicker = ({ value, onChange, isDarkMode, inline = false }) => {
   const [hours, setHours] = useState('12');
   const [minutes, setMinutes] = useState('00');
   const [period, setPeriod] = useState('AM');
+  const [hasInteracted, setHasInteracted] = useState(false);
   const [selectingHours, setSelectingHours] = useState(true);
   const dropdownRef = useRef(null);
   const clockRef = useRef(null);
@@ -20,6 +21,25 @@ const AnalogTimePicker = ({ value, onChange, isDarkMode, inline = false }) => {
       setPeriod(hour24 >= 12 ? 'PM' : 'AM');
     }
   }, [value]);
+
+  // Emit time changes automatically in inline mode after user interaction
+  useEffect(() => {
+    if (!inline || !hasInteracted) return;
+    if (hours === '' || minutes === '') {
+      onChange('');
+      return;
+    }
+
+    const hourInt = parseInt(hours, 10);
+    const minuteInt = parseInt(minutes, 10);
+    if (Number.isNaN(hourInt) || Number.isNaN(minuteInt)) return;
+
+    const hour24 = period === 'PM'
+      ? (hourInt === 12 ? 12 : hourInt + 12)
+      : (hourInt === 12 ? 0 : hourInt);
+    const timeString = `${String(hour24).padStart(2, '0')}:${String(minuteInt).padStart(2, '0')}`;
+    onChange(timeString);
+  }, [hours, minutes, period, inline, hasInteracted, onChange]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -57,6 +77,8 @@ const AnalogTimePicker = ({ value, onChange, isDarkMode, inline = false }) => {
       const minute = Math.round(normalizedDegrees / 6) % 60;
       setMinutes(String(minute).padStart(2, '0'));
     }
+
+    setHasInteracted(true);
   };
 
   const handleDone = () => {
@@ -97,6 +119,8 @@ const AnalogTimePicker = ({ value, onChange, isDarkMode, inline = false }) => {
         setHours(val);
       }
     }
+
+    setHasInteracted(true);
   };
 
   const handleHourBlur = () => {
@@ -127,6 +151,8 @@ const AnalogTimePicker = ({ value, onChange, isDarkMode, inline = false }) => {
         setMinutes(val);
       }
     }
+
+    setHasInteracted(true);
   };
 
   const handleMinuteBlur = () => {
@@ -293,7 +319,10 @@ const AnalogTimePicker = ({ value, onChange, isDarkMode, inline = false }) => {
           <div className="flex gap-1">
             <button
               type="button"
-              onClick={() => setPeriod('AM')}
+              onClick={() => {
+                setPeriod('AM');
+                setHasInteracted(true);
+              }}
               className={`px-3 py-2 rounded-lg font-medium transition-all ${
                 period === 'AM'
                   ? 'bg-blue-600 text-white'
@@ -306,7 +335,10 @@ const AnalogTimePicker = ({ value, onChange, isDarkMode, inline = false }) => {
             </button>
             <button
               type="button"
-              onClick={() => setPeriod('PM')}
+              onClick={() => {
+                setPeriod('PM');
+                setHasInteracted(true);
+              }}
               className={`px-3 py-2 rounded-lg font-medium transition-all ${
                 period === 'PM'
                   ? 'bg-blue-600 text-white'

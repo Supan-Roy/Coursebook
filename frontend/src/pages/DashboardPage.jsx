@@ -59,6 +59,8 @@ export default function DashboardPage() {
     // Load semester order from localStorage
     return JSON.parse(localStorage.getItem('semesterOrder') || '[]');
   });
+  const DOB_STORAGE_KEY = 'user_dob';
+  const [dob, setDob] = useState('');
   const { logout, user } = useAuth();
   const { isDarkMode, toggleTheme } = useTheme();
   const navigate = useNavigate();
@@ -112,6 +114,11 @@ export default function DashboardPage() {
     loadData();
   }, []);
 
+  useEffect(() => {
+    const savedDob = typeof window !== 'undefined' ? localStorage.getItem(DOB_STORAGE_KEY) : '';
+    setDob(savedDob || '');
+  }, []);
+
   const loadData = async () => {
     try {
       setError(null);
@@ -142,6 +149,38 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const getGreeting = () => {
+    const name = user?.first_name && user?.last_name
+      ? `${user.first_name} ${user.last_name}`
+      : user?.first_name || 'Student';
+
+    const today = new Date();
+    const day = String(today.getDate()).padStart(2, '0');
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const key = `${day}-${month}`;
+
+    const specialDays = {
+      '01-01': 'Happy New Year',
+      '14-04': 'শুভ নববর্ষ',
+      '21-02': 'আন্তর্জাতিক মাতৃভাষা দিবসের শুভেচ্ছা',
+      '26-03': 'Happy Independence Day',
+      '16-12': 'Happy Victory Day',
+    };
+
+    if (specialDays[key]) {
+      return `${specialDays[key]}, ${name}!`;
+    }
+
+    if (dob) {
+      const [year, monthStr, dayStr] = dob.split('-');
+      if (monthStr && dayStr && dayStr.padStart(2, '0') === day && monthStr.padStart(2, '0') === month) {
+        return `Happy Birthday, ${name}!`;
+      }
+    }
+
+    return `Welcome, ${name}`;
   };
 
   const handleUploadSuccess = (result) => {
@@ -596,7 +635,13 @@ export default function DashboardPage() {
       {/* Main Content */}
       <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
       {/* Header */}
-      <header className={`border-b sticky top-0 z-20 backdrop-blur-sm transition-colors ${isDarkMode ? 'border-gray-800 bg-black/80' : 'border-gray-200 bg-white/80'}`}>
+      <header
+        className={`border-b sticky top-0 z-20 backdrop-blur-sm shadow bg-gradient-to-r transition-colors ${
+          isDarkMode
+            ? 'from-gray-900 via-gray-800 to-gray-900 border-gray-700'
+            : 'from-gray-100 via-gray-200 to-gray-100 border-gray-300'
+        }`}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
@@ -604,7 +649,24 @@ export default function DashboardPage() {
               <CoursebookTextLogo className="w-48 h-12" isDarkMode={isDarkMode} showUnderline={false} />
             </div>
             <div className="flex items-center gap-4">
-              <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Welcome, <span className={`font-semibold ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>{user?.first_name && user?.last_name ? `${user.first_name} ${user.last_name}` : user?.first_name || 'Student'}</span></span>
+              <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                {(() => {
+                  const greeting = getGreeting();
+                  const name = user?.first_name && user?.last_name
+                    ? `${user.first_name} ${user.last_name}`
+                    : user?.first_name || 'Student';
+                  if (greeting.includes(', ')) {
+                    const parts = greeting.split(', ');
+                    const message = parts.slice(0, -1).join(', ');
+                    return (
+                      <>
+                        {message}, <span className={`font-semibold ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>{name}</span>{greeting.endsWith('!') ? '!' : ''}
+                      </>
+                    );
+                  }
+                  return greeting;
+                })()}
+              </span>
               
               {/* Theme Toggle */}
               <button

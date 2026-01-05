@@ -7,7 +7,15 @@ const DateTimePicker = ({ value, onChange, isDarkMode, includeTime = true }) => 
   const [selectedDate, setSelectedDate] = useState(value?.date || '');
   const [selectedTime, setSelectedTime] = useState(value?.time || '');
   const [viewDate, setViewDate] = useState(new Date());
+  const [dateInput, setDateInput] = useState('');
   const dropdownRef = useRef(null);
+
+  // Keep internal state in sync with external value
+  useEffect(() => {
+    setSelectedDate(value?.date || '');
+    setSelectedTime(value?.time || '');
+    setDateInput(value?.date ? formatInput(value.date) : '');
+  }, [value?.date, value?.time]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -45,10 +53,42 @@ const DateTimePicker = ({ value, onChange, isDarkMode, includeTime = true }) => 
     const dayStr = String(day).padStart(2, '0');
     const dateStr = `${year}-${month}-${dayStr}`;
     setSelectedDate(dateStr);
+    setDateInput(formatInput(dateStr));
     onChange({ date: dateStr, time: selectedTime });
     if (!includeTime) {
       setIsOpen(false);
     }
+  };
+
+  const formatInput = (isoDate) => {
+    if (!isoDate) return '';
+    const [y, m, d] = isoDate.split('-');
+    return `${d}/${m}/${y}`;
+  };
+
+  const handleManualDateChange = (e) => {
+    const raw = e.target.value;
+    // Allow digits and slashes only
+    const cleaned = raw.replace(/[^0-9/]/g, '');
+    setDateInput(cleaned);
+  };
+
+  const handleManualDateBlur = () => {
+    if (!dateInput) return;
+    const match = dateInput.match(/^\s*(\d{1,2})\/(\d{1,2})\/(\d{4})\s*$/);
+    if (!match) return;
+    const [, dStr, mStr, yStr] = match;
+    const day = parseInt(dStr, 10);
+    const month = parseInt(mStr, 10);
+    const year = parseInt(yStr, 10);
+    if (month < 1 || month > 12 || day < 1 || day > 31) return;
+    const candidate = new Date(year, month - 1, day);
+    if (candidate.getFullYear() !== year || candidate.getMonth() !== month - 1 || candidate.getDate() !== day) return;
+
+    const iso = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    setSelectedDate(iso);
+    setViewDate(candidate);
+    onChange({ date: iso, time: selectedTime });
   };
 
   const handleTimeChange = (time) => {
@@ -70,7 +110,7 @@ const DateTimePicker = ({ value, onChange, isDarkMode, includeTime = true }) => 
   const formatDisplay = () => {
     if (!selectedDate) return 'Select date & time';
     const date = new Date(selectedDate);
-    const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const dateStr = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
     if (includeTime && selectedTime) {
       return `${dateStr} at ${selectedTime}`;
     }
@@ -173,6 +213,23 @@ const DateTimePicker = ({ value, onChange, isDarkMode, includeTime = true }) => 
           <div className="flex gap-4">
             {/* Calendar Section */}
             <div className="flex-shrink-0" style={{ width: '240px' }}>
+              <div className="mb-3">
+                <label className={`block text-xs font-semibold mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  Date (DD/MM/YYYY)
+                </label>
+                <input
+                  type="text"
+                  value={dateInput}
+                  onChange={handleManualDateChange}
+                  onBlur={handleManualDateBlur}
+                  placeholder="dd/mm/yyyy"
+                  className={`w-full px-3 py-2 rounded-lg border-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    isDarkMode
+                      ? 'bg-gray-900 border-gray-700 text-white placeholder-gray-600'
+                      : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
+                  }`}
+                />
+              </div>
               {/* Month Navigation */}
               <div className="flex items-center justify-between mb-2">
                 <button

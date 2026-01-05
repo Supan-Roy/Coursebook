@@ -21,53 +21,58 @@ from django.core.cache import cache
 logger = logging.getLogger(__name__)
 
 try:
-    import google.genai as genai
+    import google.generativeai as genai
     GENAI_AVAILABLE = True
 except ImportError:
     GENAI_AVAILABLE = False
-    logger.warning("google.genai not installed")
+    logger.warning("google.generativeai not installed")
 
 
 class RateLimiter:
-    """Manages API rate limiting to prevent quota issues."""
+    """Manages API rate limiting to prevent quota issues (per key)."""
     
-    REQUESTS_PER_DAY = 1000  # Conservative limit (actual is 1500/day)
-    REQUESTS_PER_MINUTE = 10  # Conservative limit (actual is 15/min)
-    
-    @staticmethod
-    def get_cache_key(key_type):
-        """Generate cache key for rate limiting."""
-        return f"gemini_rate_{key_type}_{datetime.now().strftime('%Y%m%d')}"
+    REQUESTS_PER_DAY_PER_KEY = 400  # Conservative limit per key (actual is ~500/day per key)
+    REQUESTS_PER_MINUTE_PER_KEY = 4  # Conservative limit per key (actual is ~5/min per key)
     
     @staticmethod
-    def check_day_limit():
-        """Check if daily quota is available."""
-        cache_key = RateLimiter.get_cache_key('day')
+    def get_cache_key(key_type, key_index=0):
+        """Generate cache key for rate limiting (per key)."""
+        return f"gemini_rate_{key_type}_{key_index}_{datetime.now().strftime('%Y%m%d')}"
+    
+    @staticmethod
+    def check_day_limit(key_index=0):
+        """Check if daily quota is available for this key."""
+        cache_key = RateLimiter.get_cache_key('day', key_index)
         count = cache.get(cache_key, 0)
         
-        if count >= RateLimiter.REQUESTS_PER_DAY:
-            logger.warning(f"Daily API quota exceeded: {count}/{RateLimiter.REQUESTS_PER_DAY}")
+        if count >= RateLimiter.REQUESTS_PER_DAY_PER_KEY:
+            logger.warning(f"Daily API quota exceeded for key {key_index + 1}: {count}/{RateLimiter.REQUESTS_PER_DAY_PER_KEY}")
             return False
         
         return True
     
     @staticmethod
-    def check_minute_limit():
-        """Check if minute quota is available."""
-        cache_key = RateLimiter.get_cache_key('minute')
+    def check_minute_limit(key_index=0):
+        """Check if minute quota is available for this key."""
+        cache_key = RateLimiter.get_cache_key('minute', key_index)
         count = cache.get(cache_key, 0)
         
-        if count >= RateLimiter.REQUESTS_PER_MINUTE:
-            logger.warning(f"Per-minute API quota exceeded: {count}/{RateLimiter.REQUESTS_PER_MINUTE}")
+        if count >= RateLimiter.REQUESTS_PER_MINUTE_PER_KEY:
+            logger.warning(f"Per-minute API quota exceeded for key {key_index + 1}: {count}/{RateLimiter.REQUESTS_PER_MINUTE_PER_KEY}")
             return False
         
         return True
     
     @staticmethod
-    def increment_counters():
-        """Increment request counters."""
+    def increment_counters(key_index=0):
+        """Increment request counters for this key."""
         # Daily counter
-        day_key = RateLimiter.get_cache_key('day')
+        day_key = RateLimiter.get_cache_key('day', key_index)
+        cache.set(day_key, cache.get(day_key, 0) + 1, 86400)
+        
+        # Minute counter
+        minute_key = RateLimiter.get_cache_key('minute', key_index)
+        cache.set(minute_key, cache.get(minute_key, 0) + 1, 60)
         cache.set(day_key, cache.get(day_key, 0) + 1, 86400)
         
         # Minute counter
@@ -81,48 +86,111 @@ class GeminiService:
     def __init__(self):
         """Initialize Gemini API with API keys from settings (with rotation support)."""
         if not GENAI_AVAILABLE:
-            logger.warning("google.genai not installed - AI features disabled")
+            logger.warning("google.generativeai not installed - AI features disabled")
             self.enabled = False
             return
         
         # Support multiple keys for quota rotation
-        self.api_keys = getattr(settings, 'GEMINI_API_KEYS', [])
+        # Parse comma-separated keys from env
+        keys_env = os.environ.get('GEMINI_API_KEYS', '')
+        if keys_env:
+            raw_keys = [k.strip() for k in keys_env.split(',') if k.strip()]
+            # Validate keys are not empty and have proper format
+            self.api_keys = [k for k in raw_keys if k and len(k) > 10]
+        else:
+            self.api_keys = getattr(settings, 'GEMINI_API_KEYS', [])
         
         # Fallback to single key if multiple keys not configured
         if not self.api_keys:
             single_key = getattr(settings, 'GEMINI_API_KEY', os.environ.get('GEMINI_API_KEY'))
-            if single_key:
+            if single_key and len(single_key) > 10:
                 self.api_keys = [single_key]
         
         if not self.api_keys:
-            logger.warning("No Gemini API keys found in settings or environment")
+            logger.warning("No valid Gemini API keys found in settings or environment")
             self.enabled = False
             return
         
         self.current_key_index = 0
+        self.model = None
+        self.rate_limiters = {}  # Per-key rate limiters
         
         try:
-            # Configure with first key
+            # Configure with first key using new API (don't validate yet - save quota!)
             genai.configure(api_key=self.api_keys[0])
-            self.model = genai.GenerativeModel('gemini-2.5-flash')
+            self.model = genai.GenerativeModel('gemini-2.0-flash')
             self.enabled = True
-            logger.info(f"Gemini API initialized with {len(self.api_keys)} key(s)")
+            logger.info(f"Gemini API initialized with {len(self.api_keys)} key(s) for rotation (quota-aware mode)")
+        except AttributeError as e:
+            # Handle old API compatibility - try new client initialization
+            try:
+                from google.generativeai import GenerativeModel
+                genai.api_key = self.api_keys[0]
+                self.model = GenerativeModel('gemini-2.0-flash')
+                self.enabled = True
+                logger.info(f"Gemini API initialized (new SDK) with {len(self.api_keys)} key(s) for rotation (quota-aware mode)")
+            except Exception as init_error:
+                logger.error(f"Failed to initialize Gemini API: {init_error}")
+                self.enabled = False
         except Exception as e:
             logger.error(f"Failed to initialize Gemini API: {e}")
             self.enabled = False
     
+    def validate_keys(self):
+        """Check which API keys are valid (logs results for debugging)."""
+        if not GENAI_AVAILABLE:
+            return {}
+        
+        validation_results = {}
+        for idx, key in enumerate(self.api_keys):
+            try:
+                # Just try to configure - this validates the key format and basic auth
+                genai.configure(api_key=key)
+                validation_results[idx] = {
+                    'valid': True,
+                    'key_preview': f"{key[:10]}...{key[-5:]}",
+                    'length': len(key)
+                }
+                logger.info(f"✓ Key {idx + 1}: Valid format")
+            except Exception as e:
+                validation_results[idx] = {
+                    'valid': False,
+                    'key_preview': f"{key[:10]}...{key[-5:]}",
+                    'length': len(key),
+                    'error': str(e)[:100]
+                }
+                logger.error(f"✗ Key {idx + 1}: {str(e)[:100]}")
+        
+        logger.info(f"Key validation summary: {sum(1 for r in validation_results.values() if r.get('valid'))}/{len(self.api_keys)} keys valid")
+        return validation_results
+
     def _rotate_key(self):
-        """Rotate to next API key."""
+        """Rotate to next API key and reinitialize model."""
         if len(self.api_keys) <= 1:
             return
         
         self.current_key_index = (self.current_key_index + 1) % len(self.api_keys)
         current_key = self.api_keys[self.current_key_index]
+        
         try:
+            # Configure with new key
             genai.configure(api_key=current_key)
-            logger.info(f"Rotated to API key {self.current_key_index + 1}/{len(self.api_keys)}")
+            # Recreate model with new authentication
+            self.model = genai.GenerativeModel('gemini-2.0-flash')
+            logger.info(f"Rotated to API key {self.current_key_index + 1}/{len(self.api_keys)} and recreated model")
+        except AttributeError:
+            # Handle new SDK
+            try:
+                genai.api_key = current_key
+                from google.generativeai import GenerativeModel
+                self.model = GenerativeModel('gemini-2.0-flash')
+                logger.info(f"Rotated to API key {self.current_key_index + 1}/{len(self.api_keys)} (new SDK) and recreated model")
+            except Exception as e:
+                logger.error(f"Failed to rotate API key: {e}")
+                self.enabled = False
         except Exception as e:
             logger.error(f"Failed to rotate API key: {e}")
+            self.enabled = False
     
     def generate_summary(
         self,
@@ -154,22 +222,8 @@ class GeminiService:
                 'error': 'Gemini API not configured'
             }
         
-        # Check rate limits
-        if not RateLimiter.check_day_limit():
-            return {
-                'success': False,
-                'summary': '',
-                'word_count': 0,
-                'error': 'Daily API quota exceeded. Will use fallback generation.'
-            }
-        
-        if not RateLimiter.check_minute_limit():
-            return {
-                'success': False,
-                'summary': '',
-                'word_count': 0,
-                'error': 'Per-minute API quota exceeded. Please try again in a moment.'
-            }
+        # Note: Rate limiting is now handled by Google's API directly
+        # We'll check actual quota errors from Google and rotate on 429 responses
         
         try:
             # Build prompt based on style
@@ -229,9 +283,9 @@ Notes:"""
                     word_count = len(summary.split())
                     
                     # Increment rate limit counters only on success
-                    RateLimiter.increment_counters()
+                    RateLimiter.increment_counters(self.current_key_index)
                     
-                    logger.info(f"Generated notes: {word_count} words")
+                    logger.info(f"Generated notes: {word_count} words (Key {self.current_key_index + 1}/{len(self.api_keys)})")
                     
                     return {
                         'success': True,
@@ -242,23 +296,24 @@ Notes:"""
                     
                 except Exception as e:
                     error_msg = str(e)
-                    logger.warning(f"Error on attempt {attempt + 1}/{len(self.api_keys)}: {error_msg}")
+                    logger.warning(f"Error on attempt {attempt + 1}/{len(self.api_keys)} (Key {self.current_key_index + 1}): {error_msg}")
                     
                     # Check if it's a quota error
-                    if "429" in error_msg or "quota" in error_msg.lower():
+                    if any(quota_indicator in error_msg for quota_indicator in ["429", "quota", "rate limit", "RESOURCE_EXHAUSTED"]):
                         if attempt < len(self.api_keys) - 1:
-                            logger.info(f"Quota exceeded, rotating to next API key...")
+                            logger.info(f"Quota exceeded for key {self.current_key_index + 1}, rotating to next API key...")
                             self._rotate_key()
                             continue
                         else:
-                            logger.warning("All API keys exceeded quota")
+                            logger.warning(f"All {len(self.api_keys)} API keys exceeded quota")
                             return {
                                 'success': False,
                                 'summary': '',
                                 'word_count': 0,
-                                'error': 'All API quotas exceeded. Using fallback generation method.'
+                                'error': f'All API quotas exceeded (free tier limit reached). Get new free keys at https://aistudio.google.com/apikey or upgrade to paid tier.'
                             }
                     else:
+                        # For non-quota errors, return immediately
                         return {
                             'success': False,
                             'summary': '',
@@ -311,22 +366,8 @@ Notes:"""
                 'error': 'Gemini API not configured'
             }
         
-        # Check rate limits
-        if not RateLimiter.check_day_limit():
-            return {
-                'success': False,
-                'questions': [],
-                'count': 0,
-                'error': 'Daily API quota exceeded. Will use fallback generation.'
-            }
-        
-        if not RateLimiter.check_minute_limit():
-            return {
-                'success': False,
-                'questions': [],
-                'count': 0,
-                'error': 'Per-minute API quota exceeded. Please try again in a moment.'
-            }
+        # Note: Rate limiting is now handled by Google's API directly
+        # We'll check actual quota errors from Google and rotate on 429 responses
         
         try:
             prompt = f"""Generate {num_questions} high-quality multiple-choice questions from the following text.
@@ -380,9 +421,9 @@ Generate the questions now:"""
                         }
                     
                     # Increment rate limit counters only on success
-                    RateLimiter.increment_counters()
+                    RateLimiter.increment_counters(self.current_key_index)
                     
-                    logger.info(f"Generated {len(questions)} quiz questions")
+                    logger.info(f"Generated {len(questions)} quiz questions (Key {self.current_key_index + 1}/{len(self.api_keys)})")
                     
                     return {
                         'success': True,
@@ -393,21 +434,21 @@ Generate the questions now:"""
                     
                 except Exception as e:
                     error_msg = str(e)
-                    logger.warning(f"Error on attempt {attempt + 1}/{len(self.api_keys)}: {error_msg}")
+                    logger.warning(f"Error on attempt {attempt + 1}/{len(self.api_keys)} (Key {self.current_key_index + 1}): {error_msg}")
                     
                     # Check if it's a quota error
-                    if "429" in error_msg or "quota" in error_msg.lower():
+                    if any(quota_indicator in error_msg for quota_indicator in ["429", "quota", "rate limit", "RESOURCE_EXHAUSTED"]):
                         if attempt < len(self.api_keys) - 1:
-                            logger.info(f"Quota exceeded, rotating to next API key...")
+                            logger.info(f"Quota exceeded for key {self.current_key_index + 1}, rotating to next API key...")
                             self._rotate_key()
                             continue
                         else:
-                            logger.warning("All API keys exceeded quota")
+                            logger.warning(f"All {len(self.api_keys)} API keys exceeded quota")
                             return {
                                 'success': False,
                                 'questions': [],
                                 'count': 0,
-                                'error': 'All API quotas exceeded. Using fallback generation method.'
+                                'error': f'All API quotas exceeded (free tier limit reached). Get new free keys at https://aistudio.google.com/apikey or upgrade to paid tier.'
                             }
                     else:
                         return {

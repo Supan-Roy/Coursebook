@@ -209,7 +209,13 @@ export default function CourseDetailPage() {
   return (
     <div className={`min-h-screen ${isDarkMode ? 'bg-black' : 'bg-gray-50'}`}>
       {/* Header */}
-      <header className={`border-b backdrop-blur-sm sticky top-0 z-50 ${isDarkMode ? 'border-gray-800 bg-black/80' : 'border-gray-200 bg-white/80'}`}>
+      <header
+        className={`border-b backdrop-blur-sm sticky top-0 z-50 shadow bg-gradient-to-r transition-colors ${
+          isDarkMode
+            ? 'from-gray-900 via-gray-800 to-gray-900 border-gray-700'
+            : 'from-gray-100 via-gray-200 to-gray-100 border-gray-300'
+        }`}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/dashboard')}>
