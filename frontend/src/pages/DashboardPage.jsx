@@ -1213,6 +1213,67 @@ export default function DashboardPage() {
             </div>
           </div>
         )}
+
+        {/* Online Compiler CTA */}
+        <div className={`rounded-2xl overflow-hidden mb-8 border-2 transition-all hover:shadow-2xl hover:scale-[1.02] ${isDarkMode ? 'bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-600 border-emerald-500' : 'bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 border-emerald-400'}`}>
+          <a 
+            href="https://compiler.supanroy.com" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="block p-8 relative group"
+          >
+            {/* Background Pattern */}
+            <div className="absolute inset-0 opacity-10">
+              <div className="absolute top-4 right-4 text-white/20 text-6xl font-mono">&lt;/&gt;</div>
+              <div className="absolute bottom-4 left-4 text-white/20 text-4xl font-mono">{ }</div>
+            </div>
+
+            <div className="relative flex flex-col md:flex-row items-center justify-between gap-6">
+              {/* Left Content */}
+              <div className="flex-1 text-center md:text-left">
+                <div className="flex items-center justify-center md:justify-start gap-3 mb-3">
+                  <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                    <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                    </svg>
+                  </div>
+                  <h2 className="text-2xl font-bold text-white drop-shadow-lg">Try Our Online Compiler</h2>
+                </div>
+                <p className="text-white/90 text-base mb-2 drop-shadow">
+                  Write, compile, and execute code in multiple languages - C++, Python, Java, JavaScript & more!
+                </p>
+                <div className="flex flex-wrap gap-2 justify-center md:justify-start">
+                  <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-white text-xs font-semibold">Interactive Terminal</span>
+                  <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-white text-xs font-semibold">Real-time Output</span>
+                  <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-white text-xs font-semibold">Multi-Language</span>
+                </div>
+              </div>
+
+              {/* Right CTA Button */}
+              <div className="flex-shrink-0">
+                <div className="px-8 py-4 rounded-xl bg-white text-emerald-600 font-bold text-lg shadow-xl group-hover:shadow-2xl group-hover:scale-110 transition-all flex items-center gap-3">
+                  <span>Launch Compiler</span>
+                  <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            {/* Language Icons */}
+            <div className="relative mt-6 flex items-center justify-center gap-4 text-white/60">
+              <span className="text-xs font-mono">C++</span>
+              <span className="text-white/30">•</span>
+              <span className="text-xs font-mono">Python</span>
+              <span className="text-white/30">•</span>
+              <span className="text-xs font-mono">Java</span>
+              <span className="text-white/30">•</span>
+              <span className="text-xs font-mono">JavaScript</span>
+              <span className="text-white/30">•</span>
+              <span className="text-xs font-mono">C</span>
+            </div>
+          </a>
+        </div>
         </>
         )}
       </main>
