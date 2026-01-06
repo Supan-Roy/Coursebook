@@ -25,6 +25,16 @@ class OpenRouterService:
         self.enabled = bool(self.api_key)
         self.base_url = "https://openrouter.ai/api/v1/chat/completions"
         self.model = "xiaomi/mimo-v2-flash:free"  # Free model with good quality
+
+        # Referer and title must match what you registered at OpenRouter
+        self.http_referer = os.environ.get(
+            "OPENROUTER_HTTP_REFERER",
+            getattr(settings, "OPENROUTER_HTTP_REFERER", "http://localhost:8000"),
+        )
+        self.app_title = os.environ.get(
+            "OPENROUTER_APP_TITLE",
+            getattr(settings, "OPENROUTER_APP_TITLE", "Coursebook"),
+        )
         
         if self.enabled:
             logger.info("OpenRouter service initialized successfully")
@@ -103,8 +113,8 @@ Notes:"""
                 headers={
                     "Authorization": f"Bearer {self.api_key}",
                     "Content-Type": "application/json",
-                    "HTTP-Referer": "http://localhost:8000",
-                    "X-Title": "Coursebook"
+                    "HTTP-Referer": self.http_referer,
+                    "X-Title": self.app_title,
                 },
                 json={
                     "model": self.model,
@@ -129,7 +139,11 @@ Notes:"""
                 }
             else:
                 error_msg = response.text
-                logger.error(f"OpenRouter error: {error_msg[:200]}")
+                logger.error(
+                    "OpenRouter error (status %s): %s",
+                    response.status_code,
+                    error_msg[:200],
+                )
                 return {
                     'success': False,
                     'summary': '',
@@ -198,8 +212,8 @@ Generate only valid JSON array, no other text."""
                 headers={
                     "Authorization": f"Bearer {self.api_key}",
                     "Content-Type": "application/json",
-                    "HTTP-Referer": "http://localhost:8000",
-                    "X-Title": "Coursebook"
+                    "HTTP-Referer": self.http_referer,
+                    "X-Title": self.app_title,
                 },
                 json={
                     "model": self.model,
@@ -260,7 +274,11 @@ Generate only valid JSON array, no other text."""
                 }
             else:
                 error_msg = response.text
-                logger.error(f"OpenRouter error: {error_msg[:200]}")
+                logger.error(
+                    "OpenRouter error (status %s): %s",
+                    response.status_code,
+                    error_msg[:200],
+                )
                 return {
                     'success': False,
                     'questions': [],
