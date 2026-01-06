@@ -147,9 +147,11 @@ LOGGING = {
     },
 }
 
-# Google Gemini API Configuration
-# Get your free API key from: https://aistudio.google.com/apikey
-# Support both single key (legacy) and multiple keys (for quota rotation)
+# OpenRouter API Configuration (Replaced Gemini)
+# Get your free API key from: https://openrouter.ai
+# Free models with no daily quota limits
+OPENROUTER_API_KEY = os.environ.get('OPENROUTER_API_KEY', '')
+
+# Legacy: Google Gemini API Configuration (deprecated - use OpenRouter)
 GEMINI_API_KEYS = [k.strip() for k in os.environ.get('GEMINI_API_KEYS', '').split(',') if k.strip()]
-GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')  # Legacy single key fallback
-# Free tier per key: 1,500 requests/day, 15 requests/minute
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')

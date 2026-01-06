@@ -15,7 +15,7 @@ from .question_generation import generate_questions_from_text
 from .summarizer import summarize_text
 from .pdf_export import generate_summary_pdf
 from .serializers import QuizSessionSerializer, StudySummarySerializer
-from .gemini_service import get_gemini_service
+from .openrouter_service import get_openrouter_service
 
 logger = logging.getLogger(__name__)
 
@@ -109,30 +109,30 @@ class SummaryGenerateView(APIView):
             return Response({"detail": "No text could be extracted from the selected materials."}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            # Try Gemini API first, fallback to rule-based if unavailable
-            gemini = get_gemini_service()
+            # Use OpenRouter API for summary generation
+            openrouter = get_openrouter_service()
             summary = None
             used_ai = False
             
-            if gemini.enabled:
-                logger.info("Attempting to generate summary with Gemini API")
+            if openrouter.enabled:
+                logger.info("Attempting to generate summary with OpenRouter API")
                 max_words = int(len(combined_text.split()) * 0.15)  # ~15% of source
-                result = gemini.generate_summary(combined_text, max_words=max_words, style='detailed')
+                result = openrouter.generate_summary(combined_text, max_words=max_words, style='detailed')
                 if result['success']:
                     summary = result['summary']
                     used_ai = True
-                    logger.info("Successfully generated summary with Gemini API")
+                    logger.info("Successfully generated summary with OpenRouter API")
                 else:
-                    logger.warning("Gemini API failed: %s, falling back to rule-based", result['error'])
+                    logger.warning("OpenRouter API failed: %s, falling back to rule-based", result['error'])
             
-            # Fallback to rule-based summarizer if Gemini unavailable or failed
+            # Fallback to rule-based summarizer if OpenRouter unavailable or failed
             if summary is None:
                 logger.info("Using rule-based summarizer")
                 summary = summarize_text(combined_text, ratio=0.15)
             
             # Ensure summary is not None
             if summary is None or summary == "":
-                logger.error("Summary generation failed - both Gemini and fallback returned None/empty")
+                logger.error("Summary generation failed - both OpenRouter and fallback returned None/empty")
                 return Response(
                     {"detail": "Failed to generate summary from materials"},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -193,22 +193,22 @@ class QuizGenerateView(APIView):
 
         combined_text = "\n".join(aggregated_text_parts).strip()
         
-        # Try Gemini API first, fallback to rule-based if unavailable
-        gemini = get_gemini_service()
+        # Use OpenRouter API for quiz generation
+        openrouter = get_openrouter_service()
         questions = None
         used_ai = False
         
-        if gemini.enabled:
-            logger.info("Attempting to generate quiz with Gemini API")
-            result = gemini.generate_quiz(combined_text, num_questions=num_questions, difficulty=difficulty)
+        if openrouter.enabled:
+            logger.info("Attempting to generate quiz with OpenRouter API")
+            result = openrouter.generate_quiz(combined_text, num_questions=num_questions, difficulty=difficulty)
             if result['success']:
                 questions = result['questions']
                 used_ai = True
-                logger.info("Successfully generated %d questions with Gemini API", len(questions))
+                logger.info("Successfully generated %d questions with OpenRouter API", len(questions))
             else:
-                logger.warning("Gemini API failed: %s, falling back to rule-based", result['error'])
+                logger.warning("OpenRouter API failed: %s, falling back to rule-based", result['error'])
         
-        # Fallback to rule-based quiz generator if Gemini unavailable or failed
+        # Fallback to rule-based quiz generator if OpenRouter unavailable or failed
         if questions is None:
             logger.info("Using rule-based quiz generator")
             questions = generate_questions_from_text(combined_text, num_questions=num_questions, course_title=course.title or course.code)
