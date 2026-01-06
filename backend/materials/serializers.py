@@ -17,8 +17,10 @@ class MaterialSerializer(serializers.ModelSerializer):
             "storage_key",
             "uploaded_at",
             "updated_at",
+            "is_deleted",
+            "deleted_at",
         ]
-        read_only_fields = ["id", "uploaded_at", "updated_at"]
+        read_only_fields = ["id", "uploaded_at", "updated_at", "is_deleted", "deleted_at"]
 
     def validate_course(self, course):
         request = self.context.get("request")

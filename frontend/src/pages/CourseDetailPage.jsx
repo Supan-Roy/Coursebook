@@ -48,6 +48,8 @@ export default function CourseDetailPage() {
     }
   };
 
+
+
   const handleFileUpload = async (event) => {
     const files = Array.from(event.target.files);
     if (files.length === 0) return;
@@ -80,14 +82,16 @@ export default function CourseDetailPage() {
   const handleDeleteMaterial = async (materialId) => {
     setConfirmDialog({
       isOpen: true,
-      title: 'Delete File',
-      message: 'Are you sure you want to delete this file? This action cannot be undone.',
+      title: 'Move to Trash',
+      message: 'Move this file to trash? You can restore it within 30 days from the Trash Bin.',
       onConfirm: async () => {
         try {
           await materialService.delete(materialId);
+          setToast({ message: 'File moved to trash', type: 'success' });
           loadCourseData();
         } catch (error) {
           console.error('Failed to delete material:', error);
+          setToast({ message: 'Failed to move file to trash', type: 'error' });
         }
         setConfirmDialog({ ...confirmDialog, isOpen: false });
       }
@@ -261,6 +265,19 @@ export default function CourseDetailPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
                   </svg>
                 )}
+              </button>
+
+              <button
+                onClick={() => navigate('/trash')}
+                className={`hidden sm:flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-all ${
+                  isDarkMode ? 'bg-purple-500/20 text-purple-300 hover:bg-purple-500/30' : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+                }`}
+                title="Open Trash Bin"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Trash
               </button>
 
               {/* Profile Dropdown */}

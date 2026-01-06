@@ -50,9 +50,6 @@ export const courseService = {
     console.log('courseService.getAll() response.data:', response.data);
     console.log('Is array?:', Array.isArray(response.data));
     
-    // API returns either:
-    // - Direct array: [...]
-    // - Paginated object: {count, next, previous, results: [...]}
     if (Array.isArray(response.data)) {
       console.log('Returning as array');
       return response.data;
@@ -85,9 +82,6 @@ export const materialService = {
   async getAll(courseId = null) {
     const params = courseId ? { course_id: courseId } : {};
     const response = await api.get('/materials/', { params });
-    // API returns either:
-    // - Direct array: [...]
-    // - Paginated object: {count, next, previous, results: [...]}
     if (Array.isArray(response.data)) {
       return response.data;
     }
@@ -118,6 +112,28 @@ export const materialService = {
 
   async delete(id) {
     await api.delete(`/materials/${id}/`);
+  },
+
+  async getTrash() {
+    const response = await api.get('/materials/trash/');
+    if (Array.isArray(response.data)) {
+      return response.data;
+    }
+    return response.data.results || response.data;
+  },
+
+  async restore(id) {
+    const response = await api.post(`/materials/${id}/restore/`);
+    return response.data;
+  },
+
+  async permanentDelete(id) {
+    await api.delete(`/materials/${id}/permanent-delete/`);
+  },
+
+  async emptyTrash() {
+    const response = await api.post('/materials/trash/empty/');
+    return response.data;
   },
 };
 

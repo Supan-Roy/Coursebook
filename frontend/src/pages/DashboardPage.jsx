@@ -548,14 +548,7 @@ export default function DashboardPage() {
 
           {/* Trash Bin */}
           <button
-            onClick={() => {
-              setAlertDialog({
-                isOpen: true,
-                title: 'Trash Bin',
-                message: 'Trash bin feature coming soon! You\'ll be able to restore or permanently delete items.',
-                type: 'info'
-              });
-            }}
+            onClick={() => navigate('/trash')}
             className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${isDarkMode ? 'text-gray-400 hover:bg-gray-800 hover:text-white' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`}
             title="Trash Bin"
           >
@@ -1536,7 +1529,7 @@ export default function DashboardPage() {
                 Your all-in-one academic companion for organizing courses, managing study materials, and tracking your academic journey.
               </p>
               <div className={`text-sm ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
-                © 2026 Coursebook. All rights reserved.
+                © {new Date().getFullYear()} Coursebook. All rights reserved.
               </div>
             </div>
 

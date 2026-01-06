@@ -35,7 +35,7 @@ class MaterialListCreateView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        qs = Material.objects.filter(user=self.request.user)
+        qs = Material.objects.filter(user=self.request.user, is_deleted=False)
         course_id = self.request.query_params.get("course_id")
         if (course_id):
             qs = qs.filter(course_id=course_id)
@@ -53,7 +53,11 @@ class MaterialDetailView(generics.RetrieveDestroyAPIView):
     lookup_field = "id"
 
     def get_queryset(self):
-        return Material.objects.filter(user=self.request.user)
+        return Material.objects.filter(user=self.request.user, is_deleted=False)
+    
+    def perform_destroy(self, instance):
+        """Soft delete - move to trash instead of permanent deletion"""
+        instance.soft_delete()
 
 
 class MaterialExtractContentView(APIView):
@@ -359,3 +363,111 @@ class FileUploadView(APIView):
         
         logger.info(f"Returning {len(courses)} unique courses: {[(c['code'], c['title']) for c in courses]}")
         return courses
+
+
+class TrashBinListView(generics.ListAPIView):
+    """List all deleted materials in trash bin"""
+    serializer_class = MaterialSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        qs = Material.objects.filter(user=self.request.user, is_deleted=True)
+        course_id = self.request.query_params.get("course_id")
+        if course_id:
+            qs = qs.filter(course_id=course_id)
+        return qs.order_by('-deleted_at')
+
+
+class MaterialRestoreView(APIView):
+    """Restore a material from trash bin"""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, id):
+        material = get_object_or_404(
+            Material,
+            id=id,
+            user=request.user,
+            is_deleted=True
+        )
+        
+        material.restore()
+        
+        return Response(
+            {
+                'detail': 'Material restored successfully',
+                'material': MaterialSerializer(material).data
+            },
+            status=status.HTTP_200_OK
+        )
+
+
+class MaterialPermanentDeleteView(APIView):
+    """Permanently delete a material from trash bin"""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def delete(self, request, id):
+        material = get_object_or_404(
+            Material,
+            id=id,
+            user=request.user,
+            is_deleted=True
+        )
+        
+        # Delete the physical file
+        try:
+            if material.storage_key and os.path.exists(material.storage_key):
+                os.remove(material.storage_key)
+        except Exception as e:
+            pass  # Log but don't fail if file doesn't exist
+        
+        # Update storage usage
+        storage_usage, _ = StorageUsage.objects.get_or_create(user=request.user)
+        storage_usage.used_bytes = max(0, storage_usage.used_bytes - material.size_bytes)
+        storage_usage.save()
+        
+        # Permanently delete from database
+        material.delete()
+        
+        return Response(
+            {'detail': 'Material permanently deleted'},
+            status=status.HTTP_204_NO_CONTENT
+        )
+
+
+class EmptyTrashView(APIView):
+    """Empty entire trash bin - permanently delete all trashed materials"""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def delete(self, request):
+        materials = Material.objects.filter(user=request.user, is_deleted=True)
+        
+        total_size = 0
+        deleted_count = 0
+        
+        for material in materials:
+            # Delete physical file
+            try:
+                if material.storage_key and os.path.exists(material.storage_key):
+                    os.remove(material.storage_key)
+            except Exception:
+                pass
+            
+            total_size += material.size_bytes
+            deleted_count += 1
+        
+        # Update storage usage
+        storage_usage, _ = StorageUsage.objects.get_or_create(user=request.user)
+        storage_usage.used_bytes = max(0, storage_usage.used_bytes - total_size)
+        storage_usage.save()
+        
+        # Delete all from database
+        materials.delete()
+        
+        return Response(
+            {
+                'detail': f'Trash emptied successfully. {deleted_count} materials permanently deleted.',
+                'deleted_count': deleted_count,
+                'freed_bytes': total_size
+            },
+            status=status.HTTP_200_OK
+        )
