@@ -1,10 +1,16 @@
+import os
 import requests
 import json
 
-api_key = "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"
+api_key = os.getenv("OPENROUTER_API_KEY", "")
+
+if not api_key:
+    raise SystemExit(
+        "OPENROUTER_API_KEY is not set. Export it in your environment or load it from backend/.env."
+    )
 
 print("Testing OpenRouter API key...\n")
-print(f"Key: {api_key[:20]}...{api_key[-10:]}\n")
+print(f"Key: {api_key[:6]}...{api_key[-4:]} (masked)\n")
 
 # Test 1: Simple request to free model
 print("Test 1: Simple request to xiaomi/mimo-v2-flash:free")

@@ -136,10 +136,10 @@ def test_key(api_key):
 
 # Test your keys
 keys = [
-    "AIzaSyC0cJtbD77Pd2jAZbZLwtPRAUyWu5-6FD8",
-    "AIzaSyDkpHKuIzd2Kvfmqtb51ZhR1YD5FS6RIPs",
-    "AIzaSyBvNUztadLRogRdAIOfuWBj0lPDaqMsZsw",
-    "AIzaSyD96VqcMYRNqw_iphhZ7-V77-QllnkZHJg"
+  "<YOUR_KEY_1>",
+  "<YOUR_KEY_2>",
+  "<YOUR_KEY_3>",
+  "<YOUR_KEY_4>"
 ]
 
 for key in keys:

@@ -18,7 +18,7 @@ Edit `backend/.env` and replace the GEMINI_API_KEYS line:
 
 **Current (exhausted):**
 ```env
-GEMINI_API_KEYS=AIzaSyBfoVQ1GXuAyZL91udT5wSjCZIXJN-kUO0,AIzaSyCJeji9HLV9jttn26YZsFMD2-fzU1H1D7o,AIzaSyD0DAnXcrSnZ9ULUFbanEgArJI1mzQwFN8,AIzaSyA3O0wi9Ji0UAJuyN1qFfPBtY-XQzOgxo4
+GEMINI_API_KEYS=<redacted>
 ```
 
 **New (with fresh keys):**
