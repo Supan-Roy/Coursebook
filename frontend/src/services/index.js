@@ -132,7 +132,7 @@ export const materialService = {
   },
 
   async emptyTrash() {
-    const response = await api.post('/materials/trash/empty/');
+    const response = await api.delete('/materials/trash/empty/');
     return response.data;
   },
 };

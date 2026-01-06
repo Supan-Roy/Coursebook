@@ -1,3 +1,25 @@
+from django.http import HttpResponse, Http404
+import requests
+from rest_framework.views import APIView
+# ...existing code...
+
+class PublicMaterialServeView(APIView):
+    """Serve material file publicly via /files/<uuid:id>/"""
+    permission_classes = []  # Public access
+
+    def get(self, request, id):
+        material = get_object_or_404(Material, id=id, is_deleted=False)
+        cloudinary_url = material.storage_url
+        if not cloudinary_url:
+            raise Http404("File not found")
+        try:
+            resp = requests.get(cloudinary_url, stream=True)
+            resp.raise_for_status()
+        except Exception:
+            raise Http404("File not found or unavailable")
+        response = HttpResponse(resp.raw, content_type=material.content_type)
+        response['Content-Disposition'] = f'inline; filename="{material.filename}"'
+        return response
 import os
 import re
 from pathlib import Path
@@ -120,24 +142,24 @@ class MaterialUploadView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Save the file
-        upload_dir = Path(settings.MEDIA_ROOT) / 'materials' / str(request.user.id) / str(course_id)
-        upload_dir.mkdir(parents=True, exist_ok=True)
-        
-        file_path = upload_dir / file.name
-        with open(file_path, 'wb+') as destination:
-            for chunk in file.chunks():
-                destination.write(chunk)
-        
-        # Create material record
+
+        # Save file to Cloudinary
+        from cloudinary.uploader import upload as cloudinary_upload
+        cloudinary_result = cloudinary_upload(
+            file,
+            resource_type="raw",
+            folder=f"materials/{request.user.id}/{course_id}/"
+        )
+
+        # Create material record with Cloudinary URLs
         material = Material.objects.create(
             user=request.user,
             course=course,
             filename=file.name,
             content_type=file.content_type or 'application/octet-stream',
             size_bytes=file.size,
-            storage_url=f'/media/materials/{request.user.id}/{course_id}/{file.name}',
-            storage_key=str(file_path)
+            storage_url=cloudinary_result.get('secure_url', ''),
+            storage_key=cloudinary_result.get('public_id', '')
         )
         
         # Update storage usage
@@ -413,10 +435,11 @@ class MaterialPermanentDeleteView(APIView):
             is_deleted=True
         )
         
-        # Delete the physical file
+        # Delete the file from Cloudinary if present
         try:
-            if material.storage_key and os.path.exists(material.storage_key):
-                os.remove(material.storage_key)
+            if material.storage_key:
+                from cloudinary.uploader import destroy as cloudinary_destroy
+                cloudinary_destroy(material.storage_key, resource_type="raw")
         except Exception as e:
             pass  # Log but don't fail if file doesn't exist
         
@@ -445,13 +468,13 @@ class EmptyTrashView(APIView):
         deleted_count = 0
         
         for material in materials:
-            # Delete physical file
+            # Delete from Cloudinary
             try:
-                if material.storage_key and os.path.exists(material.storage_key):
-                    os.remove(material.storage_key)
+                if material.storage_key:
+                    from cloudinary.uploader import destroy as cloudinary_destroy
+                    cloudinary_destroy(material.storage_key, resource_type="raw")
             except Exception:
                 pass
-            
             total_size += material.size_bytes
             deleted_count += 1
         

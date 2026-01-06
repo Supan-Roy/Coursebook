@@ -48,7 +48,6 @@ export default function DashboardPage() {
   const [showWatermarkPDF, setShowWatermarkPDF] = useState(false);
   const [showEditPDF, setShowEditPDF] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-    // Load sidebar state from localStorage, default to false (expanded)
     return localStorage.getItem('sidebarCollapsed') === 'true';
   });
   const [activeTab, setActiveTab] = useState(() => {
@@ -622,6 +621,7 @@ export default function DashboardPage() {
             </svg>
             {!sidebarCollapsed && <span className="font-medium">Logout</span>}
           </button>
+
         </nav>
       </aside>
 
@@ -1413,7 +1413,7 @@ export default function DashboardPage() {
                     </div>
                   </div>
                   <a
-                    href={material.storage_url}
+                    href={`/api/materials/files/${material.id}/`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="ml-3 px-3 py-1.5 text-xs font-semibold text-sky-300 hover:text-sky-200 hover:bg-sky-500/10 rounded-lg transition-all border border-sky-500/20 hover:border-sky-500/50"

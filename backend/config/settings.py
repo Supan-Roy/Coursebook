@@ -124,13 +124,23 @@ SIMPLE_JWT = {
 CORS_ALLOW_ALL_ORIGINS = env.bool("CORS_ALLOW_ALL_ORIGINS", default=True)
 CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[])
 
+
+# Cloudinary Storage
+INSTALLED_APPS += ["cloudinary", "cloudinary_storage"]
+
 STORAGES = {
     "default": {
-        "BACKEND": "django.core.files.storage.FileSystemStorage",
+        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
     },
     "staticfiles": {
         "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
     },
+}
+
+CLOUDINARY_STORAGE = {
+    "CLOUD_NAME": env("CLOUDINARY_CLOUD_NAME", default="your_cloud_name"),
+    "API_KEY": env("CLOUDINARY_API_KEY", default="your_api_key"),
+    "API_SECRET": env("CLOUDINARY_API_SECRET", default="your_api_secret"),
 }
 
 LOGGING = {

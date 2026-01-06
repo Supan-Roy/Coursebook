@@ -248,17 +248,6 @@ export default function TrashBinPage() {
                 Items are automatically removed after 30 days
               </p>
             </div>
-            <button
-              onClick={handleEmptyTrash}
-              disabled={trashedMaterials.length === 0}
-              className={`px-6 py-3 rounded-lg text-sm font-semibold transition-all ${
-                trashedMaterials.length === 0
-                  ? 'opacity-50 cursor-not-allowed'
-                  : ''
-              } ${isDarkMode ? 'bg-red-500/10 text-red-300 hover:bg-red-500/20' : 'bg-red-50 text-red-600 hover:bg-red-100'}`}
-            >
-              Empty Trash
-            </button>
           </div>
         </div>
 

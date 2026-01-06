@@ -9,7 +9,8 @@ from .views import (
     TrashBinListView,
     MaterialRestoreView,
     MaterialPermanentDeleteView,
-    EmptyTrashView
+    EmptyTrashView,
+    PublicMaterialServeView
 )
 
 urlpatterns = [
@@ -22,4 +23,5 @@ urlpatterns = [
     path("trash/empty/", EmptyTrashView.as_view(), name="trash-empty"),
     path("<uuid:id>/restore/", MaterialRestoreView.as_view(), name="material-restore"),
     path("<uuid:id>/permanent-delete/", MaterialPermanentDeleteView.as_view(), name="material-permanent-delete"),
+    path("files/<uuid:id>/", PublicMaterialServeView.as_view(), name="public-material-serve"),
 ]

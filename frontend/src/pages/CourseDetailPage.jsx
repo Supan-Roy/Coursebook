@@ -432,7 +432,7 @@ export default function CourseDetailPage() {
               {materials.map((material) => (
                 <div
                   key={material.id}
-                  onClick={() => window.open(`http://127.0.0.1:8000${material.storage_url}`, '_blank')}
+                  onClick={() => window.open(`/api/materials/files/${material.id}/`, '_blank')}
                   className={`group flex items-center justify-between p-4 rounded-lg border transition-all cursor-pointer ${
                     isDarkMode 
                       ? 'border-gray-700/50 hover:border-sky-500/50 bg-gray-900/30 hover:bg-gray-900/50' 
@@ -454,7 +454,9 @@ export default function CourseDetailPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <a
-                      href={`http://127.0.0.1:8000${material.storage_url}`}
+                      href={`/api/materials/files/${material.id}/`}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       download
                       onClick={(e) => e.stopPropagation()}
                       className={`p-2 rounded-lg transition-all ${
@@ -471,8 +473,7 @@ export default function CourseDetailPage() {
                     <button
                       onClick={async (e) => {
                         e.stopPropagation();
-                        const shareUrl = `http://127.0.0.1:8000${material.storage_url}`;
-                        
+                        const shareUrl = `${window.location.origin}/api/materials/files/${material.id}/`;
                         if (navigator.share) {
                           try {
                             await navigator.share({
@@ -482,13 +483,11 @@ export default function CourseDetailPage() {
                             });
                           } catch (err) {
                             if (err.name !== 'AbortError') {
-                              // Fallback to clipboard if share fails
                               navigator.clipboard.writeText(shareUrl);
                               alert('Link copied to clipboard!');
                             }
                           }
                         } else {
-                          // Fallback for browsers that don't support Web Share API
                           navigator.clipboard.writeText(shareUrl);
                           alert('Link copied to clipboard!');
                         }
