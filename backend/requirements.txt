@@ -1,5 +1,5 @@
 Django==5.0.4
-psycopg2-binary==2.9.9
+psycopg2-binary==2.9.11
 djangorestframework==3.15.2
 djangorestframework-simplejwt==5.3.1
 django-cors-headers==4.3.1
@@ -7,4 +7,7 @@ django-environ==0.11.2
 PyPDF2==3.0.1
 PyMuPDF==1.26.7
 Pillow==11.0.0
-pytesseract==0.3.10google-generativeai==0.8.6
+pytesseract==0.3.10
+google-generativeai==0.8.6
+cloudinary==1.41.0
+django-ratelimit==4.1.0

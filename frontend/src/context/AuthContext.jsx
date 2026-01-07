@@ -46,12 +46,40 @@ export const AuthProvider = ({ children }) => {
   const register = async (data) => {
     setLoading(true);
     try {
-      await authService.register(data.email, data.password, data.first_name, data.last_name);
-      return { success: true };
+      const response = await authService.register(data.email, data.password, data.first_name, data.last_name);
+      return { success: true, message: response.message };
     } catch (error) {
+      // Extract error message from Django REST Framework response
+      let errorMessage = 'Registration failed';
+      
+      if (error.response?.data) {
+        const errorData = error.response.data;
+        
+        // Handle Django REST Framework validation errors
+        if (typeof errorData === 'object') {
+          // Check for field-specific errors (e.g., {email: ["error message"]})
+          const fieldErrors = Object.values(errorData).flat();
+          if (fieldErrors.length > 0) {
+            errorMessage = Array.isArray(fieldErrors[0]) ? fieldErrors[0][0] : fieldErrors[0];
+          } else if (errorData.detail) {
+            // Check for detail field
+            errorMessage = errorData.detail;
+          } else if (errorData.message) {
+            // Check for message field
+            errorMessage = errorData.message;
+          } else if (typeof errorData === 'string') {
+            errorMessage = errorData;
+          }
+        } else if (typeof errorData === 'string') {
+          errorMessage = errorData;
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       return {
         success: false,
-        error: error.response?.data || 'Registration failed',
+        error: errorMessage,
       };
     } finally {
       setLoading(false);

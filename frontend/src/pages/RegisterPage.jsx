@@ -42,7 +42,11 @@ export default function RegisterPage() {
 
     const result = await register(formData);
     if (result.success) {
-      navigate('/login', { state: { message: 'Account created successfully. Please sign in.' } });
+      navigate('/login', { 
+        state: { 
+          message: result.message || 'Account created successfully! Please check your email to verify your account before signing in.' 
+        } 
+      });
     } else {
       setError(typeof result.error === 'string' ? result.error : JSON.stringify(result.error));
     }

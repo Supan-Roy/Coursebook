@@ -6,6 +6,8 @@ from rest_framework import permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from materials.views import PublicMaterialServeView
+
 
 class HealthView(APIView):
     permission_classes = [permissions.AllowAny]
@@ -44,6 +46,8 @@ urlpatterns = [
     path("api/todos/", include("todos.urls")),
     path("api/preparation/", include("preparation.urls")),
     path("api/toolkit/", include("toolkit.urls")),
+    # Public material access without the /api/ prefix
+    path("materials/files/<uuid:id>/", PublicMaterialServeView.as_view(), name="public-material-serve-direct"),
 ]
 
 # Serve media files in development

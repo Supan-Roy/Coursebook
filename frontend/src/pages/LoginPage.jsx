@@ -10,7 +10,7 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [infoMessage, setInfoMessage] = useState('');
-  const { login, loading } = useAuth();
+  const { login, loading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -20,7 +20,12 @@ export default function LoginPage() {
     if (location.state?.message) {
       setInfoMessage(location.state.message);
     }
-  }, [location]);
+    // If already authenticated, redirect to intended page or dashboard
+    if (isAuthenticated) {
+      const from = location.state?.from?.pathname || '/dashboard';
+      navigate(from, { replace: true });
+    }
+  }, [location, isAuthenticated, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

@@ -37,15 +37,13 @@ export default function SettingsPage() {
   const [deletePassword, setDeletePassword] = useState('');
   const [deleteError, setDeleteError] = useState('');
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const handleDeleteAccount = async (e) => {
     e.preventDefault();
     setDeleteError('');
     if (!deletePassword) {
       setDeleteError('Please enter your password to confirm.');
-      return;
-    }
-    if (!window.confirm('Are you sure you want to permanently delete your account?')) {
       return;
     }
     try {
@@ -169,56 +167,31 @@ export default function SettingsPage() {
 
         <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
           <section className={`rounded-2xl p-8 border ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200 shadow-sm'}`}>
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-4">
               <div>
                 <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Account</p>
                 <h1 className="text-2xl font-bold">Profile</h1>
+                <p className={`mt-1 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  Manage your personal info and avatar from your profile page.
+                </p>
               </div>
             </div>
-            <form className="grid gap-4 sm:grid-cols-2" onSubmit={handleProfileSubmit}>
-              <div className="sm:col-span-1">
-                <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>First name</label>
-                <input
-                  className={`w-full px-4 py-2 rounded-lg border ${isDarkMode ? 'bg-gray-900 border-gray-700 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
-                  value={profileForm.first_name}
-                  onChange={(e) => setProfileForm({ ...profileForm, first_name: e.target.value })}
-                />
+            <div className="flex items-center justify-between">
+              <div>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Signed in as</p>
+                <p className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  {user?.first_name} {user?.last_name}
+                </p>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{user?.email}</p>
               </div>
-              <div className="sm:col-span-1">
-                <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Last name</label>
-                <input
-                  className={`w-full px-4 py-2 rounded-lg border ${isDarkMode ? 'bg-gray-900 border-gray-700 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
-                  value={profileForm.last_name}
-                  onChange={(e) => setProfileForm({ ...profileForm, last_name: e.target.value })}
-                />
-              </div>
-              <div className="sm:col-span-2">
-                <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Email</label>
-                <input
-                  className={`w-full px-4 py-2 rounded-lg border ${isDarkMode ? 'bg-gray-900 border-gray-700 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
-                  value={profileForm.email}
-                  onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
-                  type="email"
-                  disabled
-                />
-                <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>Email is managed by your account. Contact support to change.</p>
-              </div>
-              <div className="sm:col-span-2 flex gap-3">
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-lg bg-sky-600 text-white font-semibold hover:bg-sky-500 transition-colors"
-                >
-                  Save changes
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setProfileForm({ first_name: user?.first_name || '', last_name: user?.last_name || '', email: user?.email || '' })}
-                  className={`px-4 py-2 rounded-lg font-semibold ${isDarkMode ? 'bg-gray-800 text-gray-200 hover:bg-gray-700' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}`}
-                >
-                  Reset
-                </button>
-              </div>
-            </form>
+              <button
+                type="button"
+                onClick={() => navigate('/profile')}
+                className="px-4 py-2 rounded-lg bg-sky-600 text-white font-semibold hover:bg-sky-500 transition-colors"
+              >
+                Open profile
+              </button>
+            </div>
           </section>
 
           <section className={`rounded-2xl p-8 border ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200 shadow-sm'}`}>
@@ -255,13 +228,70 @@ export default function SettingsPage() {
               Permanently delete your account and data. This action cannot be undone.
             </p>
             <button
-              onClick={handleDeleteAccount}
+              type="button"
+              onClick={() => {
+                setDeletePassword('');
+                setDeleteError('');
+                setShowDeleteModal(true);
+              }}
               className="px-4 py-2 rounded-lg bg-red-600 text-white font-semibold hover:bg-red-500 transition-colors"
             >
               Delete account
             </button>
           </section>
         </main>
+
+        {/* Delete Account Modal */}
+        {showDeleteModal && (
+          <div className="fixed inset-0 z-40 flex items-center justify-center px-4" style={{ backdropFilter: 'blur(4px)' }}>
+            <div
+              className={`absolute inset-0 ${isDarkMode ? 'bg-black/70' : 'bg-black/40'}`}
+              onClick={() => !deleteLoading && setShowDeleteModal(false)}
+            />
+            <div
+              className={`relative max-w-md w-full rounded-2xl border shadow-2xl p-6 ${
+                isDarkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-200'
+              }`}
+            >
+              <h2 className={`text-xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Confirm deletion</h2>
+              <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mb-4`}>
+                This will permanently delete your Coursebook account and all associated data. Enter your password to confirm.
+              </p>
+              <form className="space-y-4" onSubmit={handleDeleteAccount}>
+                <input
+                  type="password"
+                  value={deletePassword}
+                  onChange={(e) => setDeletePassword(e.target.value)}
+                  placeholder="Current password"
+                  className={`w-full px-4 py-2 rounded-lg border ${
+                    isDarkMode ? 'bg-gray-950 border-gray-700 text-white' : 'bg-white border-gray-300 text-gray-900'
+                  }`}
+                  disabled={deleteLoading}
+                />
+                {deleteError && <p className="text-sm text-red-500">{deleteError}</p>}
+                <div className="flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => !deleteLoading && setShowDeleteModal(false)}
+                    className={`px-4 py-2 rounded-lg font-semibold ${
+                      isDarkMode ? 'bg-gray-800 text-gray-200 hover:bg-gray-700' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                    }`}
+                    disabled={deleteLoading}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={deleteLoading}
+                    className="px-4 py-2 rounded-lg bg-red-600 text-white font-semibold hover:bg-red-500 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {deleteLoading ? 'Deleting…' : 'Delete account'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

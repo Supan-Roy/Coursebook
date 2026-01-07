@@ -13,8 +13,15 @@ from django.utils.decorators import method_decorator
 def get_email_from_request(request):
     """Helper function to extract email from request for rate limiting"""
     if request.method == 'POST':
-        email = request.POST.get('email') or (request.data.get('email') if hasattr(request, 'data') else None)
-        return email or 'unknown'
+        # Try to get email from request data (works for DRF)
+        if hasattr(request, 'data') and request.data:
+            email = request.data.get('email')
+            if email:
+                return f'email:{email}'
+        # Fallback to POST data
+        email = request.POST.get('email')
+        if email:
+            return f'email:{email}'
     return 'unknown'
 
 from materials.models import Material
@@ -219,7 +226,7 @@ class EmailVerificationView(APIView):
 
 
 @method_decorator(ratelimit(key='ip', rate='5/h', method='POST'), name='post')
-@method_decorator(ratelimit(key='post:email', rate='3/h', method='POST'), name='post')
+@method_decorator(ratelimit(key=get_email_from_request, rate='3/h', method='POST'), name='post')
 class ResendVerificationEmailView(APIView):
     """Resend verification email"""
     permission_classes = [permissions.AllowAny]
@@ -261,7 +268,7 @@ class ResendVerificationEmailView(APIView):
 
 
 @method_decorator(ratelimit(key='ip', rate='5/h', method='POST'), name='post')
-@method_decorator(ratelimit(key='post:email', rate='3/h', method='POST'), name='post')
+@method_decorator(ratelimit(key=get_email_from_request, rate='3/h', method='POST'), name='post')
 class PasswordResetRequestView(APIView):
     """Request password reset - sends email with reset link"""
     permission_classes = [permissions.AllowAny]

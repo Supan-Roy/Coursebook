@@ -48,7 +48,10 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+      onClick={handleClose}
+    >
       <div 
         className={`w-full max-w-2xl rounded-2xl border shadow-2xl transition-colors ${
           isDarkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-200'

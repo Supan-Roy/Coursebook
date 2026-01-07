@@ -15,11 +15,34 @@ export const authService = {
 
   async login(email, password) {
     const response = await api.post('/auth/login/', { email, password });
-    const { access, refresh } = response.data;
+    const { access, refresh, user } = response.data;
     
     localStorage.setItem('access_token', access);
     localStorage.setItem('refresh_token', refresh);
     
+    return response.data;
+  },
+
+  async verifyEmail(token) {
+    const response = await api.post('/auth/verify-email/', { token });
+    return response.data;
+  },
+
+  async resendVerificationEmail(email) {
+    const response = await api.post('/auth/resend-verification/', { email });
+    return response.data;
+  },
+
+  async requestPasswordReset(email) {
+    const response = await api.post('/auth/password-reset/', { email });
+    return response.data;
+  },
+
+  async resetPassword(token, newPassword) {
+    const response = await api.post('/auth/password-reset-confirm/', {
+      token,
+      new_password: newPassword,
+    });
     return response.data;
   },
 
@@ -31,6 +54,10 @@ export const authService = {
   async updateProfile(data) {
     const response = await api.patch('/auth/me/', data);
     return response.data;
+  },
+
+  async deleteAccount(password) {
+    await api.post('/auth/delete-account/', { password });
   },
 
   logout() {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -8,6 +8,10 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import AlertDialog from '../components/AlertDialog';
 import PreparationMode from '../components/PreparationMode/PreparationMode';
 import Toast from '../components/Toast';
+import Sidebar from '../components/Sidebar';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+const BACKEND_BASE_URL = API_BASE_URL.replace(/\/api$/, '');
 
 export default function CourseDetailPage() {
   const { courseId } = useParams();
@@ -26,6 +30,24 @@ export default function CourseDetailPage() {
   const { logout, user } = useAuth();
   const { isDarkMode, toggleTheme } = useTheme();
   const navigate = useNavigate();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    return localStorage.getItem('sidebarCollapsed') === 'true';
+  });
+  const profileMenuRef = useRef(null);
+  useEffect(() => {
+    localStorage.setItem('sidebarCollapsed', sidebarCollapsed);
+  }, [sidebarCollapsed]);
+
+  useEffect(() => {
+    if (!showProfileMenu) return;
+    const handleClick = (e) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(e.target)) {
+        setShowProfileMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [showProfileMenu]);
 
   useEffect(() => {
     loadCourseData();
@@ -211,7 +233,14 @@ export default function CourseDetailPage() {
   }
 
   return (
-    <div className={`min-h-screen ${isDarkMode ? 'bg-black' : 'bg-gray-50'}`}>
+    <div className={`min-h-screen transition-colors duration-200 flex ${isDarkMode ? 'bg-black text-white' : 'bg-gray-50 text-gray-900'}`}>
+      <Sidebar
+        collapsed={sidebarCollapsed}
+        onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+        activeKey="dashboard"
+        isDarkMode={isDarkMode}
+      />
+      <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
       {/* Header */}
       <header
         className={`border-b backdrop-blur-sm sticky top-0 z-50 shadow bg-gradient-to-r transition-colors ${
@@ -281,7 +310,7 @@ export default function CourseDetailPage() {
               </button>
 
               {/* Profile Dropdown */}
-              <div className="relative">
+              <div className="relative" ref={profileMenuRef}>
                 <button
                   onClick={() => setShowProfileMenu(!showProfileMenu)}
                   className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-all border ${isDarkMode ? 'text-gray-300 hover:text-white hover:bg-gray-900 border-gray-700 hover:border-sky-500/50' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100 border-gray-300 hover:border-sky-500/50'}`}
@@ -432,7 +461,7 @@ export default function CourseDetailPage() {
               {materials.map((material) => (
                 <div
                   key={material.id}
-                  onClick={() => window.open(`/api/materials/files/${material.id}/`, '_blank')}
+                  onClick={() => window.open(`${BACKEND_BASE_URL}/materials/files/${material.id}/`, '_blank')}
                   className={`group flex items-center justify-between p-4 rounded-lg border transition-all cursor-pointer ${
                     isDarkMode 
                       ? 'border-gray-700/50 hover:border-sky-500/50 bg-gray-900/30 hover:bg-gray-900/50' 
@@ -454,7 +483,7 @@ export default function CourseDetailPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <a
-                      href={`/api/materials/files/${material.id}/`}
+                      href={`${BACKEND_BASE_URL}/materials/files/${material.id}/`}
                       target="_blank"
                       rel="noopener noreferrer"
                       download
@@ -473,7 +502,7 @@ export default function CourseDetailPage() {
                     <button
                       onClick={async (e) => {
                         e.stopPropagation();
-                        const shareUrl = `${window.location.origin}/api/materials/files/${material.id}/`;
+                        const shareUrl = `${BACKEND_BASE_URL}/materials/files/${material.id}/`;
                         if (navigator.share) {
                           try {
                             await navigator.share({
@@ -802,6 +831,7 @@ export default function CourseDetailPage() {
           onSave={loadCourseData}
         />
       )}
+      </div>
     </div>
   );
 }
