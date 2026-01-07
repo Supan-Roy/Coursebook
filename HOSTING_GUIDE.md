@@ -152,10 +152,13 @@ This guide covers the best free hosting options for your Django backend and Reac
    - Connect your GitHub repo
    - Settings:
      - **Name:** coursebook-backend
-     - **Environment:** Python 3
-     - **Build Command:** `cd backend && pip install -r requirements.txt`
+     - **Environment:** Docker (recommended) or Python 3
+     - **If Docker:** Render will use `backend/Dockerfile` automatically (includes Ghostscript)
+     - **If Python 3:** Build Command: `apt-get update && apt-get install -y ghostscript && cd backend && pip install -r requirements.txt`
      - **Start Command:** `cd backend && python manage.py migrate && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT`
      - **Root Directory:** backend
+   
+   **Note:** For optimal PDF compression, use Docker or install Ghostscript in build command. See `backend/GHOSTSCRIPT_SETUP.md` for details.
 
 3. **Add PostgreSQL Database**
    - Click "New" → "PostgreSQL"

@@ -105,7 +105,7 @@ const CompressPDF = ({ onClose }) => {
         {/* Info Message */}
         <div className={`mb-6 p-4 rounded-lg ${isDarkMode ? 'bg-blue-900/30 border border-blue-700' : 'bg-blue-50 border border-blue-200'}`}>
           <p className={`text-sm ${isDarkMode ? 'text-blue-300' : 'text-blue-700'}`}>
-            Compress your PDF to reduce file size. Choose a compression level to balance quality and file size.
+            Compress your PDF to reduce file size while maintaining quality.
           </p>
         </div>
 
@@ -143,35 +143,6 @@ const CompressPDF = ({ onClose }) => {
               </p>
             )}
           </label>
-        </div>
-
-        {/* Compression Level Selection */}
-        <div className="mb-6">
-          <label className={`block text-sm font-semibold mb-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-            Compression Level
-          </label>
-          <div className="flex gap-3">
-            {['low', 'medium', 'high'].map((level) => (
-              <button
-                key={level}
-                onClick={() => setCompressionLevel(level)}
-                className={`flex-1 py-2 px-4 rounded-lg font-medium transition ${
-                  compressionLevel === level
-                    ? isDarkMode
-                      ? 'bg-sky-500 text-white'
-                      : 'bg-sky-500 text-white'
-                    : isDarkMode
-                    ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
-              >
-                {level.charAt(0).toUpperCase() + level.slice(1)}
-              </button>
-            ))}
-          </div>
-          <p className={`text-xs mt-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-            Low: Fastest, less compression | Medium: Balanced | High: Maximum compression, slower
-          </p>
         </div>
 
         {/* Error Message */}

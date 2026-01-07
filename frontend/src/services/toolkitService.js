@@ -201,13 +201,11 @@ export const toolkitService = {
   /**
    * Compress PDF file
    * @param {File} file - PDF file to compress
-   * @param {string} compressionLevel - Compression level ('low', 'medium', 'high')
    * @returns {Promise<Blob>} - Compressed PDF file
    */
-  async compressPDF(file, compressionLevel = 'medium') {
+  async compressPDF(file) {
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('compressionLevel', compressionLevel);
     
     const response = await api.post('/toolkit/compress-pdf/', formData, {
       responseType: 'blob',

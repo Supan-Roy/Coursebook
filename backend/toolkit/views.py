@@ -545,6 +545,8 @@ class CompressPDFView(APIView):
             
             # Get compression level from request (default: medium)
             compression_level = request.data.get('compressionLevel', 'medium')
+            if compression_level not in ['low', 'medium', 'high']:
+                compression_level = 'medium'
             
             # Compress PDF
             result_pdf, error = PDFCompressionService.compress_pdf(
