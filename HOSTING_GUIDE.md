@@ -93,8 +93,11 @@ This guide covers the best free hosting options for your Django backend and Reac
 
 5. **Configure Build Settings**
    - Railway auto-detects Django
-   - Add build command: `pip install -r requirements.txt`
+   - **If using Dockerfile:** Railway will automatically use `backend/Dockerfile` (includes Ghostscript)
+   - **If not using Docker:** Add build command: `pip install -r requirements.txt`
    - Add start command: `python manage.py migrate && python manage.py collectstatic --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT`
+   
+   **Note:** For PDF compression to work optimally, use the Dockerfile (includes Ghostscript). See `backend/GHOSTSCRIPT_SETUP.md` for details.
 
 6. **Add Gunicorn to requirements.txt**
    ```txt

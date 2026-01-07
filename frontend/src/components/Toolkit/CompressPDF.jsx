@@ -6,7 +6,6 @@ import './ToolkitModal.css';
 const CompressPDF = ({ onClose }) => {
   const { isDarkMode } = useTheme();
   const [file, setFile] = useState(null);
-  const [compressionLevel, setCompressionLevel] = useState('medium');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [dragActive, setDragActive] = useState(false);
@@ -64,7 +63,7 @@ const CompressPDF = ({ onClose }) => {
 
     try {
       const originalSize = file.size;
-      await toolkitService.compressPDF(file, compressionLevel);
+      await toolkitService.compressPDF(file);
       
       // Note: The actual compressed size would be returned from the backend
       // For now, show a success message
@@ -76,7 +75,6 @@ const CompressPDF = ({ onClose }) => {
       // Reset form after successful compression
       setTimeout(() => {
         setFile(null);
-        setCompressionLevel('medium');
         setCompressionInfo(null);
         onClose();
       }, 2000);
