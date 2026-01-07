@@ -53,30 +53,64 @@ def _clean_text(text: str) -> str:
 
 
 def extract_text_from_path(file_path: str | Path, content_type: Optional[str] = None, max_chars: int = 12000) -> str:
-    """Extract human-readable text from a stored file path.
+    """Extract human-readable text from a stored file path or remote URL.
 
     Supports PDFs, common image formats via OCR, and plain text files.
+    If file_path is a URL (starts with http/https), downloads the file to a temp location first.
     The result is cleaned and truncated to max_chars to avoid oversized payloads.
     """
-    path = Path(file_path)
-    if not path.exists():
-        raise FileNotFoundError(f"File not found: {path}")
+    import tempfile
+    import requests
 
-    ext = path.suffix.lower()
-    content_type = (content_type or "").lower()
-
-    try:
-        if ext == ".pdf" or "pdf" in content_type:
-            raw_text = _extract_pdf_text(path)
-        elif ext in IMAGE_EXTENSIONS or content_type.startswith("image/"):
-            raw_text = _extract_image_text(path)
-        elif ext in TEXT_EXTENSIONS or content_type.startswith("text/"):
-            raw_text = _extract_plain_text(path)
-        else:
-            # Fallback: try plain text read
-            raw_text = _extract_plain_text(path)
-    except Exception as exc:  # noqa: BLE001
-        raise RuntimeError(f"Failed to extract text from {path}: {exc}") from exc
+    is_url = isinstance(file_path, str) and file_path.startswith("http")
+    if is_url:
+        # Download remote file (Cloudinary or local API proxy) to temp file
+        import shutil
+        import uuid
+        ext = Path(file_path).suffix.lower() or ".tmp"
+        temp_dir = tempfile.gettempdir()
+        temp_name = f"material_{uuid.uuid4().hex}{ext}"
+        temp_path = Path(temp_dir) / temp_name
+        try:
+            response = requests.get(file_path, stream=True)
+            response.raise_for_status()
+            with open(temp_path, "wb") as f:
+                shutil.copyfileobj(response.raw, f)
+            path = temp_path
+            content_type = (content_type or "").lower()
+            try:
+                if ext == ".pdf" or "pdf" in content_type:
+                    raw_text = _extract_pdf_text(path)
+                elif ext in IMAGE_EXTENSIONS or content_type.startswith("image/"):
+                    raw_text = _extract_image_text(path)
+                elif ext in TEXT_EXTENSIONS or content_type.startswith("text/"):
+                    raw_text = _extract_plain_text(path)
+                else:
+                    raw_text = _extract_plain_text(path)
+            finally:
+                try:
+                    path.unlink(missing_ok=True)
+                except Exception:
+                    pass
+        except Exception as exc:
+            raise RuntimeError(f"Failed to extract text from remote file {file_path}: {exc}") from exc
+    else:
+        path = Path(file_path)
+        if not path.exists():
+            raise FileNotFoundError(f"File not found: {path}")
+        ext = path.suffix.lower()
+        content_type = (content_type or "").lower()
+        try:
+            if ext == ".pdf" or "pdf" in content_type:
+                raw_text = _extract_pdf_text(path)
+            elif ext in IMAGE_EXTENSIONS or content_type.startswith("image/"):
+                raw_text = _extract_image_text(path)
+            elif ext in TEXT_EXTENSIONS or content_type.startswith("text/"):
+                raw_text = _extract_plain_text(path)
+            else:
+                raw_text = _extract_plain_text(path)
+        except Exception as exc:
+            raise RuntimeError(f"Failed to extract text from {path}: {exc}") from exc
 
     cleaned = _clean_text(raw_text)
     return cleaned[:max_chars]

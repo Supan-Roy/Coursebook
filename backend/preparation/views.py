@@ -97,7 +97,9 @@ class SummaryGenerateView(APIView):
         aggregated_text_parts: list[str] = []
         for material in materials:
             try:
-                text = extract_text_from_path(material.storage_key, material.content_type, max_chars=20000)
+                # Use Cloudinary URL if available, else local storage_key
+                file_source = material.storage_url if material.storage_url else material.storage_key
+                text = extract_text_from_path(file_source, material.content_type, max_chars=20000)
                 if text:
                     aggregated_text_parts.append(text)
             except Exception as exc:  # noqa: BLE001
@@ -185,7 +187,9 @@ class QuizGenerateView(APIView):
         aggregated_text_parts: list[str] = []
         for material in materials:
             try:
-                text = extract_text_from_path(material.storage_key, material.content_type)
+                # Use Cloudinary URL if available, else local storage_key
+                file_source = material.storage_url if material.storage_url else material.storage_key
+                text = extract_text_from_path(file_source, material.content_type)
                 if text:
                     aggregated_text_parts.append(text)
             except Exception as exc:  # noqa: BLE001
