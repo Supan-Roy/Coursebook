@@ -7,7 +7,7 @@ import json
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.http import FileResponse
 from .document_converter import DocumentConverter, SUPPORTED_FORMATS
@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 class DocumentToPDFView(APIView):
     """Convert documents to PDF"""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]  # Public access for toolkit features
     parser_classes = [MultiPartParser, FormParser]
     
     def post(self, request):
@@ -108,7 +108,7 @@ class DocumentToPDFView(APIView):
 class ImagesToPDFView(APIView):
     """Convert one or more images to a PDF without padding"""
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]  # Public access for toolkit features
     parser_classes = [MultiPartParser, FormParser]
 
     def post(self, request):
@@ -141,7 +141,7 @@ class ImagesToPDFView(APIView):
 
 class SupportedFormatsView(APIView):
     """Get list of supported file formats"""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]  # Public access for toolkit features
     
     def get(self, request):
         """Return supported formats"""
@@ -153,7 +153,7 @@ class SupportedFormatsView(APIView):
 
 class AddPageNumbersView(APIView):
     """Add page numbers to PDF"""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]  # Public access for toolkit features
     parser_classes = [MultiPartParser, FormParser]
     
     def post(self, request):
@@ -232,7 +232,7 @@ class AddPageNumbersView(APIView):
 
 class MergePDFsView(APIView):
     """Merge multiple PDFs into one"""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]  # Public access for toolkit features
     parser_classes = [MultiPartParser, FormParser]
     
     def post(self, request):
@@ -301,7 +301,7 @@ class MergePDFsView(APIView):
 
 class SplitPDFView(APIView):
     """Split/extract pages from PDF"""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]  # Public access for toolkit features
     parser_classes = [MultiPartParser, FormParser]
     
     def post(self, request):
@@ -376,7 +376,7 @@ class SplitPDFView(APIView):
 
 class LockPDFView(APIView):
     """Encrypt PDF with password protection"""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]  # Public access for toolkit features
     parser_classes = [MultiPartParser, FormParser]
     
     def post(self, request):
@@ -446,7 +446,7 @@ class LockPDFView(APIView):
 
 class UnlockPDFView(APIView):
     """Decrypt password-protected PDF"""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]  # Public access for toolkit features
     parser_classes = [MultiPartParser, FormParser]
     
     def post(self, request):
@@ -516,7 +516,7 @@ class UnlockPDFView(APIView):
 
 class CompressPDFView(APIView):
     """Compress PDF files"""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]  # Public access for toolkit features
     parser_classes = [MultiPartParser, FormParser]
     
     def post(self, request):
@@ -585,7 +585,7 @@ class CompressPDFView(APIView):
 
 class WatermarkPDFView(APIView):
     """Add text or image watermark to PDF"""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]  # Public access for toolkit features
     parser_classes = [MultiPartParser, FormParser]
     
     def post(self, request):
@@ -731,7 +731,7 @@ class WatermarkPDFView(APIView):
 
 class EditPDFView(APIView):
     """Apply annotations (text and highlights) to a PDF"""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]  # Public access for toolkit features
     parser_classes = [MultiPartParser, FormParser]
 
     def post(self, request):

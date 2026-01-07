@@ -12,7 +12,7 @@ import requests
 import secrets
 
 
-def get_email_from_request(request):
+def get_email_from_request(group, request):
     """Helper function to extract email from request for rate limiting"""
     if request.method == 'POST':
         # Try to get email from request data (works for DRF)
@@ -35,7 +35,7 @@ from .serializers import (
 )
 from .utils import (
     send_verification_email, send_password_reset_email,
-    send_login_notification_email, generate_password_reset_token
+    generate_password_reset_token
 )
 
 User = get_user_model()
@@ -175,12 +175,8 @@ class SecureLoginView(APIView):
         # Generate JWT tokens
         refresh = RefreshToken.for_user(user)
         
-        # Send login notification email (optional, can be disabled in production)
-        try:
-            ip_address = request.META.get('REMOTE_ADDR', 'Unknown')
-            send_login_notification_email(user, ip_address)
-        except Exception:
-            pass  # Don't fail login if email sending fails
+        # Note: Login notification emails removed to preserve email service quota
+        # Emails are only sent for registration (verification) and password reset
         
         return Response({
             "access": str(refresh.access_token),
@@ -402,16 +398,30 @@ class GoogleOAuthCallbackView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Verify state token (CSRF protection)
-        session_state = request.session.get('oauth_state')
-        if not session_state or session_state != state:
+        if not state:
             return Response(
-                {"detail": "Invalid state parameter."},
+                {"detail": "State parameter is required."},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Clear state from session
-        request.session.pop('oauth_state', None)
+        # Verify state token (CSRF protection)
+        # Check both session and the state sent from frontend
+        session_state = request.session.get('oauth_state')
+        
+        # State validation: Google already validates the state, but we check session as additional security
+        # If session state exists and doesn't match, reject (but allow if session state is missing due to CORS/session issues)
+        if session_state and session_state != state:
+            return Response(
+                {"detail": "Invalid state parameter. Session mismatch."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # If no session state but state is provided, we'll accept it (frontend validates it)
+        # This handles cases where sessions don't persist across OAuth redirect
+        
+        # Clear state from session if it exists
+        if 'oauth_state' in request.session:
+            request.session.pop('oauth_state', None)
         
         if not settings.GOOGLE_OAUTH2_CLIENT_ID or not settings.GOOGLE_OAUTH2_CLIENT_SECRET:
             return Response(

@@ -59,38 +59,16 @@ export default function LoginPage() {
   };
 
   return (
-    <>
-      <div className="space-bg"></div>
-      <div className="floating-element eq1">∑∫∂∇</div>
-      <div className="floating-element eq2">E=mc²</div>
-      <div className="floating-element eq3">λ = h/p</div>
-      <div className="floating-element eq4">f(x) = y</div>
-      <div className="floating-element eq5">π ≈ 3.14</div>
-      <div className="floating-element code1">const x = 42</div>
-      <div className="floating-element code2">def learn():</div>
-      <div className="floating-element symbol1">⚛</div>
-      <div className="floating-element symbol2">∞</div>
-      <div className="floating-element small1">α β γ δ</div>
-      <div className="floating-element small2">∂²f/∂x²</div>
-      <div className="floating-element small3">Σ(i=1)</div>
-      <div className="floating-element large1">∑</div>
-      <div className="floating-element large2">∫</div>
-      <div className="floating-element medium1">⚘</div>
-      <div className="floating-element medium2">◆</div>
-      <div className="floating-element medium3">✦</div>
-      <div className="particles">
-        {[...Array(5)].map((_, i) => (
-          <div key={i} className="particle"></div>
-        ))}
-      </div>
-      <div className="min-h-screen flex items-center justify-center px-4 relative z-10">
-        <div className="w-full max-w-md">
-          <div className="glass-card rounded-2xl p-8">
+    <div className="min-h-screen flex items-center justify-center px-4 bg-gray-50">
+          <div className="w-full max-w-md">
+          <div className="bg-white rounded-2xl p-8 shadow-lg">
             <div className="text-center mb-8">
-              <div className="flex justify-center items-center mb-4 relative">
-                <img src="/coursebook.svg" alt="Coursebook" className="absolute w-12 h-12" style={{ left: '20px' }} />
-                <CoursebookTextLogo className="w-64 h-16" />
-              </div>
+              <Link to="/dashboard" className="block">
+                <div className="flex justify-center items-center mb-4 relative cursor-pointer hover:opacity-80 transition-opacity">
+                  <img src="/coursebook.svg" alt="Coursebook" className="absolute w-12 h-12" style={{ left: '20px' }} />
+                  <CoursebookTextLogo className="w-64 h-16" isDarkMode={false} />
+                </div>
+              </Link>
               <p className="text-sm text-gray-400">Sign in to your account</p>
             </div>
 
@@ -228,6 +206,5 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
-    </>
   );
 }

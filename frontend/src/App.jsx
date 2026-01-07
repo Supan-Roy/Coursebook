@@ -32,14 +32,8 @@ function App() {
           <Route path="/resend-verification" element={<ResendVerificationPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
-          <Route
-            path="/dashboard"
-            element={
-              <PrivateRoute>
-                <DashboardPage />
-              </PrivateRoute>
-            }
-          />
+          <Route path="/auth/google/callback" element={<GoogleOAuthCallbackPage />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
           <Route
             path="/course/:courseId"
             element={

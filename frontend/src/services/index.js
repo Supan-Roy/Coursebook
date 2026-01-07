@@ -33,6 +33,16 @@ export const authService = {
     return response.data;
   },
 
+  async getGoogleOAuthUrl() {
+    const response = await api.get('/auth/google/');
+    return response.data;
+  },
+
+  async handleGoogleOAuthCallback(code, state) {
+    const response = await api.post('/auth/google/callback/', { code, state });
+    return response.data;
+  },
+
   async requestPasswordReset(email) {
     const response = await api.post('/auth/password-reset/', { email });
     return response.data;

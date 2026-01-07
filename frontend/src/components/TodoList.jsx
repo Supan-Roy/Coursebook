@@ -22,16 +22,20 @@ const MyPlans = ({ isDarkMode }) => {
     { id: 2, name: 'Personal' }
   ];
   
+  // Check authentication from localStorage as fallback for initial state
+  const hasToken = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+  const isInitiallyAuthenticated = hasToken !== null;
+  
   const [categories, setCategories] = useState(() => {
     // Show default categories for unauthenticated users
-    if (!isAuthenticated) {
+    if (!isInitiallyAuthenticated) {
       return defaultCategories;
     }
     return [];
   });
   const [activeCategory, setActiveCategory] = useState(() => {
     // Set first default category as active for unauthenticated users
-    if (!isAuthenticated) {
+    if (!isInitiallyAuthenticated) {
       return 1; // Academic
     }
     return null;
@@ -77,6 +81,19 @@ const MyPlans = ({ isDarkMode }) => {
       notificationService.clearPeriodicCheck(notificationIntervalRef.current);
     };
   }, []);
+  
+  // Update categories when authentication state changes
+  useEffect(() => {
+    if (!isAuthenticated) {
+      // Show default categories for unauthenticated users
+      setCategories(defaultCategories);
+      setActiveCategory(1); // Academic
+      setTodos([]);
+    } else {
+      // Load real data for authenticated users
+      loadData();
+    }
+  }, [isAuthenticated]);
 
   // Setup notification checking when todos change
   useEffect(() => {
@@ -91,6 +108,11 @@ const MyPlans = ({ isDarkMode }) => {
   }, [notificationsEnabled, todos]);
 
   const toggleNotifications = async () => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+    
     if (notificationsEnabled) {
       notificationService.clearPeriodicCheck(notificationIntervalRef.current);
       setNotificationsEnabled(false);
@@ -198,6 +220,11 @@ const MyPlans = ({ isDarkMode }) => {
   };
 
   const handleUpdateCategory = async (categoryId) => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+    
     const category = categories.find((c) => c.id === categoryId);
     if (!category || isDefaultCategory(category)) return;
     if (!editingCategoryName.trim()) return;
@@ -214,6 +241,11 @@ const MyPlans = ({ isDarkMode }) => {
   };
 
   const handleDeleteCategory = async (categoryId) => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+    
     const category = categories.find((c) => c.id === categoryId);
     if (!category || isDefaultCategory(category)) return;
     try {
@@ -477,6 +509,7 @@ const MyPlans = ({ isDarkMode }) => {
                   if (deleteMode && !isDefault) {
                     handleDeleteCategory(category.id);
                   } else {
+                    // Allow category switching for viewing, even for unauthenticated users
                     setActiveCategory(category.id);
                   }
                 };
@@ -541,6 +574,10 @@ const MyPlans = ({ isDarkMode }) => {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
+                              if (!isAuthenticated) {
+                                navigate('/login');
+                                return;
+                              }
                               setEditingCategory(category.id);
                               setEditingCategoryName(category.name);
                             }}
@@ -564,7 +601,13 @@ const MyPlans = ({ isDarkMode }) => {
               {/* Add More Category Button */}
               {!showAddCategory ? (
                 <button
-                  onClick={() => setShowAddCategory(true)}
+                  onClick={() => {
+                    if (!isAuthenticated) {
+                      navigate('/login');
+                      return;
+                    }
+                    setShowAddCategory(true);
+                  }}
                   className={`flex-shrink-0 px-6 py-3 rounded-lg border-2 border-dashed transition-all ${
                     isDarkMode
                       ? 'border-gray-700 hover:border-gray-600 text-gray-400 hover:text-gray-300 hover:bg-gray-800'
@@ -621,7 +664,13 @@ const MyPlans = ({ isDarkMode }) => {
             </button>
 
             <button
-              onClick={() => setDeleteMode((prev) => !prev)}
+              onClick={() => {
+                if (!isAuthenticated) {
+                  navigate('/login');
+                  return;
+                }
+                setDeleteMode((prev) => !prev);
+              }}
               className={`px-3 py-2 rounded-lg text-sm font-medium transition-all border ${
                 deleteMode
                   ? isDarkMode

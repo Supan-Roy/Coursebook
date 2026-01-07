@@ -47,16 +47,49 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     try {
       const response = await authService.handleGoogleOAuthCallback(code, state);
-      // Store tokens
-      localStorage.setItem('access_token', response.access);
-      localStorage.setItem('refresh_token', response.refresh);
-      setIsAuthenticated(true);
-      setUser(response.user);
-      return { success: true };
+      // Store tokens IMMEDIATELY if we have them
+      if (response && response.access && response.refresh) {
+        localStorage.setItem('access_token', response.access);
+        localStorage.setItem('refresh_token', response.refresh);
+        setIsAuthenticated(true);
+        setUser(response.user);
+        return { success: true };
+      } else {
+        return {
+          success: false,
+          error: 'Invalid response from server',
+        };
+      }
     } catch (error) {
+      // Don't throw or return error immediately - let the callback page check for tokens
+      // The response might have succeeded even if there's an error in processing
+      const errorMessage = error.response?.data?.detail || error.message || '';
+      
+      // Check if tokens were set despite the error
+      const hasToken = localStorage.getItem('access_token');
+      if (hasToken) {
+        // Tokens exist - probably succeeded, return success
+        setIsAuthenticated(true);
+        return { success: true };
+      }
+      
+      // No tokens - return error, but filter communication errors
+      const isCommunicationError = !errorMessage || 
+          errorMessage.toLowerCase().includes('network') ||
+          errorMessage.toLowerCase().includes('communicat') ||
+          errorMessage.toLowerCase().includes('timeout') ||
+          errorMessage.toLowerCase().includes('fetch') ||
+          error.code === 'ERR_NETWORK';
+      
+      if (isCommunicationError) {
+        // For communication errors, return success=false but no error message
+        // The callback page will check for tokens
+        return { success: false };
+      }
+      
       return {
         success: false,
-        error: error.response?.data?.detail || 'Google authentication failed',
+        error: errorMessage || 'Google authentication failed',
       };
     } finally {
       setLoading(false);
@@ -117,7 +150,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, loading, login, register, logout, refreshUser }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, loading, login, register, logout, refreshUser, handleGoogleLogin }}>
       {children}
     </AuthContext.Provider>
   );

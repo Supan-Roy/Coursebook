@@ -81,10 +81,12 @@ export default function RegisterPage() {
           <div className="w-full max-w-md">
           <div className="bg-white rounded-2xl p-8 shadow-lg">
             <div className="text-center mb-6">
-              <div className="flex justify-center items-center mb-4 relative">
-                <img src="/coursebook.svg" alt="Coursebook" className="absolute w-12 h-12" style={{ left: '20px' }} />
-                <CoursebookTextLogo className="w-64 h-16" />
-              </div>
+              <Link to="/dashboard" className="block">
+                <div className="flex justify-center items-center mb-4 relative cursor-pointer hover:opacity-80 transition-opacity">
+                  <img src="/coursebook.svg" alt="Coursebook" className="absolute w-12 h-12" style={{ left: '20px' }} />
+                  <CoursebookTextLogo className="w-64 h-16" isDarkMode={false} />
+                </div>
+              </Link>
               <p className="text-sm text-gray-400">Create your account</p>
             </div>
 
@@ -283,6 +285,5 @@ export default function RegisterPage() {
           </div>
         </div>
       </div>
-    </>
   );
 }
