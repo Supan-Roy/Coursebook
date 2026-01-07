@@ -43,6 +43,26 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const handleGoogleLogin = async (code, state) => {
+    setLoading(true);
+    try {
+      const response = await authService.handleGoogleOAuthCallback(code, state);
+      // Store tokens
+      localStorage.setItem('access_token', response.access);
+      localStorage.setItem('refresh_token', response.refresh);
+      setIsAuthenticated(true);
+      setUser(response.user);
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.detail || 'Google authentication failed',
+      };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const register = async (data) => {
     setLoading(true);
     try {

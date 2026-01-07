@@ -8,6 +8,8 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from django_ratelimit.decorators import ratelimit  # type: ignore
 from django.utils.decorators import method_decorator
+import requests
+import secrets
 
 
 def get_email_from_request(request):
@@ -347,3 +349,150 @@ class PasswordResetConfirmView(APIView):
         return Response({
             "detail": "Password reset successfully. You can now log in with your new password."
         }, status=status.HTTP_200_OK)
+
+
+class GoogleOAuthView(APIView):
+    """Get Google OAuth URL"""
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, *args, **kwargs):
+        if not settings.GOOGLE_OAUTH2_CLIENT_ID:
+            return Response(
+                {"detail": "Google OAuth is not configured."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE
+            )
+        
+        # Generate state token for CSRF protection
+        # Store in session as backup, but frontend will also store it
+        state = secrets.token_urlsafe(32)
+        request.session['oauth_state'] = state
+        request.session.set_expiry(600)  # 10 minutes expiry
+        
+        # Build Google OAuth URL
+        redirect_uri = f"{settings.FRONTEND_URL}/auth/google/callback"
+        scope = "openid email profile"
+        google_oauth_url = (
+            f"https://accounts.google.com/o/oauth2/v2/auth?"
+            f"client_id={settings.GOOGLE_OAUTH2_CLIENT_ID}&"
+            f"redirect_uri={redirect_uri}&"
+            f"response_type=code&"
+            f"scope={scope}&"
+            f"state={state}&"
+            f"access_type=offline&"
+            f"prompt=consent"
+        )
+        
+        return Response({
+            "auth_url": google_oauth_url,
+            "state": state  # Return state so frontend can store it
+        }, status=status.HTTP_200_OK)
+
+
+class GoogleOAuthCallbackView(APIView):
+    """Handle Google OAuth callback and create/login user"""
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        code = request.data.get('code')
+        state = request.data.get('state')
+        
+        if not code:
+            return Response(
+                {"detail": "Authorization code is required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Verify state token (CSRF protection)
+        session_state = request.session.get('oauth_state')
+        if not session_state or session_state != state:
+            return Response(
+                {"detail": "Invalid state parameter."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Clear state from session
+        request.session.pop('oauth_state', None)
+        
+        if not settings.GOOGLE_OAUTH2_CLIENT_ID or not settings.GOOGLE_OAUTH2_CLIENT_SECRET:
+            return Response(
+                {"detail": "Google OAuth is not configured."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE
+            )
+        
+        # Exchange code for access token
+        token_url = "https://oauth2.googleapis.com/token"
+        redirect_uri = f"{settings.FRONTEND_URL}/auth/google/callback"
+        
+        token_data = {
+            'code': code,
+            'client_id': settings.GOOGLE_OAUTH2_CLIENT_ID,
+            'client_secret': settings.GOOGLE_OAUTH2_CLIENT_SECRET,
+            'redirect_uri': redirect_uri,
+            'grant_type': 'authorization_code'
+        }
+        
+        try:
+            token_response = requests.post(token_url, data=token_data)
+            token_response.raise_for_status()
+            token_json = token_response.json()
+            access_token = token_json.get('access_token')
+            
+            if not access_token:
+                return Response(
+                    {"detail": "Failed to get access token from Google."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Get user info from Google
+            user_info_url = "https://www.googleapis.com/oauth2/v2/userinfo"
+            headers = {'Authorization': f'Bearer {access_token}'}
+            user_info_response = requests.get(user_info_url, headers=headers)
+            user_info_response.raise_for_status()
+            user_info = user_info_response.json()
+            
+            email = user_info.get('email')
+            first_name = user_info.get('given_name', '')
+            last_name = user_info.get('family_name', '')
+            
+            if not email:
+                return Response(
+                    {"detail": "Email not provided by Google."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Get or create user
+            user, created = User.objects.get_or_create(
+                email=email,
+                defaults={
+                    'first_name': first_name,
+                    'last_name': last_name,
+                    'email_verified': True,  # Google emails are already verified
+                }
+            )
+            
+            # Update user info if not new
+            if not created:
+                user.first_name = first_name or user.first_name
+                user.last_name = last_name or user.last_name
+                user.email_verified = True  # Ensure verified
+                user.save(update_fields=['first_name', 'last_name', 'email_verified'])
+            
+            # Generate JWT tokens
+            refresh = RefreshToken.for_user(user)
+            
+            return Response({
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
+                "user": UserSerializer(user).data
+            }, status=status.HTTP_200_OK)
+            
+        except requests.RequestException as e:
+            return Response(
+                {"detail": f"Error communicating with Google: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            return Response(
+                {"detail": f"An error occurred: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

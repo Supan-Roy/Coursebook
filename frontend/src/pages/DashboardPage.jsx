@@ -56,17 +56,26 @@ export default function DashboardPage() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     return localStorage.getItem('sidebarCollapsed') === 'true';
   });
+  const { logout, user, isAuthenticated } = useAuth();
   const [activeTab, setActiveTab] = useState(() => {
-    // Load active tab from localStorage, default to 'semesters'
-    return localStorage.getItem('dashboardActiveTab') || 'semesters';
+    // Load active tab from localStorage
+    const saved = localStorage.getItem('dashboardActiveTab');
+    if (saved) return saved;
+    // Default to semesters for everyone
+    return 'semesters';
   });
+  
+  // Update active tab when authentication changes (only if needed)
+  useEffect(() => {
+    // Keep current tab, don't force change
+    localStorage.setItem('dashboardActiveTab', activeTab);
+  }, [activeTab]);
   const [semesterOrder, setSemesterOrder] = useState(() => {
     // Load semester order from localStorage
     return JSON.parse(localStorage.getItem('semesterOrder') || '[]');
   });
   const DOB_STORAGE_KEY = 'user_dob';
   const [dob, setDob] = useState('');
-  const { logout, user } = useAuth();
   const { isDarkMode, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
@@ -129,7 +138,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [isAuthenticated]); // Reload data when authentication changes
 
   useEffect(() => {
     const savedDob = typeof window !== 'undefined' ? localStorage.getItem(DOB_STORAGE_KEY) : '';
@@ -137,6 +146,17 @@ export default function DashboardPage() {
   }, []);
 
   const loadData = async () => {
+    // For unauthenticated users, just set loading to false
+    // They can view the dashboard but can't interact with protected features
+    if (!isAuthenticated) {
+      setLoading(false);
+      setCourses([]);
+      setMaterials([]);
+      setSemesters([]);
+      setUsage(null);
+      return;
+    }
+    
     try {
       setError(null);
       const coursesData = await courseService.getAll();
@@ -514,44 +534,46 @@ export default function DashboardPage() {
               <CoursebookTextLogo className="w-48 h-12" isDarkMode={isDarkMode} showUnderline={false} />
             </div>
             <div className="flex items-center gap-4">
-              <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                {(() => {
-                  const greeting = getGreeting();
-                  const name = user?.first_name && user?.last_name
-                    ? `${user.first_name} ${user.last_name}`
-                    : user?.first_name || 'Student';
-                  if (greeting.includes(', ')) {
-                    const parts = greeting.split(', ');
-                    const message = parts.slice(0, -1).join(', ');
-                    return (
-                      <>
-                        {message}, <span className={`font-semibold ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>{name}</span>{greeting.endsWith('!') ? '!' : ''}
-                      </>
-                    );
-                  }
-                  return greeting;
-                })()}
-              </span>
-              
-              {/* Theme Toggle */}
-              <button
-                onClick={toggleTheme}
-                className="p-2 text-gray-400 hover:text-white hover:bg-gray-900 rounded-lg transition-all border border-gray-700 hover:border-sky-500/50"
-                title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-              >
-                {isDarkMode ? (
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                  </svg>
-                ) : (
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                  </svg>
-                )}
-              </button>
-              
-              {/* Profile Dropdown */}
-              <div className="relative" ref={profileMenuRef}>
+              {isAuthenticated ? (
+                <>
+                  <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                    {(() => {
+                      const greeting = getGreeting();
+                      const name = user?.first_name && user?.last_name
+                        ? `${user.first_name} ${user.last_name}`
+                        : user?.first_name || 'Student';
+                      if (greeting.includes(', ')) {
+                        const parts = greeting.split(', ');
+                        const message = parts.slice(0, -1).join(', ');
+                        return (
+                          <>
+                            {message}, <span className={`font-semibold ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>{name}</span>{greeting.endsWith('!') ? '!' : ''}
+                          </>
+                        );
+                      }
+                      return greeting;
+                    })()}
+                  </span>
+                  
+                  {/* Theme Toggle */}
+                  <button
+                    onClick={toggleTheme}
+                    className={`p-2 rounded-lg transition-all border ${isDarkMode ? 'text-gray-400 hover:text-white hover:bg-gray-900 border-gray-700 hover:border-sky-500/50' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 border-gray-300 hover:border-sky-500/50'}`}
+                    title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                  >
+                    {isDarkMode ? (
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                      </svg>
+                    ) : (
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                      </svg>
+                    )}
+                  </button>
+                  
+                  {/* Profile Dropdown */}
+                  <div className="relative" ref={profileMenuRef}>
                 <button
                   onClick={() => setShowProfileMenu(!showProfileMenu)}
                   className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-all border ${isDarkMode ? 'text-gray-300 hover:text-white hover:bg-gray-900 border-gray-700 hover:border-sky-500/50' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100 border-gray-300 hover:border-sky-500/50'}`}
@@ -614,6 +636,43 @@ export default function DashboardPage() {
                   </div>
                 )}
               </div>
+                </>
+              ) : (
+                <>
+                  {/* Theme Toggle for unauthenticated */}
+                  <button
+                    onClick={toggleTheme}
+                    className={`p-2 rounded-lg transition-all border ${isDarkMode ? 'text-gray-400 hover:text-white hover:bg-gray-900 border-gray-700 hover:border-sky-500/50' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 border-gray-300 hover:border-sky-500/50'}`}
+                    title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                  >
+                    {isDarkMode ? (
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                      </svg>
+                    ) : (
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                      </svg>
+                    )}
+                  </button>
+                  
+                  {/* Login/Signup buttons for unauthenticated users */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => navigate('/login')}
+                      className={`px-4 py-2 text-sm font-medium rounded-lg transition-all border ${isDarkMode ? 'text-gray-300 hover:text-white hover:bg-gray-800 border-gray-700 hover:border-sky-500/50' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100 border-gray-300 hover:border-sky-500/50'}`}
+                    >
+                      Sign In
+                    </button>
+                    <button
+                      onClick={() => navigate('/register')}
+                      className="px-4 py-2 text-sm font-medium rounded-lg bg-sky-600 text-white hover:bg-sky-700 transition-all"
+                    >
+                      Sign Up
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -677,7 +736,7 @@ export default function DashboardPage() {
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
                 </svg>
-                Toolkit
+                PDF Toolkit
               </div>
             </button>
           </div>
@@ -688,6 +747,204 @@ export default function DashboardPage() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {activeTab === 'todos' ? (
           <MyPlans isDarkMode={isDarkMode} />
+        ) : activeTab === 'semesters' ? (
+          <>
+            {/* Create New Semester Section */}
+            <div className={`rounded-2xl p-8 mb-8 border-2 border-dashed transition-colors ${isDarkMode ? 'border-gray-700/50 hover:border-sky-500/50 bg-gray-900/30' : 'border-gray-300 hover:border-sky-400 bg-gray-50'}`}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Create Semester Button */}
+                {creatingNewSemester ? (
+                  <div className={`border rounded-xl p-6 transition-all ${isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-white border-gray-200'}`}>
+                    <h3 className={`text-lg font-semibold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Create New Semester</h3>
+                    <input
+                      type="text"
+                      value={newSemesterName}
+                      onChange={(e) => setNewSemesterName(e.target.value)}
+                      placeholder="Enter semester name (e.g., Fall 2024)"
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          handleCreateNewSemester();
+                        } else if (e.key === 'Escape') {
+                          setCreatingNewSemester(false);
+                          setNewSemesterName('');
+                        }
+                      }}
+                      className={`w-full px-3 py-2 mb-3 rounded-lg border-2 text-sm ${
+                        isDarkMode
+                          ? 'bg-gray-900 border-sky-500 text-white'
+                          : 'bg-white border-sky-400 text-gray-900'
+                      }`}
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleCreateNewSemester()}
+                        className={`flex-1 px-3 py-2 text-sm font-semibold rounded-lg transition-colors text-white bg-sky-500 hover:bg-sky-600`}
+                      >
+                        Create
+                      </button>
+                      <button
+                        onClick={() => {
+                          setCreatingNewSemester(false);
+                          setNewSemesterName('');
+                        }}
+                        className={`flex-1 px-3 py-2 text-sm font-semibold rounded-lg transition-colors ${
+                          isDarkMode
+                            ? 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                            : 'bg-gray-300 hover:bg-gray-400 text-gray-700'
+                        }`}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => {
+                      if (!isAuthenticated) {
+                        navigate('/login');
+                        return;
+                      }
+                      setCreatingNewSemester(true);
+                    }}
+                    className={`border-2 rounded-xl p-6 transition-all flex flex-col items-center justify-center hover:shadow-xl hover:scale-[1.02] ${isDarkMode ? 'bg-gradient-to-br from-orange-600 to-orange-700 border-orange-500' : 'bg-gradient-to-br from-orange-400 to-orange-500 border-orange-400'}`}
+                  >
+                    <svg className="w-8 h-8 mb-2 text-white drop-shadow-lg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    <p className="text-sm font-semibold text-white drop-shadow-md">
+                      Create New Semester
+                    </p>
+                    <p className="text-xs mt-1 text-white/90">
+                      Create your semester manually
+                    </p>
+                  </button>
+                )}
+
+                {/* Upload Routine Button */}
+                <button
+                  onClick={() => {
+                    if (!isAuthenticated) {
+                      navigate('/login');
+                      return;
+                    }
+                    setShowUploadModal(true);
+                  }}
+                  className={`border-2 rounded-xl p-6 transition-all flex flex-col items-center justify-center hover:shadow-xl hover:scale-[1.02] ${isDarkMode ? 'bg-gradient-to-br from-purple-600 to-purple-700 border-purple-500' : 'bg-gradient-to-br from-purple-400 to-purple-500 border-purple-400'}`}
+                >
+                  <svg className="w-8 h-8 mb-2 text-white drop-shadow-lg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                  <p className="text-sm font-semibold text-white drop-shadow-md">
+                    Upload Routine
+                  </p>
+                  <p className="text-xs mt-1 text-white/90">
+                    Extract courses from PDF or Image
+                  </p>
+                </button>
+              </div>
+            </div>
+
+            {/* Semesters Section */}
+            {semesterList.length === 0 ? (
+              <div className={`rounded-2xl p-8 mb-8 border transition-colors ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200'}`}>
+                <div className={`text-center py-16 border-2 border-dashed rounded-xl ${isDarkMode ? 'border-gray-700' : 'border-gray-300'}`}>
+                  <svg
+                    className={`mx-auto h-12 w-12 ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                    />
+                  </svg>
+                  <h3 className={`mt-4 text-lg font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>No semesters yet</h3>
+                  <p className={`mt-2 text-sm ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>Create or Upload a routine to create your first semester</p>
+                </div>
+              </div>
+            ) : (
+              semesterList.map((semesterName) => (
+                <div 
+                  key={semesterName}
+                  className={`rounded-2xl p-8 mb-8 border transition-all hover:shadow-lg ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200'}`}
+                >
+                  <div className="flex justify-between items-center mb-6">
+                    <div>
+                      <div className="flex items-center gap-3 mb-2">
+                        {editingSemester === semesterName ? (
+                          <input
+                            type="text"
+                            value={editingSemesterName}
+                            onChange={(e) => setEditingSemesterName(e.target.value)}
+                            onBlur={() => handleUpdateSemesterName(semesterName)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                handleUpdateSemesterName(semesterName);
+                              } else if (e.key === 'Escape') {
+                                setEditingSemester(null);
+                              }
+                            }}
+                            autoFocus
+                            className={`text-2xl font-bold px-2 py-1 rounded border-2 border-sky-500 ${
+                              isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+                            }`}
+                          />
+                        ) : (
+                          <h2 
+                            className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} ${isAuthenticated ? 'cursor-pointer hover:text-sky-400' : 'cursor-not-allowed opacity-60'} transition-colors`}
+                            onClick={() => {
+                              if (!isAuthenticated) {
+                                navigate('/login');
+                                return;
+                              }
+                              setEditingSemester(semesterName);
+                              setEditingSemesterName(semesterName);
+                            }}
+                          >
+                            {semesterName}
+                          </h2>
+                        )}
+                      </div>
+                      <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        {(groupedBySemester[semesterName] || []).length} {(groupedBySemester[semesterName] || []).length === 1 ? 'course' : 'courses'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {(groupedBySemester[semesterName] || []).map((course) => (
+                      <div
+                        key={course.id}
+                        onClick={() => {
+                          if (!isAuthenticated) {
+                            navigate('/login');
+                            return;
+                          }
+                          if (editingCourse !== course.id) {
+                            navigate(`/course/${course.id}`);
+                          }
+                        }}
+                        className={`group border-2 rounded-xl p-6 transition-all duration-200 relative shadow-lg ${isAuthenticated ? 'hover:shadow-xl hover:scale-[1.02] cursor-pointer' : 'cursor-not-allowed opacity-60'} min-h-[180px] flex flex-col ${isDarkMode ? 'bg-gradient-to-br from-blue-600 to-blue-700 border-blue-500' : 'bg-gradient-to-br from-blue-600 to-blue-700 border-blue-500'}`}
+                      >
+                        <h3 className="font-bold text-2xl mb-2 text-white drop-shadow-md">{course.code}</h3>
+                        {course.title && (
+                          <p className="text-base line-clamp-2 leading-relaxed text-white/90">{course.title}</p>
+                        )}
+                        <div className="flex items-center justify-between pt-4 border-t border-white/20 mt-auto">
+                          <span className="text-sm font-medium text-white/80">
+                            {materials.filter((m) => m.course === course.id).length} {materials.filter((m) => m.course === course.id).length === 1 ? 'file' : 'files'}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))
+            )}
+          </>
         ) : activeTab === 'toolkit' ? (
           <div>
             {/* Toolkit Section */}
@@ -852,384 +1109,12 @@ export default function DashboardPage() {
               <p className={`${isDarkMode ? 'text-gray-500' : 'text-gray-600'}`}>Click on any tool above to explore its features when available</p>
             </div>
           </div>
-        ) : (
+        ) : null}
+
+        {/* Recent Materials - Only show for authenticated users */}
+        {isAuthenticated && (
           <>
-        {/* Create New Semester Section */}
-        <div className={`rounded-2xl p-8 mb-8 border-2 border-dashed transition-colors ${isDarkMode ? 'border-gray-700/50 hover:border-sky-500/50 bg-gray-900/30' : 'border-gray-300 hover:border-sky-400 bg-gray-50'}`}>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Create Semester Button */}
-            {creatingNewSemester ? (
-              <div className={`border rounded-xl p-6 transition-all ${isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-white border-gray-200'}`}>
-                <h3 className={`text-lg font-semibold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Create New Semester</h3>
-                <input
-                  type="text"
-                  value={newSemesterName}
-                  onChange={(e) => setNewSemesterName(e.target.value)}
-                  placeholder="Enter semester name (e.g., Fall 2024)"
-                  autoFocus
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      handleCreateNewSemester();
-                    } else if (e.key === 'Escape') {
-                      setCreatingNewSemester(false);
-                      setNewSemesterName('');
-                    }
-                  }}
-                  className={`w-full px-3 py-2 mb-3 rounded-lg border-2 text-sm ${
-                    isDarkMode
-                      ? 'bg-gray-900 border-sky-500 text-white'
-                      : 'bg-white border-sky-400 text-gray-900'
-                  }`}
-                />
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleCreateNewSemester()}
-                    className={`flex-1 px-3 py-2 text-sm font-semibold rounded-lg transition-colors text-white bg-sky-500 hover:bg-sky-600`}
-                  >
-                    Create
-                  </button>
-                  <button
-                    onClick={() => {
-                      setCreatingNewSemester(false);
-                      setNewSemesterName('');
-                    }}
-                    className={`flex-1 px-3 py-2 text-sm font-semibold rounded-lg transition-colors ${
-                      isDarkMode
-                        ? 'bg-gray-700 hover:bg-gray-600 text-gray-300'
-                        : 'bg-gray-300 hover:bg-gray-400 text-gray-700'
-                    }`}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <button
-                onClick={() => setCreatingNewSemester(true)}
-                className={`border-2 rounded-xl p-6 transition-all flex flex-col items-center justify-center hover:shadow-xl hover:scale-[1.02] ${isDarkMode ? 'bg-gradient-to-br from-orange-600 to-orange-700 border-orange-500' : 'bg-gradient-to-br from-orange-400 to-orange-500 border-orange-400'}`}
-              >
-                <svg className="w-8 h-8 mb-2 text-white drop-shadow-lg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                <p className="text-sm font-semibold text-white drop-shadow-md">
-                  Create New Semester
-                </p>
-                <p className="text-xs mt-1 text-white/90">
-                  Create blank semester manually
-                </p>
-              </button>
-            )}
-
-            {/* Upload Routine Button */}
-            <button
-              onClick={() => setShowUploadModal(true)}
-              className={`border-2 rounded-xl p-6 transition-all flex flex-col items-center justify-center hover:shadow-xl hover:scale-[1.02] ${isDarkMode ? 'bg-gradient-to-br from-purple-600 to-purple-700 border-purple-500' : 'bg-gradient-to-br from-purple-400 to-purple-500 border-purple-400'}`}
-            >
-              <svg className="w-8 h-8 mb-2 text-white drop-shadow-lg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-              </svg>
-              <p className="text-sm font-semibold text-white drop-shadow-md">
-                Upload Routine
-              </p>
-              <p className="text-xs mt-1 text-white/90">
-                Extract courses from PDF or Image
-              </p>
-            </button>
-          </div>
-        </div>
-
-        {/* Semesters Section */}
-        {semesterList.length === 0 ? (
-          <div className={`rounded-2xl p-8 mb-8 border transition-colors ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200'}`}>
-            <div className={`text-center py-16 border-2 border-dashed rounded-xl ${isDarkMode ? 'border-gray-700' : 'border-gray-300'}`}>
-              <svg
-                className={`mx-auto h-12 w-12 ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-                />
-              </svg>
-              <h3 className={`mt-4 text-lg font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>No semesters yet</h3>
-              <p className={`mt-2 text-sm ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>Upload a routine to create your first semester</p>
-            </div>
-          </div>
-        ) : (
-          semesterList.map((semesterName) => (
-            <div 
-              key={semesterName}
-              className={`rounded-2xl p-8 mb-8 border transition-all hover:shadow-lg ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200'}`}
-            >
-              <div className="flex justify-between items-center mb-6">
-                <div>
-                    <div className="flex items-center gap-3 mb-2">
-                      {editingSemester === semesterName ? (
-                        <input
-                          type="text"
-                          value={editingSemesterName}
-                          onChange={(e) => setEditingSemesterName(e.target.value)}
-                          onBlur={() => handleUpdateSemesterName(semesterName)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                            handleUpdateSemesterName(semesterName);
-                          } else if (e.key === 'Escape') {
-                            setEditingSemester(null);
-                          }
-                        }}
-                        autoFocus
-                        className={`text-2xl font-bold px-2 py-1 rounded border-2 border-sky-500 ${
-                          isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
-                        }`}
-                      />
-                    ) : (
-                      <h2 
-                        className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} cursor-pointer hover:text-sky-400 transition-colors`}
-                        onClick={() => {
-                          setEditingSemester(semesterName);
-                          setEditingSemesterName(semesterName);
-                        }}
-                      >
-                        {semesterName}
-                      </h2>
-                    )}
-                    <button
-                      onClick={() => {
-                        setEditingSemester(semesterName);
-                        setEditingSemesterName(semesterName);
-                      }}
-                      className={`p-1 rounded hover:bg-sky-500/10 transition-colors ${isDarkMode ? 'text-gray-400 hover:text-sky-400' : 'text-gray-500 hover:text-sky-500'}`}
-                      title="Edit semester name"
-                    >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                      </svg>
-                    </button>
-                    <button
-                      onClick={() => handleDeleteAllCourses(semesterName)}
-                      className={`p-1 rounded hover:bg-red-500/10 transition-colors ${isDarkMode ? 'text-gray-400 hover:text-red-400' : 'text-gray-500 hover:text-red-500'}`}
-                      title="Delete all courses in this semester"
-                    >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                    <button
-                      onClick={() => handleMoveSemesterUp(semesterName)}
-                      disabled={semesterOrder.indexOf(semesterName) === 0}
-                      className={`p-1 rounded transition-colors ${semesterOrder.indexOf(semesterName) === 0 ? 'opacity-40 cursor-not-allowed' : `hover:bg-sky-500/10 ${isDarkMode ? 'text-gray-400 hover:text-sky-400' : 'text-gray-500 hover:text-sky-500'}`}`}
-                      title="Move semester up"
-                    >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                      </svg>
-                    </button>
-                    <button
-                      onClick={() => handleMoveSemesterDown(semesterName)}
-                      disabled={semesterOrder.indexOf(semesterName) === semesterOrder.length - 1}
-                      className={`p-1 rounded transition-colors ${semesterOrder.indexOf(semesterName) === semesterOrder.length - 1 ? 'opacity-40 cursor-not-allowed' : `hover:bg-sky-500/10 ${isDarkMode ? 'text-gray-400 hover:text-sky-400' : 'text-gray-500 hover:text-sky-500'}`}`}
-                      title="Move semester down"
-                    >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </button>
-                  </div>
-                  <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                    {(groupedBySemester[semesterName] || []).length} {(groupedBySemester[semesterName] || []).length === 1 ? 'course' : 'courses'}
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {(groupedBySemester[semesterName] || []).map((course, index) => (
-                  <div
-                    key={course.id}
-                    onClick={() => editingCourse !== course.id && navigate(`/course/${course.id}`)}
-                    className={`group border-2 rounded-xl p-6 transition-all duration-200 relative shadow-lg hover:shadow-xl hover:scale-[1.02] cursor-pointer min-h-[180px] flex flex-col ${isDarkMode ? 'bg-gradient-to-br from-blue-600 to-blue-700 border-blue-500' : 'bg-gradient-to-br from-blue-600 to-blue-700 border-blue-500'}`}
-                  >
-                    {/* Action buttons */}
-                  {editingCourse !== course.id && (
-                    <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          startEditCourse(course);
-                        }}
-                        className="p-1.5 rounded-lg transition-colors bg-white/20 hover:bg-white/30 text-white backdrop-blur-sm"
-                        title="Edit course"
-                      >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                        </svg>
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteCourse(course.id);
-                        }}
-                        className="p-1.5 rounded-lg transition-colors bg-white/20 hover:bg-red-500/80 text-white backdrop-blur-sm"
-                        title="Delete course"
-                      >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
-                    </div>
-                  )}
-
-                  {editingCourse === course.id ? (
-                    <div className="mb-4">
-                      <input
-                        type="text"
-                        value={editFormData.code}
-                        onChange={(e) => setEditFormData({ ...editFormData, code: e.target.value })}
-                        placeholder="Course Code"
-                        className="w-full px-3 py-2 mb-2 rounded-lg border-2 border-white/30 bg-white/90 text-lg font-bold text-gray-900 placeholder-gray-500"
-                      />
-                      <input
-                        type="text"
-                        value={editFormData.title}
-                        onChange={(e) => setEditFormData({ ...editFormData, title: e.target.value })}
-                        placeholder="Course Title"
-                        className="w-full px-3 py-2 mb-3 rounded-lg border-2 border-white/30 bg-white/90 text-sm text-gray-900 placeholder-gray-500"
-                      />
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleUpdateCourse(course.id)}
-                          className="flex-1 px-3 py-2 text-sm font-semibold rounded-lg transition-colors bg-white text-gray-900 hover:bg-gray-100"
-                        >
-                          Save
-                        </button>
-                        <button
-                          onClick={() => {
-                            setEditingCourse(null);
-                            setEditFormData({ code: '', title: '' });
-                          }}
-                          className="flex-1 px-3 py-2 text-sm font-semibold rounded-lg transition-colors bg-black/20 text-white hover:bg-black/30"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="flex items-start justify-between mb-4 pr-16">
-                        <div className="flex-1 mr-2">
-                          <h3 className="font-bold text-2xl mb-2 text-white drop-shadow-md">
-                            {course.code}
-                          </h3>
-                          {course.title && (
-                            <p className="text-base line-clamp-2 leading-relaxed text-white/90">
-                              {course.title}
-                            </p>
-                          )}
-                        </div>
-                        <svg className="flex-shrink-0 group-hover:scale-110 transition-transform ml-2" width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M4 19.5C4 18.837 4.26339 18.2011 4.73223 17.7322C5.20107 17.2634 5.83696 17 6.5 17H20" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.9"/>
-                          <path d="M6.5 3H20V21H6.5C5.83696 21 5.20107 20.7366 4.73223 20.2678C4.26339 19.7989 4 19.163 4 18.5V5.5C4 4.83696 4.26339 4.20107 4.73223 3.73223C5.20107 3.26339 5.83696 3 6.5 3Z" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.9"/>
-                          <path d="M9 7H16" stroke="white" strokeWidth="1.5" strokeLinecap="round" opacity="0.7"/>
-                          <path d="M9 11H16" stroke="white" strokeWidth="1.5" strokeLinecap="round" opacity="0.7"/>
-                        </svg>
-                      </div>
-                      <div className="flex items-center justify-between pt-4 border-t border-white/20 mt-auto">
-                        <span className="text-sm font-medium text-white/80">
-                          {materials.filter((m) => m.course === course.id).length} {materials.filter((m) => m.course === course.id).length === 1 ? 'file' : 'files'}
-                        </span>
-                        <div className="flex items-center gap-1 text-sm font-semibold text-white/80">
-                          View
-                          <svg className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                          </svg>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-                ))}
-
-                {/* Add Course Card */}
-                {addingCourseToSemester === semesterName ? (
-                  <div className={`border-2 border-dashed rounded-xl p-6 transition-all duration-200 ${isDarkMode ? 'border-gray-700 bg-gray-900/30 hover:border-sky-500/50 hover:bg-gray-900/50' : 'border-gray-300 bg-gray-50 hover:border-sky-400 hover:bg-gray-100'}`}>
-                    <div className="space-y-3">
-                      <input
-                        type="text"
-                        value={newCourseData.code}
-                        onChange={(e) => setNewCourseData({ ...newCourseData, code: e.target.value })}
-                        placeholder="Course Code (e.g., CSE313)"
-                        autoFocus
-                        className={`w-full px-3 py-2 rounded-lg border-2 text-lg font-bold ${
-                          isDarkMode
-                            ? 'bg-gray-800 border-sky-500 text-sky-300'
-                            : 'bg-white border-sky-400 text-sky-600'
-                        }`}
-                      />
-                      <input
-                        type="text"
-                        value={newCourseData.title}
-                        onChange={(e) => setNewCourseData({ ...newCourseData, title: e.target.value })}
-                        placeholder="Course Title (optional)"
-                        className={`w-full px-3 py-2 rounded-lg border-2 text-sm ${
-                          isDarkMode
-                            ? 'bg-gray-800 border-sky-500 text-gray-300'
-                            : 'bg-white border-sky-400 text-gray-700'
-                        }`}
-                      />
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleAddNewCourse(semesterName)}
-                          className={`flex-1 px-3 py-2 text-sm font-semibold rounded-lg transition-colors ${
-                            isDarkMode
-                              ? 'bg-sky-500 hover:bg-sky-600 text-white'
-                              : 'bg-sky-500 hover:bg-sky-600 text-white'
-                          }`}
-                        >
-                          Add
-                        </button>
-                        <button
-                          onClick={() => {
-                            setAddingCourseToSemester(null);
-                            setNewCourseData({ code: '', title: '' });
-                          }}
-                          className={`flex-1 px-3 py-2 text-sm font-semibold rounded-lg transition-colors ${
-                            isDarkMode
-                              ? 'bg-gray-700 hover:bg-gray-600 text-gray-300'
-                              : 'bg-gray-300 hover:bg-gray-400 text-gray-700'
-                          }`}
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setAddingCourseToSemester(semesterName)}
-                    className={`border-2 border-dashed rounded-xl p-6 transition-all duration-200 flex flex-col items-center justify-center h-full hover:shadow-md ${
-                      isDarkMode 
-                        ? 'border-gray-700 hover:border-sky-500/50 bg-gray-900/20 hover:bg-gray-900/40' 
-                        : 'border-gray-300 hover:border-sky-400 bg-gray-50 hover:bg-gray-100'
-                    }`}
-                  >
-                    <svg className={`w-8 h-8 mb-2 ${isDarkMode ? 'text-gray-600 group-hover:text-sky-400' : 'text-gray-400 group-hover:text-sky-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                    <p className={`text-sm font-semibold ${isDarkMode ? 'text-gray-400 hover:text-sky-400' : 'text-gray-600 hover:text-sky-600'} transition-colors`}>
-                      Add Course
-                    </p>
-                  </button>
-                )}
-              </div>
-            </div>
-          ))
-        )}
-
-        {/* Recent Materials */}
-        <div className={`rounded-2xl p-8 border transition-colors ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200'}`}>
+            <div className={`rounded-2xl p-8 border transition-colors ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200'}`}>
           <h2 className={`text-lg font-bold mb-6 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Recent Files</h2>
 
           {materials.filter(m => {
@@ -1296,10 +1181,10 @@ export default function DashboardPage() {
               ))}
             </div>
           )}
-        </div>
+            </div>
 
-        {/* Storage Usage Card */}
-        {usage && (
+            {/* Storage Usage Card */}
+            {usage && (
           <div className={`rounded-2xl p-8 mb-8 border transition-colors ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200'}`}>
             <div className="flex items-center justify-between mb-6">
               <div>
@@ -1321,9 +1206,11 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
+            )}
+          </>
         )}
-
-        {/* Online Compiler CTA */}
+        
+        {/* Online Compiler CTA - Accessible to everyone */}
         <div className={`rounded-2xl overflow-hidden mb-8 border-2 transition-all hover:shadow-2xl hover:scale-[1.02] ${isDarkMode ? 'bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-600 border-emerald-500' : 'bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 border-emerald-400'}`}>
           <a 
             href="https://compiler.supanroy.com" 
@@ -1383,8 +1270,6 @@ export default function DashboardPage() {
             </div>
           </a>
         </div>
-        </>
-        )}
       </main>
 
       {/* Footer */}

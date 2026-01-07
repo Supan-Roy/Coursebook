@@ -1,10 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { todoService, todoCategoryService } from '../services';
 import { FiPlus, FiTrash2, FiCheck, FiClock, FiAlertCircle, FiEdit2, FiChevronLeft, FiChevronRight, FiX } from 'react-icons/fi';
 import DateTimePicker from './DateTimePicker';
 import notificationService from '../services/notificationService';
 
 const MyPlans = ({ isDarkMode }) => {
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const NOTIFICATION_PREF_KEY = 'todo_notifications_enabled';
   // Get today's date in YYYY-MM-DD format
   const getTodayDate = () => {
@@ -12,8 +16,26 @@ const MyPlans = ({ isDarkMode }) => {
     return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   };
 
-  const [categories, setCategories] = useState([]);
-  const [activeCategory, setActiveCategory] = useState(null);
+  // Initialize with default categories for unauthenticated users
+  const defaultCategories = [
+    { id: 1, name: 'Academic' },
+    { id: 2, name: 'Personal' }
+  ];
+  
+  const [categories, setCategories] = useState(() => {
+    // Show default categories for unauthenticated users
+    if (!isAuthenticated) {
+      return defaultCategories;
+    }
+    return [];
+  });
+  const [activeCategory, setActiveCategory] = useState(() => {
+    // Set first default category as active for unauthenticated users
+    if (!isAuthenticated) {
+      return 1; // Academic
+    }
+    return null;
+  });
   const [todos, setTodos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [newTodo, setNewTodo] = useState({
@@ -93,6 +115,12 @@ const MyPlans = ({ isDarkMode }) => {
   };
 
   const loadData = async () => {
+    // For unauthenticated users, just set loading to false and show default UI
+    if (!isAuthenticated) {
+      setLoading(false);
+      return;
+    }
+    
     try {
       const [categoriesData, todosData] = await Promise.all([
         todoCategoryService.getAll(),
@@ -127,6 +155,11 @@ const MyPlans = ({ isDarkMode }) => {
   const handleAddTodo = async (e) => {
     e.preventDefault();
     if (!newTodo.title.trim()) return;
+    
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
 
     try {
       const todoData = {
@@ -148,6 +181,12 @@ const MyPlans = ({ isDarkMode }) => {
 
   const handleAddCategory = async () => {
     if (!newCategoryName.trim()) return;
+    
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+    
     try {
       const newCategory = await todoCategoryService.create({ name: newCategoryName });
       setCategories([...categories, newCategory]);
@@ -210,6 +249,11 @@ const MyPlans = ({ isDarkMode }) => {
   };
 
   const toggleComplete = async (todo) => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+    
     try {
       const updated = await todoService.update(todo.id, {
         is_completed: !todo.is_completed,
@@ -221,6 +265,11 @@ const MyPlans = ({ isDarkMode }) => {
   };
 
   const deleteTodo = async (id) => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+    
     try {
       await todoService.delete(id);
       setTodos(todos.filter((t) => t.id !== id));
@@ -230,6 +279,11 @@ const MyPlans = ({ isDarkMode }) => {
   };
 
   const startEditTodo = (todo) => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+    
     setEditingTodo(todo.id);
     setEditFormData({
       title: todo.title,
@@ -254,6 +308,11 @@ const MyPlans = ({ isDarkMode }) => {
   const handleUpdateTodo = async (e) => {
     e.preventDefault();
     if (!editFormData.title.trim()) return;
+    
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
 
     try {
       const updated = await todoService.update(editingTodo, {
@@ -583,7 +642,13 @@ const MyPlans = ({ isDarkMode }) => {
       {/* Add Todo Button */}
       {!isAddingTodo && (
         <button
-          onClick={() => setIsAddingTodo(true)}
+          onClick={() => {
+            if (!isAuthenticated) {
+              navigate('/login');
+              return;
+            }
+            setIsAddingTodo(true);
+          }}
           className={`w-full mb-6 p-4 rounded-xl border-2 border-dashed transition-all duration-200 flex items-center justify-center gap-2 ${
             isDarkMode
               ? 'border-gray-700 hover:border-blue-500 text-gray-400 hover:text-blue-400'

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { initFloatingElementInteraction } from '../utils/floatingElementInteraction';
 import CoursebookTextLogo from '../components/CoursebookTextLogo';
+import { authService } from '../services';
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -15,11 +15,14 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendMessage, setResendMessage] = useState('');
   const { register, loading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    initFloatingElementInteraction();
+    // Component mounted
   }, []);
 
   const handleChange = (e) => {
@@ -42,44 +45,41 @@ export default function RegisterPage() {
 
     const result = await register(formData);
     if (result.success) {
-      navigate('/login', { 
-        state: { 
-          message: result.message || 'Account created successfully! Please check your email to verify your account before signing in.' 
-        } 
-      });
+      setSuccess(true);
+      setError('');
+      // Don't navigate immediately, show success message with resend option
     } else {
       setError(typeof result.error === 'string' ? result.error : JSON.stringify(result.error));
+      setSuccess(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!formData.email) {
+      setResendMessage('Please enter your email address first');
+      return;
+    }
+
+    setResendLoading(true);
+    setResendMessage('');
+    
+    try {
+      const response = await authService.resendVerificationEmail(formData.email);
+      setResendMessage(response.detail || 'Verification email sent! Please check your inbox.');
+    } catch (err) {
+      setResendMessage(
+        err.response?.data?.detail || 
+        'If an account with this email exists, a verification email has been sent.'
+      );
+    } finally {
+      setResendLoading(false);
     }
   };
 
   return (
-    <>
-      <div className="space-bg"></div>
-      <div className="floating-element eq1">∑∫∂∇</div>
-      <div className="floating-element eq2">E=mc²</div>
-      <div className="floating-element eq3">λ = h/p</div>
-      <div className="floating-element eq4">f(x) = y</div>
-      <div className="floating-element eq5">π ≈ 3.14</div>
-      <div className="floating-element code1">const x = 42</div>
-      <div className="floating-element code2">def learn():</div>
-      <div className="floating-element symbol1">⚛</div>
-      <div className="floating-element symbol2">∞</div>
-      <div className="floating-element small1">α β γ δ</div>
-      <div className="floating-element small2">∂²f/∂x²</div>
-      <div className="floating-element small3">Σ(i=1)</div>
-      <div className="floating-element large1">∑</div>
-      <div className="floating-element large2">∫</div>
-      <div className="floating-element medium1">⚘</div>
-      <div className="floating-element medium2">◆</div>
-      <div className="floating-element medium3">✦</div>
-      <div className="particles">
-        {[...Array(5)].map((_, i) => (
-          <div key={i} className="particle"></div>
-        ))}
-      </div>
-      <div className="min-h-screen flex items-center justify-center px-4 py-8 relative z-10">
-        <div className="w-full max-w-md">
-          <div className="glass-card rounded-2xl p-8">
+    <div className="min-h-screen flex items-center justify-center px-4 py-8 bg-gray-50">
+          <div className="w-full max-w-md">
+          <div className="bg-white rounded-2xl p-8 shadow-lg">
             <div className="text-center mb-6">
               <div className="flex justify-center items-center mb-4 relative">
                 <img src="/coursebook.svg" alt="Coursebook" className="absolute w-12 h-12" style={{ left: '20px' }} />
@@ -92,6 +92,55 @@ export default function RegisterPage() {
           {error && (
             <div className="rounded-lg bg-red-500/10 border-2 border-red-500 p-3">
               <p className="text-sm text-red-400 font-medium">{error}</p>
+            </div>
+          )}
+
+          {success && (
+            <div className="rounded-lg bg-green-500/10 border-2 border-green-500 p-4 space-y-3">
+              <p className="text-sm text-green-400 font-medium">
+                Account created successfully! Please check your email to verify your account.
+              </p>
+              <div className="space-y-2">
+                <p className="text-xs text-gray-400">
+                  Didn't receive the email? Check your spam folder or resend it.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleResendVerification}
+                  disabled={resendLoading}
+                  className="w-full flex justify-center items-center gap-2 py-2 px-4 border border-green-500/50 rounded-lg text-sm font-semibold text-green-400 hover:bg-green-500/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {resendLoading ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                      Resend Verification Email
+                    </>
+                  )}
+                </button>
+                {resendMessage && (
+                  <p className={`text-xs ${resendMessage.includes('sent') ? 'text-green-400' : 'text-gray-400'}`}>
+                    {resendMessage}
+                  </p>
+                )}
+                <div className="pt-2 border-t border-green-500/20">
+                  <Link
+                    to="/login"
+                    className="block text-center text-sm font-semibold text-green-400 hover:text-green-300"
+                  >
+                    Go to Sign In →
+                  </Link>
+                </div>
+              </div>
             </div>
           )}
 
@@ -212,13 +261,15 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
-          >
-            {loading ? 'Creating account...' : 'Create account'}
-          </button>
+          {!success && (
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+            >
+              {loading ? 'Creating account...' : 'Create account'}
+            </button>
+          )}
         </form>
 
         <div className="mt-6 text-center">
