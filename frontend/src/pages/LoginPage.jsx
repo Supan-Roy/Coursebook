@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { initFloatingElementInteraction } from '../utils/floatingElementInteraction';
 import CoursebookTextLogo from '../components/CoursebookTextLogo';
@@ -9,12 +9,18 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [infoMessage, setInfoMessage] = useState('');
   const { login, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     initFloatingElementInteraction();
-  }, []);
+    // Check for message from registration or other pages
+    if (location.state?.message) {
+      setInfoMessage(location.state.message);
+    }
+  }, [location]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -22,7 +28,9 @@ export default function LoginPage() {
 
     const result = await login(email, password);
     if (result.success) {
-      navigate('/dashboard');
+      // Redirect to intended page or dashboard
+      const from = location.state?.from?.pathname || '/dashboard';
+      navigate(from, { replace: true });
     } else {
       setError(result.error);
     }
@@ -65,9 +73,22 @@ export default function LoginPage() {
             </div>
 
         <form className="space-y-4" onSubmit={handleSubmit}>
+          {infoMessage && (
+            <div className="rounded-lg bg-blue-500/10 border-2 border-blue-500 p-3">
+              <p className="text-sm text-blue-400 font-medium">{infoMessage}</p>
+            </div>
+          )}
           {error && (
             <div className="rounded-lg bg-red-500/10 border-2 border-red-500 p-3">
               <p className="text-sm text-red-400 font-medium">{error}</p>
+              {error.includes('verify') && (
+                <p className="text-xs text-red-300 mt-2">
+                  <Link to="/resend-verification" className="underline hover:text-red-200">
+                    Resend verification email
+                  </Link>
+                  {' '}or check your backend console in development mode.
+                </p>
+              )}
             </div>
           )}
 
@@ -131,11 +152,16 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div className="mt-6 text-center">
+        <div className="mt-6 space-y-3 text-center">
           <p className="text-sm text-gray-600">
             Don't have an account?{' '}
             <Link to="/register" className="font-semibold text-primary-600 hover:text-primary-700">
               Create account
+            </Link>
+          </p>
+          <p className="text-sm text-gray-600">
+            <Link to="/forgot-password" className="font-semibold text-primary-600 hover:text-primary-700">
+              Forgot password?
             </Link>
           </p>
         </div>
