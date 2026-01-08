@@ -33,7 +33,7 @@ class CourseDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class UpdateSemesterNameView(APIView):
-    """Update semester name for all courses in a semester"""
+    """Update semester name for all courses in a semester and Semester model"""
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
@@ -46,27 +46,40 @@ class UpdateSemesterNameView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Check if new semester name already exists
-        existing = Course.objects.filter(
+        # Check if new semester name already exists in Course model
+        existing_course = Course.objects.filter(
             user=request.user, 
             semester=new_semester
         ).exists()
         
-        if existing and old_semester != new_semester:
+        # Check if new semester name already exists in Semester model
+        existing_semester = Semester.objects.filter(
+            user=request.user,
+            name=new_semester
+        ).exists()
+        
+        if (existing_course or existing_semester) and old_semester != new_semester:
             return Response(
                 {'detail': 'A semester with this name already exists'}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
         
         # Update all courses with the old semester name
-        updated_count = Course.objects.filter(
+        updated_courses_count = Course.objects.filter(
             user=request.user,
             semester=old_semester
         ).update(semester=new_semester)
         
+        # Update Semester model if it exists
+        updated_semesters_count = Semester.objects.filter(
+            user=request.user,
+            name=old_semester
+        ).update(name=new_semester)
+        
         return Response({
-            'message': f'Successfully updated {updated_count} courses',
-            'updated_count': updated_count
+            'message': f'Successfully updated {updated_courses_count} courses and {updated_semesters_count} semester(s)',
+            'updated_courses_count': updated_courses_count,
+            'updated_semesters_count': updated_semesters_count
         }, status=status.HTTP_200_OK)
 
 

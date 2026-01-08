@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTheme } from '../context/ThemeContext';
+import api from '../services/api';
 
 export default function FileUpload({ onUploadSuccess, courseId = null }) {
   const { isDarkMode } = useTheme();
@@ -60,26 +61,15 @@ export default function FileUpload({ onUploadSuccess, courseId = null }) {
         formData.append('course_id', courseId);
       }
 
-      const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
-      const response = await fetch(`${API_BASE_URL}/materials/upload/`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-        },
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Upload failed');
-      }
-
-      const result = await response.json();
+      const response = await api.post('/materials/upload/', formData);
+      const result = response.data;
+      
       if (onUploadSuccess) {
         onUploadSuccess(result);
       }
     } catch (err) {
-      setError(err.message || 'Failed to upload file');
+      const errorMessage = err.response?.data?.detail || err.message || 'Failed to upload file';
+      setError(errorMessage);
     } finally {
       setUploading(false);
     }

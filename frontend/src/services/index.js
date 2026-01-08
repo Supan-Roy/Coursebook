@@ -194,11 +194,13 @@ export const materialService = {
     return response.data.results || response.data;
   },
 
-  async upload(formData) {
+  async upload(formData, onUploadProgress, signal) {
     const response = await api.post('/materials/upload-material/', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+      onUploadProgress: onUploadProgress,
+      signal: signal,
     });
     return response.data;
   },

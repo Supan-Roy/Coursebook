@@ -151,30 +151,31 @@ export default function SharedCourseDetailPage() {
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-3">
+          <div className="flex justify-between items-center h-16 gap-2 sm:gap-4">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               <button
                 onClick={() => navigate(`/shared/${token}`)}
-                className={`p-2 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-gray-800 text-gray-400' : 'hover:bg-gray-100 text-gray-600'}`}
+                className={`p-2 rounded-lg transition-colors flex-shrink-0 ${isDarkMode ? 'hover:bg-gray-800 text-gray-400' : 'hover:bg-gray-100 text-gray-600'}`}
               >
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
-              <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/dashboard')}>
-                <img src="/coursebook.svg" alt="Coursebook" className="w-10 h-10" />
-                <CoursebookTextLogo className="w-48 h-12" isDarkMode={isDarkMode} showUnderline={false} />
+              <div className="flex items-center gap-2 sm:gap-3 cursor-pointer min-w-0" onClick={() => navigate('/dashboard')}>
+                <img src="/coursebook.svg" alt="Coursebook" className="w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0" />
+                <CoursebookTextLogo className="w-32 h-8 sm:w-48 sm:h-12 hidden sm:block" isDarkMode={isDarkMode} showUnderline={false} />
               </div>
             </div>
             <button
               onClick={() => navigate('/dashboard')}
-              className={`px-4 py-2 rounded-lg transition-colors ${
+              className={`px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm rounded-lg transition-colors whitespace-nowrap ${
                 isDarkMode
                   ? 'text-gray-300 hover:text-white hover:bg-gray-900 border border-gray-700'
                   : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100 border border-gray-300'
               }`}
             >
-              Explore Coursebook
+              <span className="hidden sm:inline">Explore Coursebook</span>
+              <span className="sm:hidden">Explore</span>
             </button>
           </div>
         </div>
@@ -208,8 +209,8 @@ export default function SharedCourseDetailPage() {
                   onClick={() => window.open(`${BACKEND_BASE_URL}/materials/files/${material.id}/`, '_blank')}
                   className={`p-4 rounded-lg border cursor-pointer ${isDarkMode ? 'border-gray-700 bg-gray-900/30 hover:bg-gray-900/50' : 'border-gray-200 bg-gray-50 hover:bg-gray-100'} transition-colors`}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+                    <div className="flex items-center gap-3 flex-1 min-w-0 w-full sm:w-auto">
                       <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
                         isDarkMode ? 'bg-gray-800' : 'bg-gray-200'
                       }`}>
@@ -218,7 +219,7 @@ export default function SharedCourseDetailPage() {
                         </svg>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className={`font-medium truncate ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                        <p className={`font-medium truncate text-sm sm:text-base ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                           {material.filename}
                         </p>
                         <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
@@ -226,12 +227,12 @@ export default function SharedCourseDetailPage() {
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 ml-4" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center gap-2 w-full sm:w-auto sm:ml-4" onClick={(e) => e.stopPropagation()}>
                       <a
                         href={`${BACKEND_BASE_URL}/materials/files/${material.id}/`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className={`px-4 py-2 rounded-lg transition-colors font-semibold ${
+                        className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg transition-colors font-semibold text-sm text-center ${
                           isDarkMode
                             ? 'bg-white hover:bg-gray-100 text-black'
                             : 'bg-gray-900 hover:bg-gray-800 text-white'
@@ -245,7 +246,7 @@ export default function SharedCourseDetailPage() {
                       </a>
                       <button
                         onClick={() => handleDownload(material)}
-                        className={`px-4 py-2 rounded-lg transition-colors ${
+                        className={`px-3 sm:px-4 py-2 rounded-lg transition-colors flex-shrink-0 ${
                           isDarkMode
                             ? 'bg-gray-700 hover:bg-gray-600 text-white border border-gray-600'
                             : 'bg-gray-200 hover:bg-gray-300 text-gray-700 border border-gray-300'

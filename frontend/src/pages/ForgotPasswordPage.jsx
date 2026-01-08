@@ -49,8 +49,8 @@ export default function ForgotPasswordPage() {
           <div className={`glass-card rounded-2xl p-8 ${isDarkMode ? 'bg-gray-900/90 border border-gray-800' : ''}`}>
             <div className="text-center mb-8">
               <div className="flex justify-center items-center mb-4 relative">
-                <img src="/coursebook.svg" alt="Coursebook" className="absolute w-12 h-12" style={{ left: '20px' }} />
-                <CoursebookTextLogo className="w-64 h-16" isDarkMode={isDarkMode} />
+                <img src="/coursebook.svg" alt="Coursebook" className="absolute w-10 h-10 sm:w-12 sm:h-12" style={{ left: '10px' }} />
+                <CoursebookTextLogo className="w-48 h-12 sm:w-64 sm:h-16" isDarkMode={isDarkMode} />
               </div>
               <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`}>Reset your password</p>
             </div>

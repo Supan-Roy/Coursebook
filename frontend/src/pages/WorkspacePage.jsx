@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { sharingService, courseService, materialService } from '../services';
+import { sharingService, courseService, materialService, preparationService } from '../services';
 import ShareDialog from '../components/ShareDialog';
 import ConfirmDialog from '../components/ConfirmDialog';
 
@@ -27,6 +27,9 @@ export default function WorkspacePage({ isDarkMode: propIsDarkMode }) {
   const [activityPage, setActivityPage] = useState(1);
   const [materialToDelete, setMaterialToDelete] = useState(null);
   const [showMaterialDeleteConfirm, setShowMaterialDeleteConfirm] = useState(false);
+  const [summaries, setSummaries] = useState([]);
+  const [quizzes, setQuizzes] = useState([]);
+  const [materialActivities, setMaterialActivities] = useState([]);
   const ACTIVITIES_PER_PAGE = 10;
 
   useEffect(() => {
@@ -35,6 +38,9 @@ export default function WorkspacePage({ isDarkMode: propIsDarkMode }) {
       loadCourses();
       if (activeWorkspaceTab === 'material-manager') {
         loadMaterials();
+        loadSummaries();
+        loadQuizzes();
+        loadMaterialActivities();
       }
     }
   }, [isAuthenticated, activeWorkspaceTab]);
@@ -133,6 +139,51 @@ export default function WorkspacePage({ isDarkMode: propIsDarkMode }) {
     }
   };
 
+  const loadSummaries = async () => {
+    try {
+      const data = await preparationService.listSummaries();
+      setSummaries(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Failed to load summaries:', error);
+      setSummaries([]);
+    }
+  };
+
+  const loadQuizzes = async () => {
+    try {
+      const data = await preparationService.listQuizzes();
+      setQuizzes(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Failed to load quizzes:', error);
+      setQuizzes([]);
+    }
+  };
+
+  const loadMaterialActivities = () => {
+    // Load material access activities from localStorage
+    try {
+      const accessData = JSON.parse(localStorage.getItem('fileAccessData') || '{}');
+      const activities = [];
+      
+      Object.keys(accessData).forEach(materialId => {
+        const access = accessData[materialId];
+        if (access.lastAccessed) {
+          activities.push({
+            type: 'viewed',
+            materialId: materialId,
+            timestamp: new Date(access.lastAccessed),
+            count: access.count || 1
+          });
+        }
+      });
+      
+      setMaterialActivities(activities);
+    } catch (error) {
+      console.error('Failed to load material activities:', error);
+      setMaterialActivities([]);
+    }
+  };
+
   const formatBytes = (bytes) => {
     if (!bytes) return '0 B';
     const sizes = ['B', 'KB', 'MB', 'GB'];
@@ -140,9 +191,10 @@ export default function WorkspacePage({ isDarkMode: propIsDarkMode }) {
     return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`;
   };
 
-  // Analyze big files
+  // Analyze big files (minimum 5 MB)
   const bigFiles = useMemo(() => {
-    const nonDeleted = materials.filter(m => !m.is_deleted);
+    const MIN_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
+    const nonDeleted = materials.filter(m => !m.is_deleted && (m.size_bytes || 0) >= MIN_SIZE_BYTES);
     const sorted = [...nonDeleted].sort((a, b) => (b.size_bytes || 0) - (a.size_bytes || 0));
     const limit = materials.length > 20 ? 10 : 5;
     return sorted.slice(0, limit);
@@ -184,11 +236,14 @@ export default function WorkspacePage({ isDarkMode: propIsDarkMode }) {
     // Add material uploads
     materials.forEach(material => {
       if (!material.is_deleted && material.uploaded_at) {
+        const course = courses.find(c => c.id === material.course);
         activityList.push({
           type: 'uploaded',
           material: material,
+          course: course,
           timestamp: new Date(material.uploaded_at),
-          description: `Uploaded ${material.filename}`
+          description: `Uploaded ${material.filename}`,
+          courseName: course ? (course.code || course.title) : 'Unknown Course'
         });
       }
     });
@@ -196,11 +251,67 @@ export default function WorkspacePage({ isDarkMode: propIsDarkMode }) {
     // Add material deletions (from trash)
     materials.forEach(material => {
       if (material.is_deleted && material.deleted_at) {
+        const course = courses.find(c => c.id === material.course);
         activityList.push({
           type: 'deleted',
           material: material,
+          course: course,
           timestamp: new Date(material.deleted_at),
-          description: `Deleted ${material.filename}`
+          description: `Deleted ${material.filename}`,
+          courseName: course ? (course.code || course.title) : 'Unknown Course'
+        });
+      }
+    });
+
+    // Add material views/downloads
+    materialActivities.forEach(activity => {
+      const material = materials.find(m => m.id === activity.materialId);
+      if (material) {
+        const course = courses.find(c => c.id === material.course);
+        activityList.push({
+          type: 'viewed',
+          material: material,
+          course: course,
+          timestamp: activity.timestamp,
+          description: `Viewed ${material.filename} ${activity.count > 1 ? `(${activity.count} times)` : ''}`,
+          courseName: course ? (course.code || course.title) : 'Unknown Course'
+        });
+      }
+    });
+
+    // Add summary generations
+    summaries.forEach(summary => {
+      const course = courses.find(c => c.id === summary.course);
+      activityList.push({
+        type: 'summary',
+        summary: summary,
+        course: course,
+        timestamp: new Date(summary.created_at),
+        description: `Generated summary for ${course ? (course.code || course.title) : 'course'}`,
+        courseName: course ? (course.code || course.title) : 'Unknown Course'
+      });
+    });
+
+    // Add quiz activities
+    quizzes.forEach(quiz => {
+      const course = courses.find(c => c.id === quiz.course);
+      if (quiz.completed_at) {
+        activityList.push({
+          type: 'quiz_completed',
+          quiz: quiz,
+          course: course,
+          timestamp: new Date(quiz.completed_at),
+          description: `Completed quiz for ${course ? (course.code || course.title) : 'course'} (Score: ${parseFloat(quiz.score || 0).toFixed(1)}%)`,
+          courseName: course ? (course.code || course.title) : 'Unknown Course'
+        });
+      } else {
+        activityList.push({
+          type: 'quiz_created',
+          quiz: quiz,
+          course: course,
+          timestamp: new Date(quiz.created_at),
+          description: `Created quiz for ${course ? (course.code || course.title) : 'course'}`,
+          courseName: course ? (course.code || course.title) : 'Unknown Course'
         });
       }
     });
@@ -219,7 +330,7 @@ export default function WorkspacePage({ isDarkMode: propIsDarkMode }) {
     activityList.sort((a, b) => b.timestamp - a.timestamp);
     
     return activityList;
-  }, [materials, shareLinks]);
+  }, [materials, shareLinks, summaries, quizzes, materialActivities, courses]);
 
   const paginatedActivities = useMemo(() => {
     const start = (activityPage - 1) * ACTIVITIES_PER_PAGE;
@@ -700,6 +811,12 @@ export default function WorkspacePage({ isDarkMode: propIsDarkMode }) {
                                       ? isDarkMode ? 'bg-green-500/20 text-green-400' : 'bg-green-100 text-green-600'
                                       : activity.type === 'deleted'
                                       ? isDarkMode ? 'bg-red-500/20 text-red-400' : 'bg-red-100 text-red-600'
+                                      : activity.type === 'viewed'
+                                      ? isDarkMode ? 'bg-purple-500/20 text-purple-400' : 'bg-purple-100 text-purple-600'
+                                      : activity.type === 'summary'
+                                      ? isDarkMode ? 'bg-cyan-500/20 text-cyan-400' : 'bg-cyan-100 text-cyan-600'
+                                      : activity.type === 'quiz_created' || activity.type === 'quiz_completed'
+                                      ? isDarkMode ? 'bg-orange-500/20 text-orange-400' : 'bg-orange-100 text-orange-600'
                                       : isDarkMode ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-100 text-blue-600'
                                   }`}>
                                     {activity.type === 'uploaded' ? (
@@ -709,6 +826,19 @@ export default function WorkspacePage({ isDarkMode: propIsDarkMode }) {
                                     ) : activity.type === 'deleted' ? (
                                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                      </svg>
+                                    ) : activity.type === 'viewed' ? (
+                                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                      </svg>
+                                    ) : activity.type === 'summary' ? (
+                                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                      </svg>
+                                    ) : activity.type === 'quiz_created' || activity.type === 'quiz_completed' ? (
+                                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                                       </svg>
                                     ) : (
                                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -720,9 +850,16 @@ export default function WorkspacePage({ isDarkMode: propIsDarkMode }) {
                                     <p className={`text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                                       {activity.description}
                                     </p>
-                                    <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                      {activity.timestamp.toLocaleString()}
-                                    </p>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      {activity.courseName && (
+                                        <span className={`text-xs px-2 py-0.5 rounded ${isDarkMode ? 'bg-sky-500/20 text-sky-400' : 'bg-sky-100 text-sky-700'}`}>
+                                          📁 {activity.courseName}
+                                        </span>
+                                      )}
+                                      <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                        {activity.timestamp.toLocaleString()}
+                                      </p>
+                                    </div>
                                   </div>
                                 </div>
                               ))}

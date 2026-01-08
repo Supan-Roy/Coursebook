@@ -129,20 +129,21 @@ export default function SharedContentPage() {
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/dashboard')}>
-              <img src="/coursebook.svg" alt="Coursebook" className="w-10 h-10" />
-              <CoursebookTextLogo className="w-48 h-12" isDarkMode={isDarkMode} showUnderline={false} />
+          <div className="flex justify-between items-center h-16 gap-2 sm:gap-4">
+            <div className="flex items-center gap-2 sm:gap-3 cursor-pointer min-w-0" onClick={() => navigate('/dashboard')}>
+              <img src="/coursebook.svg" alt="Coursebook" className="w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0" />
+              <CoursebookTextLogo className="w-32 h-8 sm:w-48 sm:h-12 hidden sm:block" isDarkMode={isDarkMode} showUnderline={false} />
             </div>
             <button
               onClick={() => navigate('/dashboard')}
-              className={`px-4 py-2 rounded-lg transition-colors ${
+              className={`px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm rounded-lg transition-colors whitespace-nowrap ${
                 isDarkMode
                   ? 'text-gray-300 hover:text-white hover:bg-gray-900 border border-gray-700'
                   : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100 border border-gray-300'
               }`}
             >
-              Explore Coursebook
+              <span className="hidden sm:inline">Explore Coursebook</span>
+              <span className="sm:hidden">Explore</span>
             </button>
           </div>
         </div>

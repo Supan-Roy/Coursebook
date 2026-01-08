@@ -1,6 +1,5 @@
 from django.db.models.signals import post_delete, pre_delete
 from django.dispatch import receiver
-from pathlib import Path
 
 from usage.models import StorageUsage
 from .models import Material
@@ -20,11 +19,11 @@ def update_storage_on_delete(sender, instance, **kwargs):
 
 @receiver(post_delete, sender=Material)
 def delete_file_on_delete(sender, instance, **kwargs):
-    """Delete the physical file when a material is deleted"""
+    """Delete the file from Cloudinary when a material is deleted"""
     try:
-        file_path = Path(instance.storage_key)
-        if file_path.exists():
-            file_path.unlink()
+        if instance.storage_key:
+            from cloudinary.uploader import destroy as cloudinary_destroy
+            cloudinary_destroy(instance.storage_key, resource_type="raw")
     except Exception as e:
-        # Log error but don't block
-        print(f"Error deleting file on material delete: {e}")
+        # Log error but don't block deletion
+        print(f"Error deleting file from Cloudinary on material delete: {e}")

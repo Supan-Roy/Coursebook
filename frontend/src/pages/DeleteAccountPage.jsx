@@ -71,8 +71,8 @@ export default function DeleteAccountPage() {
           isDarkMode={isDarkMode}
         />
         <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
-          <div className="p-8">
-            <div className={`max-w-2xl mx-auto rounded-2xl p-8 border ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200 shadow-sm'}`}>
+          <div className="p-4 sm:p-6 lg:p-8">
+            <div className={`max-w-2xl mx-auto rounded-2xl p-6 sm:p-8 border ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200 shadow-sm'}`}>
               <div className="text-center space-y-4">
                 <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto">
                   <svg className="w-8 h-8 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -116,10 +116,10 @@ export default function DeleteAccountPage() {
         isDarkMode={isDarkMode}
       />
       <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
-        <div className="p-8">
-          <div className={`max-w-2xl mx-auto rounded-2xl p-8 border ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200 shadow-sm'}`}>
+        <div className="p-4 sm:p-6 lg:p-8">
+          <div className={`max-w-2xl mx-auto rounded-2xl p-6 sm:p-8 border ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200 shadow-sm'}`}>
             <div className="mb-6">
-              <h1 className="text-2xl font-bold mb-2">Delete Account</h1>
+              <h1 className="text-xl sm:text-2xl font-bold mb-2">Delete Account</h1>
               <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                 We're sorry to see you go. Your feedback helps us improve.
               </p>

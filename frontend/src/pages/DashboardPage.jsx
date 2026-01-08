@@ -55,6 +55,12 @@ export default function DashboardPage() {
   const [showEditPDF, setShowEditPDF] = useState(false);
   const profileMenuRef = useRef(null);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showSearchModal, setShowSearchModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const searchInputRef = useRef(null);
+  const semesterInputRef = useRef(null);
+  const [pendingDeletion, setPendingDeletion] = useState(null);
+  const deletionTimeoutRef = useRef(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     return localStorage.getItem('sidebarCollapsed') === 'true';
   });
@@ -102,6 +108,28 @@ export default function DashboardPage() {
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, [showProfileMenu]);
+
+  // Close search modal on ESC key
+  useEffect(() => {
+    if (!showSearchModal) return;
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') {
+        setShowSearchModal(false);
+        setSearchQuery('');
+      }
+    };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [showSearchModal]);
+
+  // Cleanup deletion timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (deletionTimeoutRef.current) {
+        clearTimeout(deletionTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Persist semester order to localStorage
   useEffect(() => {
@@ -299,15 +327,50 @@ export default function DashboardPage() {
       isOpen: true,
       title: 'Delete Semester',
       message: courseCount > 0 
-        ? `Are you sure you want to delete ${semesterName} and all ${courseCount} course${courseCount === 1 ? '' : 's'}? This action cannot be undone.`
-        : `Are you sure you want to delete ${semesterName}? This action cannot be undone.`,
+        ? `Are you sure you want to delete ${semesterName} and all ${courseCount} course${courseCount === 1 ? '' : 's'}?`
+        : `Are you sure you want to delete ${semesterName}?`,
       onConfirm: async () => {
         try {
-          // Use the semester delete endpoint which handles both semester and its courses
-          await semesterService.delete(semesterName);
-          loadData();
+          // Store semester data for potential undo
+          const semesterData = {
+            name: semesterName,
+            courses: (groupedBySemester[semesterName] || []).map(course => ({
+              id: course.id,
+              code: course.code,
+              title: course.title,
+              semester: course.semester,
+              folder_slug: course.folder_slug
+            })),
+            semesterRecord: semesters.find(s => s.name === semesterName)
+          };
+
+          // Hide semester from UI immediately
+          setPendingDeletion(semesterData);
+
+          // Clear any existing timeout
+          if (deletionTimeoutRef.current) {
+            clearTimeout(deletionTimeoutRef.current);
+          }
+
+          // Delete after 5 seconds if not undone
+          deletionTimeoutRef.current = setTimeout(async () => {
+            try {
+              await semesterService.delete(semesterName);
+              setPendingDeletion(null);
+              loadData();
+            } catch (error) {
+              console.error('Failed to delete semester:', error);
+              setPendingDeletion(null);
+              setAlertDialog({
+                isOpen: true,
+                title: 'Error',
+                message: 'Failed to delete semester',
+                type: 'error'
+              });
+            }
+          }, 5000);
         } catch (error) {
-          console.error('Failed to delete semester:', error);
+          console.error('Failed to prepare deletion:', error);
           setAlertDialog({
             isOpen: true,
             title: 'Error',
@@ -318,6 +381,33 @@ export default function DashboardPage() {
         setConfirmDialog({ ...confirmDialog, isOpen: false });
       }
     });
+  };
+
+  const handleUndoDelete = () => {
+    if (!pendingDeletion) return;
+
+    // Clear the deletion timeout - this prevents the actual deletion
+    if (deletionTimeoutRef.current) {
+      clearTimeout(deletionTimeoutRef.current);
+      deletionTimeoutRef.current = null;
+    }
+
+    // Since we haven't actually deleted from backend yet, just clear the pending state
+    // The semester will reappear when we reload data
+    setPendingDeletion(null);
+    
+    // Update semester order to restore the semester's position
+    if (!semesterOrder.includes(pendingDeletion.name)) {
+      // Restore to original position if possible, or add to beginning
+      setSemesterOrder(prev => {
+        const index = prev.indexOf(pendingDeletion.name);
+        if (index === -1) {
+          // Wasn't in order, add to beginning
+          return [pendingDeletion.name, ...prev];
+        }
+        return prev;
+      });
+    }
   };
 
   const handleMoveSemesterUp = (semesterName) => {
@@ -483,8 +573,10 @@ export default function DashboardPage() {
       return;
     }
     
+    const newName = editingSemesterName.trim();
+    
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/courses/update-semester/', {
+      const response = await fetch(`${API_BASE_URL}/courses/update-semester/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -492,7 +584,7 @@ export default function DashboardPage() {
         },
         body: JSON.stringify({
           old_semester: oldName,
-          new_semester: editingSemesterName.trim(),
+          new_semester: newName,
         }),
       });
       
@@ -506,6 +598,17 @@ export default function DashboardPage() {
         });
         return;
       }
+      
+      // Update semesterOrder to replace old name with new name in the same position
+      setSemesterOrder(prevOrder => {
+        const index = prevOrder.indexOf(oldName);
+        if (index !== -1) {
+          const newOrder = [...prevOrder];
+          newOrder[index] = newName;
+          return newOrder;
+        }
+        return prevOrder;
+      });
       
       setEditingSemester(null);
       loadData();
@@ -532,6 +635,30 @@ export default function DashboardPage() {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
   };
+
+  // Search functionality
+  const getSearchResults = () => {
+    if (!searchQuery.trim()) return { courses: [], materials: [] };
+
+    const query = searchQuery.toLowerCase().trim();
+    const filteredCourses = courses.filter(course => {
+      const codeMatch = course.code?.toLowerCase().includes(query);
+      const titleMatch = course.title?.toLowerCase().includes(query);
+      return codeMatch || titleMatch;
+    });
+
+    const filteredMaterials = materials.filter(material => {
+      const filenameMatch = material.filename?.toLowerCase().includes(query);
+      const course = courses.find(c => c.id === material.course);
+      const courseCodeMatch = course?.code?.toLowerCase().includes(query);
+      const courseTitleMatch = course?.title?.toLowerCase().includes(query);
+      return filenameMatch || courseCodeMatch || courseTitleMatch;
+    });
+
+    return { courses: filteredCourses, materials: filteredMaterials };
+  };
+
+  const searchResults = getSearchResults();
 
   const getStoragePercentage = () => {
     if (!usage) return 0;
@@ -794,7 +921,7 @@ export default function DashboardPage() {
       {/* Secondary Navigation */}
       <div className={`border-b sticky top-16 z-10 backdrop-blur-sm transition-colors ${isDarkMode ? 'border-gray-800 bg-black/80' : 'border-gray-200 bg-white/80'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex gap-1 overflow-x-auto scrollbar-hide">
+          <div className="flex gap-1 items-center overflow-x-auto scrollbar-hide">
             <button
               onClick={() => setActiveTab('semesters')}
               className={`px-3 sm:px-6 py-2 sm:py-3 font-medium text-xs sm:text-sm transition-all duration-200 border-b-2 whitespace-nowrap ${
@@ -890,6 +1017,26 @@ export default function DashboardPage() {
                 PDF Toolkit
               </div>
             </button>
+            {/* Search Button - Only visible when Semesters tab is active */}
+            {activeTab === 'semesters' && (
+              <button
+                onClick={() => {
+                  setShowSearchModal(true);
+                  setTimeout(() => searchInputRef.current?.focus(), 100);
+                }}
+                className={`ml-auto mr-2 sm:mr-4 px-3 sm:px-4 py-1 sm:py-1.5 font-medium text-xs sm:text-sm transition-all duration-200 rounded-lg whitespace-nowrap flex items-center gap-1.5 sm:gap-2 ${
+                  isDarkMode
+                    ? 'text-gray-300 hover:text-white hover:bg-gray-800 border-[0.5px] border-gray-700 hover:border-sky-500/50'
+                    : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100 border-[0.5px] border-gray-300 hover:border-sky-500/50'
+                }`}
+                title="Search courses and materials"
+              >
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <span className="hidden sm:inline">Search</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -975,7 +1122,9 @@ export default function DashboardPage() {
             </div>
           </div>
         ) : (
-          semesterList.map((semesterName) => (
+          semesterList
+            .filter(semesterName => !pendingDeletion || pendingDeletion.name !== semesterName)
+            .map((semesterName) => (
             <div 
               key={semesterName}
                   className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8 border transition-all hover:shadow-lg ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200'}`}
@@ -984,23 +1133,73 @@ export default function DashboardPage() {
                     <div className="flex-1">
                       <div className="flex items-center gap-2 sm:gap-3 mb-1.5 sm:mb-2">
                       {editingSemester === semesterName ? (
-                        <input
-                          type="text"
-                          value={editingSemesterName}
-                          onChange={(e) => setEditingSemesterName(e.target.value)}
-                          onBlur={() => handleUpdateSemesterName(semesterName)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                            handleUpdateSemesterName(semesterName);
-                          } else if (e.key === 'Escape') {
-                            setEditingSemester(null);
-                          }
-                        }}
-                        autoFocus
-                            className={`text-lg sm:text-xl lg:text-2xl font-bold px-2 py-1 rounded border-2 border-sky-500 w-full sm:w-auto ${
-                          isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
-                        }`}
-                      />
+                        <div className="flex items-center gap-2">
+                          <div className="relative inline-block">
+                            <span
+                              className={`text-lg sm:text-xl lg:text-2xl font-bold px-2 py-1 invisible whitespace-pre absolute ${
+                                isDarkMode ? 'text-white' : 'text-gray-900'
+                              }`}
+                              aria-hidden="true"
+                            >
+                              {editingSemesterName || semesterName || ' '}
+                            </span>
+                            <input
+                              ref={semesterInputRef}
+                              type="text"
+                              value={editingSemesterName}
+                              onChange={(e) => setEditingSemesterName(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  handleUpdateSemesterName(semesterName);
+                                } else if (e.key === 'Escape') {
+                                  setEditingSemester(null);
+                                  setEditingSemesterName('');
+                                }
+                              }}
+                              autoFocus
+                              className={`text-lg sm:text-xl lg:text-2xl font-bold px-2 py-1 rounded border-2 border-sky-500 relative ${
+                                isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+                              }`}
+                              style={{
+                                width: `${Math.max((editingSemesterName || semesterName || '').length * 0.65, 15)}ch`,
+                                minWidth: '15ch'
+                              }}
+                            />
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleUpdateSemesterName(semesterName);
+                            }}
+                            className={`p-1.5 sm:p-2 rounded-lg transition-all flex-shrink-0 ${
+                              isDarkMode
+                                ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
+                                : 'bg-green-100 text-green-600 hover:bg-green-200'
+                            }`}
+                            title="Save"
+                          >
+                            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingSemester(null);
+                              setEditingSemesterName('');
+                            }}
+                            className={`p-1.5 sm:p-2 rounded-lg transition-all flex-shrink-0 ${
+                              isDarkMode
+                                ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
+                                : 'bg-red-100 text-red-600 hover:bg-red-200'
+                            }`}
+                            title="Cancel"
+                          >
+                            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
                     ) : (
                           <>
                             <h2 
@@ -1035,7 +1234,53 @@ export default function DashboardPage() {
                       </p>
                     </div>
                     {isAuthenticated && (
-                      <div className="flex items-center gap-1.5 sm:gap-2">
+                      <div className="flex items-center gap-1 sm:gap-1.5">
+                    <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (!isAuthenticated) {
+                              navigate('/login');
+                              return;
+                            }
+                            handleMoveSemesterUp(semesterName);
+                          }}
+                          disabled={semesterOrder.indexOf(semesterName) === 0}
+                          className={`p-1.5 sm:p-2 rounded-lg transition-all ${
+                            semesterOrder.indexOf(semesterName) === 0
+                              ? 'opacity-30 cursor-not-allowed'
+                              : isDarkMode
+                              ? 'hover:bg-gray-800 text-gray-400 hover:text-gray-300'
+                              : 'hover:bg-gray-100 text-gray-500 hover:text-gray-700'
+                          }`}
+                          title="Move semester up"
+                        >
+                          <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                      </svg>
+                    </button>
+                    <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (!isAuthenticated) {
+                              navigate('/login');
+                              return;
+                            }
+                            handleMoveSemesterDown(semesterName);
+                          }}
+                          disabled={semesterOrder.indexOf(semesterName) === semesterOrder.length - 1}
+                          className={`p-1.5 sm:p-2 rounded-lg transition-all ${
+                            semesterOrder.indexOf(semesterName) === semesterOrder.length - 1
+                              ? 'opacity-30 cursor-not-allowed'
+                              : isDarkMode
+                              ? 'hover:bg-gray-800 text-gray-400 hover:text-gray-300'
+                              : 'hover:bg-gray-100 text-gray-500 hover:text-gray-700'
+                          }`}
+                          title="Move semester down"
+                        >
+                          <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
                     <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -1045,14 +1290,14 @@ export default function DashboardPage() {
                             }
                             handleDeleteAllCourses(semesterName);
                           }}
-                          className={`p-2 rounded-lg transition-all ${
+                          className={`p-1.5 sm:p-2 rounded-lg transition-all ${
                             isDarkMode
                               ? 'hover:bg-red-500/20 text-gray-400 hover:text-red-400'
                               : 'hover:bg-red-100 text-gray-500 hover:text-red-600'
                           }`}
                           title="Delete semester"
                         >
-                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
                     </button>
@@ -1247,61 +1492,6 @@ export default function DashboardPage() {
             </div>
           ))
         )}
-            {/* Online Compiler CTA - Only in Semesters tab */}
-            <div className={`rounded-xl sm:rounded-2xl overflow-hidden mb-6 sm:mb-8 border-2 transition-all hover:shadow-2xl hover:scale-[1.02] active:scale-95 ${isDarkMode ? 'bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-600 border-emerald-500' : 'bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 border-emerald-400'}`}>
-              <a 
-                href="https://compiler.supanroy.com" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="block p-4 sm:p-6 lg:p-8 relative group"
-              >
-                {/* Background Pattern */}
-                <div className="absolute inset-0 opacity-10">
-                  <div className="absolute top-2 right-2 sm:top-4 sm:right-4 text-white/20 text-3xl sm:text-4xl lg:text-6xl font-mono">&lt;/&gt;</div>
-                  <div className="absolute bottom-2 left-2 sm:bottom-4 sm:left-4 text-white/20 text-2xl sm:text-3xl lg:text-4xl font-mono">{ }</div>
-                </div>
-
-                <div className="relative flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6">
-                  {/* Left Content */}
-                  <div className="flex-1 text-center md:text-left">
-                    <div className="flex items-center justify-center md:justify-start gap-2 sm:gap-3 mb-2 sm:mb-3">
-                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                        <svg className="w-5 h-5 sm:w-6 sm:h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                        </svg>
-                      </div>
-                      <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-white drop-shadow-lg">Try Our Online Compiler</h2>
-                    </div>
-                    <p className="text-white/90 text-sm sm:text-base mb-2 drop-shadow">
-                      Write, compile, and execute code in multiple languages - C++, Python, Java, JavaScript & more!
-                    </p>
-                    <div className="flex flex-wrap gap-2 justify-center md:justify-start">
-                      <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-white text-xs font-semibold">Interactive Terminal</span>
-                      <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-white text-xs font-semibold">Real-time Output</span>
-                      <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-white text-xs font-semibold">Multi-Language</span>
-                    </div>
-                  </div>
-
-                  {/* Right CTA Button */}
-                  <div className="flex-shrink-0 w-full md:w-auto">
-                    <div className="px-4 sm:px-6 lg:px-8 py-3 sm:py-4 rounded-lg sm:rounded-xl bg-white text-emerald-600 font-bold text-sm sm:text-base lg:text-lg shadow-xl group-hover:shadow-2xl group-hover:scale-110 transition-all flex items-center justify-center gap-2 sm:gap-3">
-                      <span>Launch Compiler</span>
-                      <svg className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Language Icons */}
-                <div className="absolute bottom-2 right-2 flex gap-2 opacity-30">
-                  <span className="text-white text-xs font-mono">C++</span>
-                  <span className="text-white text-xs font-mono">Python</span>
-                  <span className="text-white text-xs font-mono">Java</span>
-                  <span className="text-white text-xs font-mono">JS</span>
-                </div>
-              </a>
-            </div>
           </>
         ) : activeTab === 'toolkit' ? (
           <div>
@@ -1569,6 +1759,66 @@ export default function DashboardPage() {
         )}
         </>
         )}
+
+        {/* Online Compiler CTA - Only in Semesters tab */}
+        {activeTab === 'semesters' && (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
+            <div className={`rounded-xl sm:rounded-2xl overflow-hidden border-2 transition-all hover:shadow-2xl hover:scale-[1.02] active:scale-95 ${isDarkMode ? 'bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-600 border-emerald-500' : 'bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 border-emerald-400'}`}>
+              <a 
+                href="https://compiler.supanroy.com" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="block p-4 sm:p-6 lg:p-8 relative group"
+              >
+                {/* Background Pattern */}
+                <div className="absolute inset-0 opacity-10">
+                  <div className="absolute top-2 right-2 sm:top-4 sm:right-4 text-white/20 text-3xl sm:text-4xl lg:text-6xl font-mono">&lt;/&gt;</div>
+                  <div className="absolute bottom-2 left-2 sm:bottom-4 sm:left-4 text-white/20 text-2xl sm:text-3xl lg:text-4xl font-mono">{ }</div>
+                </div>
+
+                <div className="relative flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6">
+                  {/* Left Content */}
+                  <div className="flex-1 text-center md:text-left">
+                    <div className="flex items-center justify-center md:justify-start gap-2 sm:gap-3 mb-2 sm:mb-3">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                        <svg className="w-5 h-5 sm:w-6 sm:h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                        </svg>
+                      </div>
+                      <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-white drop-shadow-lg">Try Our Online Compiler</h2>
+                    </div>
+                    <p className="text-white/90 text-sm sm:text-base mb-2 drop-shadow">
+                      Write, compile, and execute code in multiple languages - C++, Python, Java, JavaScript & more!
+                    </p>
+                    <div className="flex flex-wrap gap-2 justify-center md:justify-start">
+                      <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-white text-xs font-semibold">Interactive Terminal</span>
+                      <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-white text-xs font-semibold">Real-time Output</span>
+                      <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-white text-xs font-semibold">Multi-Language</span>
+                    </div>
+                  </div>
+
+                  {/* Right CTA Button */}
+                  <div className="flex-shrink-0 w-full md:w-auto">
+                    <div className="px-4 sm:px-6 lg:px-8 py-3 sm:py-4 rounded-lg sm:rounded-xl bg-white text-emerald-600 font-bold text-sm sm:text-base lg:text-lg shadow-xl group-hover:shadow-2xl group-hover:scale-110 transition-all flex items-center justify-center gap-2 sm:gap-3">
+                      <span>Launch Compiler</span>
+                      <svg className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Language Icons */}
+                <div className="absolute bottom-2 right-2 flex gap-2 opacity-30">
+                  <span className="text-white text-xs font-mono">C++</span>
+                  <span className="text-white text-xs font-mono">Python</span>
+                  <span className="text-white text-xs font-mono">Java</span>
+                  <span className="text-white text-xs font-mono">JS</span>
+                </div>
+              </a>
+            </div>
+          </div>
+        )}
       </main>
 
       {/* Footer */}
@@ -1785,6 +2035,224 @@ export default function DashboardPage() {
         }}
         onCancel={() => setShowLogoutConfirm(false)}
       />
+
+      {/* Search Modal */}
+      {showSearchModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-start justify-center pt-24 sm:pt-28 bg-black/50 backdrop-blur-sm"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowSearchModal(false);
+              setSearchQuery('');
+            }
+          }}
+        >
+          <div
+            className={`w-full max-w-lg mx-6 sm:mx-8 rounded-lg sm:rounded-xl shadow-2xl border transition-all ${
+              isDarkMode
+                ? 'bg-gray-900 border-gray-700'
+                : 'bg-white border-gray-200'
+            }`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Search Input */}
+            <div className={`p-3 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+              <div className="flex items-center gap-2">
+                <svg className={`w-5 h-5 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search courses and materials..."
+                  className={`flex-1 bg-transparent outline-none text-sm sm:text-base ${
+                    isDarkMode ? 'text-white placeholder-gray-500' : 'text-gray-900 placeholder-gray-400'
+                  }`}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') {
+                      setShowSearchModal(false);
+                      setSearchQuery('');
+                    }
+                  }}
+                />
+                <button
+                  onClick={() => {
+                    setShowSearchModal(false);
+                    setSearchQuery('');
+                  }}
+                  className={`p-1.5 rounded-lg transition-colors ${
+                    isDarkMode
+                      ? 'hover:bg-gray-800 text-gray-400 hover:text-gray-300'
+                      : 'hover:bg-gray-100 text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Search Results */}
+            <div className="max-h-[50vh] overflow-y-auto">
+              {!searchQuery.trim() ? (
+                <div className={`p-6 text-center ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  <svg className="w-10 h-10 mx-auto mb-2 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <p className="text-sm">Type to search for courses and materials</p>
+                </div>
+              ) : searchResults.courses.length === 0 && searchResults.materials.length === 0 ? (
+                <div className={`p-6 text-center ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  <svg className="w-10 h-10 mx-auto mb-2 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="text-sm">No results found for "{searchQuery}"</p>
+                </div>
+              ) : (
+                <div className="p-3 space-y-3">
+                  {/* Courses Section */}
+                  {searchResults.courses.length > 0 && (
+                    <div>
+                      <h3 className={`text-xs font-semibold uppercase mb-2 px-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        Courses ({searchResults.courses.length})
+                      </h3>
+                      <div className="space-y-1">
+                        {searchResults.courses.map((course) => {
+                          const courseMaterials = materials.filter(m => m.course === course.id);
+                          return (
+                            <button
+                              key={course.id}
+                              onClick={() => {
+                                setShowSearchModal(false);
+                                setSearchQuery('');
+                                navigate(`/course/${course.id}`);
+                              }}
+                              className={`w-full text-left p-2.5 rounded-lg transition-all ${
+                                isDarkMode
+                                  ? 'hover:bg-gray-800 border border-gray-700 hover:border-sky-500/50'
+                                  : 'hover:bg-gray-50 border border-gray-200 hover:border-sky-500/50'
+                              }`}
+                            >
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <span className={`font-semibold text-sm ${isDarkMode ? 'text-sky-400' : 'text-sky-600'}`}>
+                                      {course.code}
+                                    </span>
+                                    {course.title && (
+                                      <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                        {course.title}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                                    {courseMaterials.length} {courseMaterials.length === 1 ? 'file' : 'files'} • {course.semester || 'Unnamed Semester'}
+                                  </div>
+                                </div>
+                                <svg className={`w-5 h-5 flex-shrink-0 ml-2 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Materials Section */}
+                  {searchResults.materials.length > 0 && (
+                    <div>
+                      <h3 className={`text-xs font-semibold uppercase mb-2 px-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        Materials ({searchResults.materials.length})
+                      </h3>
+                      <div className="space-y-1">
+                        {searchResults.materials.map((material) => {
+                          const course = courses.find(c => c.id === material.course);
+                          return (
+                            <button
+                              key={material.id}
+                              onClick={() => {
+                                setShowSearchModal(false);
+                                setSearchQuery('');
+                                if (course) {
+                                  navigate(`/course/${course.id}`);
+                                }
+                              }}
+                              className={`w-full text-left p-2.5 rounded-lg transition-all ${
+                                isDarkMode
+                                  ? 'hover:bg-gray-800 border border-gray-700 hover:border-sky-500/50'
+                                  : 'hover:bg-gray-50 border border-gray-200 hover:border-sky-500/50'
+                              }`}
+                            >
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <svg className={`w-4 h-4 flex-shrink-0 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                    </svg>
+                                    <span className={`text-sm font-medium truncate ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                                      {material.filename}
+                                    </span>
+                                  </div>
+                                  <div className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                                    {formatBytes(material.size_bytes)} • {course?.code || 'Unknown Course'}
+                                  </div>
+                                </div>
+                                <svg className={`w-5 h-5 flex-shrink-0 ml-2 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Undo Delete Toast */}
+      {pendingDeletion && (
+        <div
+          className={`fixed bottom-4 right-4 max-w-sm rounded-lg border p-4 shadow-lg z-50 ${
+            isDarkMode
+              ? 'bg-gray-900 border-gray-700 text-white'
+              : 'bg-white border-gray-200 text-gray-900'
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            <svg className="w-5 h-5 text-red-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+            <div className="flex-1">
+              <p className="text-sm font-medium">
+                Semester "{pendingDeletion.name}" deleted
+              </p>
+              <p className={`text-xs mt-0.5 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                You can undo this action
+              </p>
+            </div>
+            <button
+              onClick={handleUndoDelete}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+                isDarkMode
+                  ? 'bg-sky-500 text-white hover:bg-sky-600'
+                  : 'bg-sky-600 text-white hover:bg-sky-700'
+              }`}
+            >
+              Undo
+            </button>
+          </div>
+        </div>
+      )}
       </div>
     </div>
   );

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import CoursebookTextLogo from '../components/CoursebookTextLogo';
 import Sidebar from '../components/Sidebar';
+import AlertDialog from '../components/AlertDialog';
 
 const plans = [
   {
@@ -43,6 +44,7 @@ export default function UpgradePage() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     return localStorage.getItem('sidebarCollapsed') === 'true';
   });
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
 
   const cardBase =
     'rounded-2xl border p-6 shadow-sm transition transform hover:-translate-y-1 hover:shadow-lg';
@@ -67,8 +69,10 @@ export default function UpgradePage() {
   );
 
   const handleUpgrade = (planName) => {
-    // Placeholder for future integration
-    alert(`${planName} upgrade flow will be added soon.`);
+    // Check if it's a premium plan (not Free)
+    if (planName !== 'Free') {
+      setShowPremiumModal(true);
+    }
   };
 
   return (
@@ -112,18 +116,18 @@ export default function UpgradePage() {
       </header>
 
       {/* Content */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid gap-8 md:grid-cols-[1.2fr_1fr] items-start">
-          <div className={`rounded-2xl p-8 border ${colors.card}`}>
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        <div className="grid gap-6 sm:gap-8 md:grid-cols-[1.2fr_1fr] items-start">
+          <div className={`rounded-2xl p-6 sm:p-8 border ${colors.card}`}>
             <div className="flex items-center gap-3 mb-3">
-              <span className={`px-3 py-1 rounded-full text-sm font-semibold ${colors.badge}`}>Upgrade to Pro</span>
+              <span className={`px-3 py-1 rounded-full text-xs sm:text-sm font-semibold ${colors.badge}`}>Upgrade to Pro</span>
             </div>
-            <h1 className="text-4xl font-bold mb-3">Unlock more storage</h1>
-            <p className={`${colors.textMuted} leading-relaxed`}>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3">Unlock more storage</h1>
+            <p className={`text-sm sm:text-base ${colors.textMuted} leading-relaxed`}>
               Choose a plan that fits your study flow. All plans include secure material storage, fast access, and the
               same Coursebook experience—just with more room for your files.
             </p>
-            <div className="mt-8 grid sm:grid-cols-2 gap-6">
+            <div className="mt-6 sm:mt-8 grid sm:grid-cols-2 gap-4 sm:gap-6">
               <div className={`rounded-xl p-4 border ${colors.card}`}>
                 <p className={colors.textMuted}>Current plan</p>
                 <p className="text-lg font-semibold">Free • 0 BDT</p>
@@ -143,7 +147,7 @@ export default function UpgradePage() {
             </div>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-1 sm:grid-cols-2">
+          <div className="grid gap-4 sm:gap-6 md:grid-cols-1 sm:grid-cols-2">
             {plans.map((plan) => {
               const buttonStyle = plan.disabled ? colors.buttonGhost : colors.buttonPrimary;
               return (
@@ -156,7 +160,7 @@ export default function UpgradePage() {
                   {plan.popular && (
                     <span className={`text-xs font-semibold px-3 py-1 rounded-full ${colors.badge}`}>Most popular</span>
                   )}
-                  <h2 className="text-2xl font-bold mt-2">{plan.name}</h2>
+                  <h2 className="text-xl sm:text-2xl font-bold mt-2">{plan.name}</h2>
                   <p className={`${colors.textMuted} mt-1`}>{plan.highlight}</p>
                   <div className="flex items-baseline gap-2 mt-4">
                     <span className="text-3xl font-extrabold">{plan.price}</span>
@@ -187,6 +191,15 @@ export default function UpgradePage() {
         </div>
       </main>
       </div>
+
+      {/* Premium Plan Modal */}
+      <AlertDialog
+        isOpen={showPremiumModal}
+        title="Premium Plans Not Available"
+        message="Premium plans are not available yet. We're working on bringing you the best upgrade experience. Please check back soon!"
+        type="info"
+        onClose={() => setShowPremiumModal(false)}
+      />
     </div>
   );
 }

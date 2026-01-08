@@ -152,8 +152,8 @@ export default function VerifyEmailPage() {
           <div className="text-center mb-6">
             <Link to="/dashboard" className="block">
               <div className="flex justify-center items-center mb-4 relative cursor-pointer hover:opacity-80 transition-opacity">
-                <img src="/coursebook.svg" alt="Coursebook" className="absolute w-12 h-12" style={{ left: '20px' }} />
-                <CoursebookTextLogo className="w-64 h-16" isDarkMode={isDarkMode} />
+                <img src="/coursebook.svg" alt="Coursebook" className="absolute w-10 h-10 sm:w-12 sm:h-12" style={{ left: '10px' }} />
+                <CoursebookTextLogo className="w-48 h-12 sm:w-64 sm:h-16" isDarkMode={isDarkMode} />
               </div>
             </Link>
             <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`}>Email Verification</p>

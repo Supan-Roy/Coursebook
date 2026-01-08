@@ -9,6 +9,7 @@ import AlertDialog from '../components/AlertDialog';
 import PreparationMode from '../components/PreparationMode/PreparationMode';
 import Toast from '../components/Toast';
 import Sidebar from '../components/Sidebar';
+import UploadQueue from '../components/UploadQueue';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
 const BACKEND_BASE_URL = API_BASE_URL.replace(/\/api$/, '');
@@ -20,6 +21,9 @@ export default function CourseDetailPage() {
   const [summaries, setSummaries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [uploadQueue, setUploadQueue] = useState([]);
+  const [uploadAbortControllers, setUploadAbortControllers] = useState(new Map());
+  const uploadAbortControllersRef = useRef(new Map());
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showPreparationMode, setShowPreparationMode] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, title: '', message: '', onConfirm: null });
@@ -54,6 +58,23 @@ export default function CourseDetailPage() {
   useEffect(() => {
     loadCourseData();
   }, [courseId]);
+
+  // Auto-clear upload queue a short time after all uploads finish
+  useEffect(() => {
+    if (!uploadQueue || uploadQueue.length === 0) return;
+
+    const allDone = uploadQueue.every(
+      (u) => u.status === 'completed' || u.status === 'error'
+    );
+
+    if (!allDone) return;
+
+    const timer = setTimeout(() => {
+      setUploadQueue([]);
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [uploadQueue]);
 
   const loadCourseData = async () => {
     try {
@@ -96,51 +117,223 @@ export default function CourseDetailPage() {
 
 
   const handleFileUpload = async (event) => {
-    const files = Array.from(event.target.files);
+    let files = Array.from(event.target.files);
     if (files.length === 0) return;
 
+    // Clear file input
+    event.target.value = '';
+
+    // Check for files exceeding 10MB
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+    const oversizedFiles = files.filter(file => file.size > MAX_FILE_SIZE);
+
+    if (oversizedFiles.length > 0) {
+      const fileNames = oversizedFiles.map(f => f.name).join(', ');
+      setAlertDialog({
+        isOpen: true,
+        title: 'File Size Limit Exceeded',
+        message: `The following file(s) exceed the 10MB limit: ${fileNames}\n\nPlease keep file sizes to a maximum of 10MB.`,
+        type: 'warning',
+      });
+      // Only proceed with files that are 10MB or less
+      files = files.filter(file => file.size <= MAX_FILE_SIZE);
+      if (files.length === 0) return;
+    }
+
+    // Initialize upload queue
+    const newUploads = files.map((file, index) => ({
+      id: `${Date.now()}-${index}`,
+      filename: file.name,
+      status: 'pending',
+      progress: 0,
+      error: null,
+      file: file, // Store file reference for cancel
+    }));
+
+    setUploadQueue(prev => [...prev, ...newUploads]);
     setUploading(true);
-    try {
-      const uploadPromises = files.map(async (file) => {
+
+    // Upload files sequentially with progress tracking
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const uploadId = newUploads[i].id;
+
+      // Create abort controller for this upload
+      const abortController = new AbortController();
+      setUploadAbortControllers(prev => new Map(prev).set(uploadId, abortController));
+      uploadAbortControllersRef.current.set(uploadId, abortController);
+
+      try {
+        // Update status to uploading
+        setUploadQueue(prev =>
+          prev.map(u =>
+            u.id === uploadId
+              ? { ...u, status: 'uploading', progress: 0 }
+              : u
+          )
+        );
+
         const formData = new FormData();
         formData.append('file', file);
         formData.append('course', courseId);
 
-        return materialService.upload(formData);
-      });
+        // Check if abort signal was already triggered before starting upload
+        if (abortController.signal.aborted) {
+          continue;
+        }
 
-      await Promise.all(uploadPromises);
-      loadCourseData();
-    } catch (error) {
-      console.error('Failed to upload files:', error);
+        // Upload with progress tracking and abort signal
+        const uploadPromise = materialService.upload(formData, (progressEvent) => {
+          // Check if abort signal was triggered during upload
+          if (abortController.signal.aborted) {
+            // Abort the request if not already aborted
+            if (!abortController.signal.aborted) {
+              abortController.abort();
+            }
+            return;
+          }
+          if (progressEvent.total) {
+            const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            setUploadQueue(prev =>
+              prev.map(u =>
+                u.id === uploadId ? { ...u, progress } : u
+              )
+            );
+          }
+        }, abortController.signal);
 
-      const errorCode = error.response?.data?.code;
-      const errorDetail = error.response?.data?.detail;
+        // Wait for upload, but check for cancellation
+        await uploadPromise;
 
-      if (errorCode === 'quota_exceeded') {
-        // Show quota exceeded dialog with Upgrade option
-        setConfirmDialog({
-          isOpen: true,
-          title: 'Storage limit reached',
-          message:
-            errorDetail ||
-            'You have reached your 500 MB free storage limit. Please delete some files from your courses or Trash Bin, or upgrade your plan for more space.',
-          type: 'warning',
-          onConfirm: () => {
-            navigate('/upgrade');
-          },
+        // Double-check if upload was cancelled before marking as completed
+        if (abortController.signal.aborted) {
+          console.log('Upload was cancelled, skipping completion');
+          continue;
+        }
+
+        // Final check - make sure it wasn't cancelled while we were waiting
+        const finalCheck = uploadAbortControllersRef.current.get(uploadId);
+        if (!finalCheck || finalCheck.signal.aborted) {
+          console.log('Upload controller was removed or aborted');
+          continue;
+        }
+
+        // Mark as completed only if not cancelled
+        setUploadQueue(prev => {
+          const upload = prev.find(u => u.id === uploadId);
+          if (upload && upload.status !== 'cancelled') {
+            return prev.map(u =>
+              u.id === uploadId
+                ? { ...u, status: 'completed', progress: 100 }
+                : u
+            );
+          }
+          return prev;
         });
-      } else {
-        setAlertDialog({
-          isOpen: true,
-          title: 'Upload Error',
-          message: errorDetail || 'Failed to upload some files. Please try again.',
-          type: 'error',
-        });
+      } catch (error) {
+        // Check if upload was cancelled (check abort signal first, then error codes)
+        if (abortController.signal.aborted || error.code === 'ERR_CANCELED' || error.name === 'AbortError' || error.message?.includes('cancel') || error.message?.includes('aborted')) {
+          setUploadQueue(prev =>
+            prev.map(u =>
+              u.id === uploadId
+                ? { ...u, status: 'cancelled', error: 'Upload cancelled' }
+                : u
+            )
+          );
+          // Clean up abort controller
+          uploadAbortControllersRef.current.delete(uploadId);
+          setUploadAbortControllers(prev => {
+            const newMap = new Map(prev);
+            newMap.delete(uploadId);
+            return newMap;
+          });
+          continue;
+        }
+
+        console.error('Failed to upload file:', error);
+
+        const errorCode = error.response?.data?.code;
+        const errorDetail = error.response?.data?.detail;
+
+        // Mark as error
+        setUploadQueue(prev =>
+          prev.map(u =>
+            u.id === uploadId
+              ? { ...u, status: 'error', error: errorDetail || 'Upload failed' }
+              : u
+          )
+        );
+
+        if (errorCode === 'quota_exceeded') {
+          // Show quota exceeded dialog with Upgrade option
+          setConfirmDialog({
+            isOpen: true,
+            title: 'Storage limit reached',
+            message:
+              errorDetail ||
+              'You have reached your 500 MB free storage limit. Please delete some files from your courses or Trash Bin, or upgrade your plan for more space.',
+            type: 'warning',
+            onConfirm: () => {
+              navigate('/upgrade');
+            },
+          });
+        } else if (i === 0) {
+          // Only show error dialog for first file to avoid spam
+          setAlertDialog({
+            isOpen: true,
+            title: 'Upload Error',
+            message: errorDetail || 'Failed to upload some files. Please try again.',
+            type: 'error',
+          });
+        }
       }
-    } finally {
-      setUploading(false);
     }
+
+    // Clean up abort controllers
+    uploadAbortControllersRef.current.clear();
+    setUploadAbortControllers(new Map());
+
+    // Reload course data after all uploads complete
+    await loadCourseData();
+    setUploading(false);
+  };
+
+  const removeUpload = (uploadId) => {
+    setUploadQueue(prev => prev.filter(u => u.id !== uploadId));
+    uploadAbortControllersRef.current.delete(uploadId);
+    setUploadAbortControllers(prev => {
+      const newMap = new Map(prev);
+      newMap.delete(uploadId);
+      return newMap;
+    });
+  };
+
+  const cancelUpload = (uploadId) => {
+    // Abort the upload request FIRST using ref (immediate access, no state delay)
+    const abortController = uploadAbortControllersRef.current.get(uploadId);
+    if (abortController && !abortController.signal.aborted) {
+      console.log('Aborting upload:', uploadId);
+      abortController.abort();
+    }
+
+    // Update status to cancelled
+    setUploadQueue(prev =>
+      prev.map(u =>
+        u.id === uploadId && (u.status === 'pending' || u.status === 'uploading')
+          ? { ...u, status: 'cancelled', error: 'Upload cancelled' }
+          : u
+      )
+    );
+
+    // Remove from ref immediately
+    uploadAbortControllersRef.current.delete(uploadId);
+    
+    // Also update state for cleanup
+    setUploadAbortControllers(prev => {
+      const newMap = new Map(prev);
+      newMap.delete(uploadId);
+      return newMap;
+    });
   };
 
   const handleDeleteMaterial = async (materialId) => {
@@ -333,22 +526,22 @@ export default function CourseDetailPage() {
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/dashboard')}>
+          <div className="flex justify-between items-center h-16 gap-2 sm:gap-4">
+            <div className="flex items-center gap-2 sm:gap-3 cursor-pointer min-w-0" onClick={() => navigate('/dashboard')}>
               <button
                 onClick={() => navigate('/dashboard')}
-                className={`p-2 rounded-lg transition-all border ${isDarkMode ? 'text-gray-400 hover:text-white hover:bg-gray-900 border-gray-700 hover:border-sky-500/50' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 border-gray-300 hover:border-sky-500/50'}`}
+                className={`p-2 rounded-lg transition-all border flex-shrink-0 ${isDarkMode ? 'text-gray-400 hover:text-white hover:bg-gray-900 border-gray-700 hover:border-sky-500/50' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 border-gray-300 hover:border-sky-500/50'}`}
                 title="Back to Dashboard"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
-              <img src="/coursebook.svg" alt="Coursebook" className="w-10 h-10 hover:opacity-80 transition-opacity" />
-              <CoursebookTextLogo className="w-48 h-12 hover:opacity-80 transition-opacity" isDarkMode={isDarkMode} showUnderline={false} />
+              <img src="/coursebook.svg" alt="Coursebook" className="w-8 h-8 sm:w-10 sm:h-10 hover:opacity-80 transition-opacity flex-shrink-0" />
+              <CoursebookTextLogo className="w-32 h-8 sm:w-48 sm:h-12 hidden sm:block hover:opacity-80 transition-opacity" isDarkMode={isDarkMode} showUnderline={false} />
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
               <button
                 onClick={() => setShowPreparationMode(true)}
                 className="hidden sm:flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-all bg-sky-500 text-white hover:bg-sky-600"
@@ -360,7 +553,7 @@ export default function CourseDetailPage() {
                 Preparation Mode
               </button>
               
-              <span className="text-sm text-gray-400">Welcome, <span className="text-sky-300 font-semibold">{user?.first_name && user?.last_name ? `${user.first_name} ${user.last_name}` : user?.first_name || 'Student'}</span></span>
+              <span className="text-xs sm:text-sm text-gray-400 hidden sm:inline">Welcome, <span className="text-sky-300 font-semibold">{user?.first_name && user?.last_name ? `${user.first_name} ${user.last_name}` : user?.first_name || 'Student'}</span></span>
               
               {/* Theme Toggle */}
               <button
@@ -543,6 +736,18 @@ export default function CourseDetailPage() {
             ) : (
               <div className="flex items-center gap-2">
                 <button
+                  onClick={handleSelectAll}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    isDarkMode
+                      ? 'bg-gray-800 hover:bg-gray-700 text-gray-200'
+                      : 'bg-gray-100 hover:bg-gray-200 text-gray-800'
+                  }`}
+                >
+                  {selectedMaterials.size === materials.length && materials.length > 0
+                    ? 'Deselect All'
+                    : 'Select All'}
+                </button>
+                <button
                   onClick={handleBulkDelete}
                   disabled={selectedMaterials.size === 0}
                   className={`px-4 py-2 rounded-lg transition-colors font-medium ${
@@ -594,18 +799,6 @@ export default function CourseDetailPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {isSelectionMode && materials.length > 0 && (
-                <div className="flex items-center gap-2 pb-2 border-b border-gray-700/50">
-                  <button
-                    onClick={handleSelectAll}
-                    className={`text-sm font-medium ${
-                      isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-700 hover:text-gray-900'
-                    }`}
-                  >
-                    {selectedMaterials.size === materials.length ? 'Deselect All' : 'Select All'}
-                  </button>
-                </div>
-              )}
               {materials.map((material) => (
                 <div
                   key={material.id}
@@ -989,6 +1182,9 @@ export default function CourseDetailPage() {
         type={alertDialog.type}
         onClose={() => setAlertDialog({ ...alertDialog, isOpen: false })}
       />
+
+      {/* Upload Queue */}
+      <UploadQueue uploads={uploadQueue} onRemove={removeUpload} onCancel={cancelUpload} />
 
       {/* Preparation Mode */}
       {showPreparationMode && (
