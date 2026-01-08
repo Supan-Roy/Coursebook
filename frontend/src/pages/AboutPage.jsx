@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import CoursebookTextLogo from '../components/CoursebookTextLogo';
@@ -5,6 +6,10 @@ import CoursebookTextLogo from '../components/CoursebookTextLogo';
 export default function AboutPage() {
   const { isDarkMode } = useTheme();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   return (
     <div className={`min-h-screen transition-colors duration-200 ${isDarkMode ? 'bg-black text-white' : 'bg-gray-50 text-gray-900'}`}>

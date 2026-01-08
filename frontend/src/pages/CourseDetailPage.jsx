@@ -27,6 +27,8 @@ export default function CourseDetailPage() {
   const [selectedSummary, setSelectedSummary] = useState(null);
   const [editingSummary, setEditingSummary] = useState(null);
   const [toast, setToast] = useState(null);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedMaterials, setSelectedMaterials] = useState(new Set());
   const { logout, user } = useAuth();
   const { isDarkMode, toggleTheme } = useTheme();
   const navigate = useNavigate();
@@ -67,6 +69,27 @@ export default function CourseDetailPage() {
       console.error('Failed to load course data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDownload = async (material) => {
+    try {
+      const fileUrl = `${BACKEND_BASE_URL}/materials/files/${material.id}/`;
+      const response = await fetch(fileUrl);
+      if (!response.ok) throw new Error('Failed to download file');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = material.filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err) {
+      console.error('Failed to download file:', err);
+      setToast({ message: 'Failed to download file', type: 'error' });
     }
   };
 
@@ -137,6 +160,47 @@ export default function CourseDetailPage() {
         setConfirmDialog({ ...confirmDialog, isOpen: false });
       }
     });
+  };
+
+  const handleBulkDelete = async () => {
+    const count = selectedMaterials.size;
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Move to Trash',
+      message: `Move ${count} file${count > 1 ? 's' : ''} to trash? You can restore them within 30 days from the Trash Bin.`,
+      onConfirm: async () => {
+        try {
+          const deletePromises = Array.from(selectedMaterials).map(id => materialService.delete(id));
+          await Promise.all(deletePromises);
+          setToast({ message: `${count} file${count > 1 ? 's' : ''} moved to trash`, type: 'success' });
+          setSelectedMaterials(new Set());
+          setIsSelectionMode(false);
+          loadCourseData();
+        } catch (error) {
+          console.error('Failed to delete materials:', error);
+          setToast({ message: 'Failed to move files to trash', type: 'error' });
+        }
+        setConfirmDialog({ ...confirmDialog, isOpen: false });
+      }
+    });
+  };
+
+  const toggleMaterialSelection = (materialId) => {
+    const newSelected = new Set(selectedMaterials);
+    if (newSelected.has(materialId)) {
+      newSelected.delete(materialId);
+    } else {
+      newSelected.add(materialId);
+    }
+    setSelectedMaterials(newSelected);
+  };
+
+  const handleSelectAll = () => {
+    if (selectedMaterials.size === materials.length) {
+      setSelectedMaterials(new Set());
+    } else {
+      setSelectedMaterials(new Set(materials.map(m => m.id)));
+    }
   };
 
   const handleViewSummary = (summary) => {
@@ -334,9 +398,17 @@ export default function CourseDetailPage() {
                   onClick={() => setShowProfileMenu(!showProfileMenu)}
                   className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-all border ${isDarkMode ? 'text-gray-300 hover:text-white hover:bg-gray-900 border-gray-700 hover:border-sky-500/50' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100 border-gray-300 hover:border-sky-500/50'}`}
                 >
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sky-400 to-cyan-500 flex items-center justify-center text-white font-bold text-sm">
-                    {user?.first_name?.[0] || 'S'}
-                  </div>
+                  {user?.profile_photo ? (
+                    <img
+                      src={user.profile_photo}
+                      alt="Profile"
+                      className="w-8 h-8 rounded-full object-cover border border-sky-500/50"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sky-400 to-cyan-500 flex items-center justify-center text-white font-bold text-sm">
+                      {user?.first_name?.[0] || 'S'}
+                    </div>
+                  )}
                   <svg className={`w-4 h-4 transition-transform ${showProfileMenu ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
@@ -453,9 +525,54 @@ export default function CourseDetailPage() {
 
         {/* Materials List */}
         <div className={`rounded-2xl p-8 border ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200 shadow-sm'}`}>
-          <h2 className={`text-xl font-bold mb-6 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-            Course Materials ({materials.length})
-          </h2>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+              Course Materials ({materials.length})
+            </h2>
+            {!isSelectionMode ? (
+              <button
+                onClick={() => setIsSelectionMode(true)}
+                className={`px-4 py-2 rounded-lg transition-colors font-medium ${
+                  isDarkMode
+                    ? 'bg-gray-700 hover:bg-gray-600 text-white'
+                    : 'bg-gray-200 hover:bg-gray-300 text-gray-900'
+                }`}
+              >
+                Select
+              </button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleBulkDelete}
+                  disabled={selectedMaterials.size === 0}
+                  className={`px-4 py-2 rounded-lg transition-colors font-medium ${
+                    selectedMaterials.size === 0
+                      ? isDarkMode
+                        ? 'bg-gray-800 text-gray-500 cursor-not-allowed'
+                        : 'bg-gray-300 text-gray-400 cursor-not-allowed'
+                      : isDarkMode
+                      ? 'bg-red-600 hover:bg-red-700 text-white'
+                      : 'bg-red-500 hover:bg-red-600 text-white'
+                  }`}
+                >
+                  Delete ({selectedMaterials.size})
+                </button>
+                <button
+                  onClick={() => {
+                    setIsSelectionMode(false);
+                    setSelectedMaterials(new Set());
+                  }}
+                  className={`px-4 py-2 rounded-lg transition-colors font-medium ${
+                    isDarkMode
+                      ? 'bg-gray-700 hover:bg-gray-600 text-white'
+                      : 'bg-gray-200 hover:bg-gray-300 text-gray-900'
+                  }`}
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+          </div>
 
           {materials.length === 0 ? (
             <div className={`text-center py-16 border-2 border-dashed rounded-xl ${isDarkMode ? 'border-gray-700' : 'border-gray-300'}`}>
@@ -477,17 +594,54 @@ export default function CourseDetailPage() {
             </div>
           ) : (
             <div className="space-y-3">
+              {isSelectionMode && materials.length > 0 && (
+                <div className="flex items-center gap-2 pb-2 border-b border-gray-700/50">
+                  <button
+                    onClick={handleSelectAll}
+                    className={`text-sm font-medium ${
+                      isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-700 hover:text-gray-900'
+                    }`}
+                  >
+                    {selectedMaterials.size === materials.length ? 'Deselect All' : 'Select All'}
+                  </button>
+                </div>
+              )}
               {materials.map((material) => (
                 <div
                   key={material.id}
-                  onClick={() => window.open(`${BACKEND_BASE_URL}/materials/files/${material.id}/`, '_blank')}
-                  className={`group flex items-center justify-between p-4 rounded-lg border transition-all cursor-pointer ${
+                  onClick={() => {
+                    if (isSelectionMode) {
+                      toggleMaterialSelection(material.id);
+                    } else {
+                      window.open(`${BACKEND_BASE_URL}/materials/files/${material.id}/`, '_blank');
+                    }
+                  }}
+                  className={`group flex items-center justify-between p-4 rounded-lg border transition-all ${
+                    isSelectionMode ? 'cursor-pointer' : 'cursor-pointer'
+                  } ${
                     isDarkMode 
-                      ? 'border-gray-700/50 hover:border-sky-500/50 bg-gray-900/30 hover:bg-gray-900/50' 
+                      ? selectedMaterials.has(material.id)
+                        ? 'border-sky-500 bg-sky-500/10'
+                        : 'border-gray-700/50 hover:border-sky-500/50 bg-gray-900/30 hover:bg-gray-900/50'
+                      : selectedMaterials.has(material.id)
+                      ? 'border-sky-400 bg-sky-50'
                       : 'border-gray-200 hover:border-sky-400 bg-gray-50 hover:bg-gray-100'
                   }`}
                 >
                   <div className="flex items-center gap-4 flex-1 min-w-0">
+                    {isSelectionMode && (
+                      <input
+                        type="checkbox"
+                        checked={selectedMaterials.has(material.id)}
+                        onChange={() => toggleMaterialSelection(material.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        className={`w-5 h-5 rounded cursor-pointer ${
+                          isDarkMode
+                            ? 'accent-sky-500 bg-gray-800 border-gray-600'
+                            : 'accent-sky-500 bg-white border-gray-300'
+                        }`}
+                      />
+                    )}
                     <span className="text-3xl flex-shrink-0">
                       {getFileIcon(material.filename)}
                     </span>
@@ -500,69 +654,70 @@ export default function CourseDetailPage() {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <a
-                      href={`${BACKEND_BASE_URL}/materials/files/${material.id}/`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      download
-                      onClick={(e) => e.stopPropagation()}
-                      className={`p-2 rounded-lg transition-all ${
-                        isDarkMode
-                          ? 'hover:bg-sky-500/20 text-gray-400 hover:text-sky-400'
-                          : 'hover:bg-sky-100 text-gray-500 hover:text-sky-600'
-                      }`}
-                      title="Download file"
-                    >
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                      </svg>
-                    </a>
-                    <button
-                      onClick={async (e) => {
-                        e.stopPropagation();
-                        const shareUrl = `${BACKEND_BASE_URL}/materials/files/${material.id}/`;
-                        if (navigator.share) {
-                          try {
-                            await navigator.share({
-                              title: material.filename,
-                              text: `Check out this file: ${material.filename}`,
-                              url: shareUrl,
-                            });
-                          } catch (err) {
-                            // User cancelled or share failed - silently handle
+                  {!isSelectionMode && (
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDownload(material);
+                        }}
+                        className={`p-2 rounded-lg transition-all ${
+                          isDarkMode
+                            ? 'hover:bg-sky-500/20 text-gray-400 hover:text-sky-400'
+                            : 'hover:bg-sky-100 text-gray-500 hover:text-sky-600'
+                        }`}
+                        title="Download file"
+                      >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          const shareUrl = `${BACKEND_BASE_URL}/materials/files/${material.id}/`;
+                          if (navigator.share) {
+                            try {
+                              await navigator.share({
+                                title: material.filename,
+                                text: `Check out this file: ${material.filename}`,
+                                url: shareUrl,
+                              });
+                            } catch (err) {
+                              // User cancelled or share failed - silently handle
+                            }
                           }
-                        }
-                        // No clipboard fallback - only use system share dialog
-                      }}
-                      className={`p-2 rounded-lg transition-all ${
-                        isDarkMode
-                          ? 'hover:bg-green-500/20 text-gray-400 hover:text-green-400'
-                          : 'hover:bg-green-100 text-gray-500 hover:text-green-600'
-                      }`}
-                      title="Share file"
-                    >
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                      </svg>
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteMaterial(material.id);
-                      }}
-                      className={`p-2 rounded-lg transition-all ${
-                        isDarkMode
-                          ? 'hover:bg-red-500/20 text-gray-400 hover:text-red-400'
-                          : 'hover:bg-red-100 text-gray-500 hover:text-red-600'
-                      }`}
-                      title="Delete file"
-                    >
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  </div>
+                          // No clipboard fallback - only use system share dialog
+                        }}
+                        className={`p-2 rounded-lg transition-all ${
+                          isDarkMode
+                            ? 'hover:bg-green-500/20 text-gray-400 hover:text-green-400'
+                            : 'hover:bg-green-100 text-gray-500 hover:text-green-600'
+                        }`}
+                        title="Share file"
+                      >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteMaterial(material.id);
+                        }}
+                        className={`p-2 rounded-lg transition-all ${
+                          isDarkMode
+                            ? 'hover:bg-red-500/20 text-gray-400 hover:text-red-400'
+                            : 'hover:bg-red-100 text-gray-500 hover:text-red-600'
+                        }`}
+                        title="Delete file"
+                      >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

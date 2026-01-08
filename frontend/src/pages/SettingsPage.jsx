@@ -88,9 +88,17 @@ export default function SettingsPage() {
                     onClick={() => setShowProfileMenu(!showProfileMenu)}
                     className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-all border ${isDarkMode ? 'text-gray-300 hover:text-white hover:bg-gray-900 border-gray-700 hover:border-sky-500/50' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100 border-gray-300 hover:border-sky-500/50'}`}
                   >
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sky-400 to-cyan-500 flex items-center justify-center text-white font-bold text-sm">
-                      {user?.first_name?.[0] || 'S'}
-                    </div>
+                    {user?.profile_photo ? (
+                      <img
+                        src={user.profile_photo}
+                        alt="Profile"
+                        className="w-8 h-8 rounded-full object-cover border border-sky-500/50"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sky-400 to-cyan-500 flex items-center justify-center text-white font-bold text-sm">
+                        {user?.first_name?.[0] || 'S'}
+                      </div>
+                    )}
                     <svg className={`w-4 h-4 transition-transform ${showProfileMenu ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>

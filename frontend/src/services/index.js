@@ -66,6 +66,22 @@ export const authService = {
     return response.data;
   },
 
+  async uploadProfilePhoto(photoFile) {
+    const formData = new FormData();
+    formData.append('photo', photoFile);
+    const response = await api.post('/auth/profile-photo/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
+  async deleteProfilePhoto() {
+    const response = await api.delete('/auth/profile-photo/delete/');
+    return response.data;
+  },
+
   async requestAccountDeletion(deletionReasons) {
     const response = await api.post('/auth/delete-account/', { 
       deletion_reasons: deletionReasons 
@@ -85,6 +101,43 @@ export const authService = {
 
   isAuthenticated() {
     return !!localStorage.getItem('access_token');
+  },
+};
+
+export const sharingService = {
+  async getAll() {
+    const response = await api.get('/sharing/');
+    return response.data;
+  },
+
+  async create(shareData) {
+    const response = await api.post('/sharing/', shareData);
+    return response.data;
+  },
+
+  async getById(id) {
+    const response = await api.get(`/sharing/${id}/`);
+    return response.data;
+  },
+
+  async update(id, data) {
+    const response = await api.patch(`/sharing/${id}/`, data);
+    return response.data;
+  },
+
+  async delete(id) {
+    const response = await api.delete(`/sharing/${id}/`);
+    return response.data;
+  },
+
+  async updatePrivacy(id, privacy) {
+    const response = await api.patch(`/sharing/${id}/privacy/`, { privacy });
+    return response.data;
+  },
+
+  async getSharedContent(token) {
+    const response = await api.get(`/sharing/view/${token}/`);
+    return response.data;
   },
 };
 

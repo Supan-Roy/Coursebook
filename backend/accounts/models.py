@@ -12,6 +12,7 @@ class User(AbstractUser):
     username = None
     email = models.EmailField(unique=True)
     university = models.CharField(max_length=200, blank=True, null=True)
+    profile_photo = models.URLField(max_length=500, blank=True, null=True)
     plan = models.CharField(max_length=20, default=USER_PLAN_FREE)
     quota_mb = models.PositiveIntegerField(default=500)
     created_at = models.DateTimeField(auto_now_add=True)

@@ -22,6 +22,8 @@ import ResendVerificationPage from './pages/ResendVerificationPage';
 import GoogleOAuthCallbackPage from './pages/GoogleOAuthCallbackPage';
 import DeleteAccountPage from './pages/DeleteAccountPage';
 import DeleteAccountConfirmPage from './pages/DeleteAccountConfirmPage';
+import SharedContentPage from './pages/SharedContentPage';
+import SharedCourseDetailPage from './pages/SharedCourseDetailPage';
 
 function App() {
   return (
@@ -89,6 +91,8 @@ function App() {
           />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/admin" element={<AP_Page />} />
+          <Route path="/shared/:token" element={<SharedContentPage />} />
+          <Route path="/shared/:token/course/:courseId" element={<SharedCourseDetailPage />} />
           <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
           <Route path="/terms-of-service" element={<TermsOfServicePage />} />
           <Route path="/cookie-policy" element={<CookiePolicyPage />} />

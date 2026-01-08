@@ -5,7 +5,7 @@ from .views import (
     RegisterView, CurrentUserView, AccountDeleteView, AccountDeleteConfirmView,
     SecureLoginView, EmailVerificationView, ResendVerificationEmailView,
     PasswordResetRequestView, PasswordResetConfirmView,
-    GoogleOAuthView, GoogleOAuthCallbackView
+    GoogleOAuthView, GoogleOAuthCallbackView, ProfilePhotoUploadView, ProfilePhotoDeleteView
 )
 
 urlpatterns = [
@@ -13,6 +13,8 @@ urlpatterns = [
     path("login/", SecureLoginView.as_view(), name="login"),
     path("refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("me/", CurrentUserView.as_view(), name="current_user"),
+    path("profile-photo/", ProfilePhotoUploadView.as_view(), name="profile_photo_upload"),
+    path("profile-photo/delete/", ProfilePhotoDeleteView.as_view(), name="profile_photo_delete"),
     path("delete-account/", AccountDeleteView.as_view(), name="account_delete"),
     path("delete-account-confirm/", AccountDeleteConfirmView.as_view(), name="account_delete_confirm"),
     path("verify-email/", EmailVerificationView.as_view(), name="verify_email"),

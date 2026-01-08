@@ -79,6 +79,103 @@ class CurrentUserView(generics.RetrieveUpdateAPIView):
         return self.request.user
 
 
+class ProfilePhotoUploadView(APIView):
+    """Upload profile photo"""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        if 'photo' not in request.FILES:
+            return Response(
+                {"detail": "No photo file provided."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        photo_file = request.FILES['photo']
+        
+        # Validate file type
+        valid_types = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp']
+        if photo_file.content_type not in valid_types:
+            return Response(
+                {"detail": "Invalid file type. Please upload an image (PNG, JPEG, JPG, GIF, or WEBP)."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Validate file size (max 5MB)
+        if photo_file.size > 5 * 1024 * 1024:
+            return Response(
+                {"detail": "File size must be less than 5MB."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            # Upload to Cloudinary
+            from cloudinary.uploader import upload as cloudinary_upload
+            cloudinary_result = cloudinary_upload(
+                photo_file,
+                folder="profile_photos",
+                resource_type="image",
+                transformation=[
+                    {'width': 400, 'height': 400, 'crop': 'fill', 'gravity': 'face'},
+                    {'quality': 'auto', 'fetch_format': 'auto'}
+                ]
+            )
+            
+            # Update user profile photo
+            user = request.user
+            user.profile_photo = cloudinary_result.get('secure_url', '')
+            user.save(update_fields=['profile_photo'])
+            
+            return Response({
+                "profile_photo": user.profile_photo,
+                "detail": "Profile photo uploaded successfully."
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response(
+                {"detail": f"Failed to upload profile photo: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class ProfilePhotoDeleteView(APIView):
+    """Delete profile photo"""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def delete(self, request, *args, **kwargs):
+        try:
+            user = request.user
+            
+            # Delete from Cloudinary if exists
+            if user.profile_photo:
+                try:
+                    from cloudinary.uploader import destroy as cloudinary_destroy
+                    # Extract public_id from URL
+                    if 'cloudinary.com' in user.profile_photo:
+                        # Extract public_id from URL (format: https://res.cloudinary.com/.../image/upload/v.../profile_photos/...)
+                        parts = user.profile_photo.split('/')
+                        if 'profile_photos' in parts:
+                            idx = parts.index('profile_photos')
+                            public_id = '/'.join(parts[idx:]).split('.')[0]  # Remove extension
+                            cloudinary_destroy(public_id, resource_type="image")
+                except Exception as e:
+                    # Don't block deletion if Cloudinary cleanup fails
+                    print(f"Failed to delete from Cloudinary: {e}")
+            
+            # Clear profile photo
+            user.profile_photo = None
+            user.save(update_fields=['profile_photo'])
+            
+            return Response({
+                "detail": "Profile photo deleted successfully."
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response(
+                {"detail": f"Failed to delete profile photo: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
 @method_decorator(ratelimit(key='ip', rate='3/h', method='POST'), name='post')
 class AccountDeleteView(APIView):
     """Request account deletion - sends confirmation email"""

@@ -46,6 +46,7 @@ urlpatterns = [
     path("api/todos/", include("todos.urls")),
     path("api/preparation/", include("preparation.urls")),
     path("api/toolkit/", include("toolkit.urls")),
+    path("api/sharing/", include("sharing.urls")),
     # Public material access without the /api/ prefix
     path("materials/files/<uuid:id>/", PublicMaterialServeView.as_view(), name="public-material-serve-direct"),
 ]

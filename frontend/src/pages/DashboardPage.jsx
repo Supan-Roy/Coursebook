@@ -9,6 +9,7 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import AlertDialog from '../components/AlertDialog';
 import Sidebar from '../components/Sidebar';
 import MyPlans from '../components/TodoList';
+import WorkspacePage from './WorkspacePage';
 import DocumentToPDF from '../components/Toolkit/DocumentToPDF';
 import AddPageNumbers from '../components/Toolkit/AddPageNumbers';
 import MergePDFs from '../components/Toolkit/MergePDFs';
@@ -681,9 +682,17 @@ export default function DashboardPage() {
                   onClick={() => setShowProfileMenu(!showProfileMenu)}
                   className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-all border ${isDarkMode ? 'text-gray-300 hover:text-white hover:bg-gray-900 border-gray-700 hover:border-sky-500/50' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100 border-gray-300 hover:border-sky-500/50'}`}
                 >
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sky-400 to-cyan-500 flex items-center justify-center text-white font-bold text-sm">
-                    {user?.first_name?.[0] || 'S'}
-                  </div>
+                  {user?.profile_photo ? (
+                    <img
+                      src={user.profile_photo}
+                      alt="Profile"
+                      className="w-8 h-8 rounded-full object-cover border border-sky-500/50"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sky-400 to-cyan-500 flex items-center justify-center text-white font-bold text-sm">
+                      {user?.first_name?.[0] || 'S'}
+                    </div>
+                  )}
                   <svg className={`w-4 h-4 transition-transform ${showProfileMenu ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
@@ -805,6 +814,25 @@ export default function DashboardPage() {
               </div>
             </button>
             <button
+              onClick={() => setActiveTab('workspace')}
+              className={`px-3 sm:px-6 py-2 sm:py-3 font-medium text-xs sm:text-sm transition-all duration-200 border-b-2 whitespace-nowrap ${
+                activeTab === 'workspace'
+                  ? isDarkMode
+                    ? 'text-blue-400 border-blue-400'
+                    : 'text-blue-600 border-blue-600'
+                  : isDarkMode
+                  ? 'text-gray-400 border-transparent hover:text-gray-300'
+                  : 'text-gray-600 border-transparent hover:text-gray-900'
+              }`}
+            >
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+                Workspace
+              </div>
+            </button>
+            <button
               onClick={() => setActiveTab('todos')}
               className={`px-3 sm:px-6 py-2 sm:py-3 font-medium text-xs sm:text-sm transition-all duration-200 border-b-2 whitespace-nowrap ${
                 activeTab === 'todos'
@@ -850,6 +878,8 @@ export default function DashboardPage() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {activeTab === 'todos' ? (
           <MyPlans isDarkMode={isDarkMode} />
+        ) : activeTab === 'workspace' ? (
+          <WorkspacePage isDarkMode={isDarkMode} />
         ) : activeTab === 'semesters' ? (
           <>
             {/* Create New Semester Section */}

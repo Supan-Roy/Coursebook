@@ -105,6 +105,17 @@ export default function Sidebar({
             </button>
 
             <button
+              onClick={() => handleTab('workspace')}
+              className={`${baseItem} ${pillActive(activeKey === 'workspace')}`}
+              title="Workspace"
+            >
+              <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+              {!collapsed && <span className="font-medium">Workspace</span>}
+            </button>
+
+            <button
               onClick={() => handleTab('todos')}
               className={`${baseItem} ${pillActive(activeKey === 'todos')}`}
               title="My Plans"
