@@ -1,5 +1,6 @@
 import secrets
 import random
+import threading
 from django.core.mail import send_mail
 from django.conf import settings
 from django.utils import timezone
@@ -21,13 +22,8 @@ def generate_password_reset_token():
     return secrets.token_urlsafe(32)
 
 
-def send_verification_email(user):
-    """Send email verification OTP to user"""
-    otp = generate_otp()
-    user.email_verification_token = otp
-    user.email_verification_sent_at = timezone.now()
-    user.save(update_fields=['email_verification_token', 'email_verification_sent_at'])
-    
+def _send_verification_email_sync(user, otp):
+    """Internal function to send verification email synchronously"""
     subject = "Verify your Coursebook account"
     message = f"""
 Hello {user.first_name or 'there'},
@@ -44,19 +40,45 @@ Best regards,
 The Coursebook Team
 """
     
-    send_mail(
-        subject,
-        message,
-        settings.DEFAULT_FROM_EMAIL,
-        [user.email],
-        fail_silently=False,
-    )
+    try:
+        send_mail(
+            subject,
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            [user.email],
+            fail_silently=False,
+        )
+    except Exception as e:
+        # Log error but don't raise - email sending failure shouldn't break registration
+        print(f"Failed to send verification email to {user.email}: {e}")
+
+
+def send_verification_email(user, async_send=True):
+    """Send email verification OTP to user
+    
+    Args:
+        user: User instance
+        async_send: If True, send email in background thread (default: True)
+    """
+    otp = generate_otp()
+    user.email_verification_token = otp
+    user.email_verification_sent_at = timezone.now()
+    user.save(update_fields=['email_verification_token', 'email_verification_sent_at'])
+    
+    if async_send:
+        # Send email in background thread to avoid blocking
+        thread = threading.Thread(target=_send_verification_email_sync, args=(user, otp))
+        thread.daemon = True  # Thread will terminate when main process exits
+        thread.start()
+    else:
+        # Send synchronously (for testing or when needed)
+        _send_verification_email_sync(user, otp)
     
     return otp
 
 
-def send_password_reset_email(user, reset_token):
-    """Send password reset link to user"""
+def _send_password_reset_email_sync(user, reset_token):
+    """Internal function to send password reset email synchronously"""
     reset_url = f"{settings.FRONTEND_URL}/reset-password/{reset_token}/"
     
     subject = "Reset your Coursebook password"
@@ -75,13 +97,34 @@ Best regards,
 The Coursebook Team
 """
     
-    send_mail(
-        subject,
-        message,
-        settings.DEFAULT_FROM_EMAIL,
-        [user.email],
-        fail_silently=False,
-    )
+    try:
+        send_mail(
+            subject,
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            [user.email],
+            fail_silently=False,
+        )
+    except Exception as e:
+        print(f"Failed to send password reset email to {user.email}: {e}")
+
+
+def send_password_reset_email(user, reset_token, async_send=True):
+    """Send password reset link to user
+    
+    Args:
+        user: User instance
+        reset_token: Password reset token
+        async_send: If True, send email in background thread (default: True)
+    """
+    if async_send:
+        # Send email in background thread to avoid blocking
+        thread = threading.Thread(target=_send_password_reset_email_sync, args=(user, reset_token))
+        thread.daemon = True
+        thread.start()
+    else:
+        # Send synchronously (for testing or when needed)
+        _send_password_reset_email_sync(user, reset_token)
 
 
 def send_login_notification_email(user, ip_address=None):
@@ -116,19 +159,8 @@ def generate_account_deletion_token():
     return secrets.token_urlsafe(32)
 
 
-def send_account_deletion_email(user, deletion_reasons=None):
-    """Send account deletion confirmation link to user"""
-    token = generate_account_deletion_token()
-    user.account_deletion_token = token
-    user.account_deletion_sent_at = timezone.now()
-    
-    # Store deletion reasons as JSON string if provided
-    if deletion_reasons:
-        import json
-        user.account_deletion_reasons = json.dumps(deletion_reasons)
-    
-    user.save(update_fields=['account_deletion_token', 'account_deletion_sent_at', 'account_deletion_reasons'])
-    
+def _send_account_deletion_email_sync(user, token, deletion_reasons=None):
+    """Internal function to send account deletion email synchronously"""
     deletion_url = f"{settings.FRONTEND_URL}/delete-account-confirm/{token}/"
     
     reasons_text = ""
@@ -155,13 +187,45 @@ Best regards,
 The Coursebook Team
 """
     
-    send_mail(
-        subject,
-        message,
-        settings.DEFAULT_FROM_EMAIL,
-        [user.email],
-        fail_silently=False,
-    )
+    try:
+        send_mail(
+            subject,
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            [user.email],
+            fail_silently=False,
+        )
+    except Exception as e:
+        print(f"Failed to send account deletion email to {user.email}: {e}")
+
+
+def send_account_deletion_email(user, deletion_reasons=None, async_send=True):
+    """Send account deletion confirmation link to user
+    
+    Args:
+        user: User instance
+        deletion_reasons: Optional dict of deletion reasons
+        async_send: If True, send email in background thread (default: True)
+    """
+    token = generate_account_deletion_token()
+    user.account_deletion_token = token
+    user.account_deletion_sent_at = timezone.now()
+    
+    # Store deletion reasons as JSON string if provided
+    if deletion_reasons:
+        import json
+        user.account_deletion_reasons = json.dumps(deletion_reasons)
+    
+    user.save(update_fields=['account_deletion_token', 'account_deletion_sent_at', 'account_deletion_reasons'])
+    
+    if async_send:
+        # Send email in background thread to avoid blocking
+        thread = threading.Thread(target=_send_account_deletion_email_sync, args=(user, token, deletion_reasons))
+        thread.daemon = True
+        thread.start()
+    else:
+        # Send synchronously (for testing or when needed)
+        _send_account_deletion_email_sync(user, token, deletion_reasons)
     
     return token
 

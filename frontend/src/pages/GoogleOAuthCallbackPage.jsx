@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { authService } from '../services';
 import CoursebookTextLogo from '../components/CoursebookTextLogo';
 
@@ -12,6 +13,7 @@ export default function GoogleOAuthCallbackPage() {
   const [loading, setLoading] = useState(true);
   const [isNavigating, setIsNavigating] = useState(false);
   const isNavigatingRef = useRef(false);
+  const { isDarkMode } = useTheme();
 
   useEffect(() => {
     const code = searchParams.get('code');
@@ -114,10 +116,10 @@ export default function GoogleOAuthCallbackPage() {
       <div className="space-bg"></div>
       <div className="min-h-screen flex items-center justify-center px-4 relative z-10">
         <div className="w-full max-w-md">
-          <div className="glass-card rounded-2xl p-8 text-center">
+          <div className={`glass-card rounded-2xl p-8 text-center ${isDarkMode ? 'bg-gray-900/90 border border-gray-800' : ''}`}>
             <div className="flex justify-center items-center mb-6">
               <img src="/coursebook.svg" alt="Coursebook" className="absolute w-12 h-12" style={{ left: '20px' }} />
-              <CoursebookTextLogo className="w-64 h-16" />
+              <CoursebookTextLogo className="w-64 h-16" isDarkMode={isDarkMode} />
             </div>
             
             {/* Always show loading spinner while processing - hide error until we're sure it failed */}
@@ -129,7 +131,7 @@ export default function GoogleOAuthCallbackPage() {
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
                 </div>
-                <p className="text-gray-400">Completing Google sign-in...</p>
+                <p className={isDarkMode ? 'text-gray-400' : 'text-gray-400'}>Completing Google sign-in...</p>
               </>
             )}
             {/* Only show error if explicitly set, loading is false, and we're not navigating */}

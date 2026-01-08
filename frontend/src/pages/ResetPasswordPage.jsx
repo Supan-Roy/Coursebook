@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { authService } from '../services';
+import { useTheme } from '../context/ThemeContext';
 import { initFloatingElementInteraction } from '../utils/floatingElementInteraction';
 import CoursebookTextLogo from '../components/CoursebookTextLogo';
 
@@ -16,6 +17,7 @@ export default function ResetPasswordPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
+  const { isDarkMode } = useTheme();
 
   useEffect(() => {
     initFloatingElementInteraction();
@@ -75,13 +77,13 @@ export default function ResetPasswordPage() {
       </div>
       <div className="min-h-screen flex items-center justify-center px-4 relative z-10">
         <div className="w-full max-w-md">
-          <div className="glass-card rounded-2xl p-8">
+          <div className={`glass-card rounded-2xl p-8 ${isDarkMode ? 'bg-gray-900/90 border border-gray-800' : ''}`}>
             <div className="text-center mb-8">
               <div className="flex justify-center items-center mb-4 relative">
                 <img src="/coursebook.svg" alt="Coursebook" className="absolute w-12 h-12" style={{ left: '20px' }} />
-                <CoursebookTextLogo className="w-64 h-16" />
+                <CoursebookTextLogo className="w-64 h-16" isDarkMode={isDarkMode} />
               </div>
-              <p className="text-sm text-gray-400">Reset your password</p>
+              <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`}>Reset your password</p>
             </div>
 
             {status === 'success' ? (
@@ -92,9 +94,9 @@ export default function ResetPasswordPage() {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Password Reset!</h3>
-                  <p className="text-sm text-gray-600 mb-4">{message}</p>
-                  <p className="text-xs text-gray-500">Redirecting to login...</p>
+                  <h3 className={`text-lg font-semibold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Password Reset!</h3>
+                  <p className={`text-sm mb-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{message}</p>
+                  <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>Redirecting to login...</p>
                 </div>
               </div>
             ) : (
@@ -107,7 +109,7 @@ export default function ResetPasswordPage() {
 
                 <div className="space-y-3">
                   <div>
-                    <label htmlFor="password" className="block text-xs font-semibold text-gray-700 mb-1.5">
+                    <label htmlFor="password" className={`block text-xs font-semibold mb-1.5 ${isDarkMode ? 'text-white' : 'text-gray-700'}`}>
                       NEW PASSWORD
                     </label>
                     <div className="relative">
@@ -118,12 +120,16 @@ export default function ResetPasswordPage() {
                         required
                         value={formData.password}
                         onChange={handleChange}
-                        className="block w-full px-3.5 py-2.5 pr-10 text-sm border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                        className={`block w-full px-3.5 py-2.5 pr-10 text-sm border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all ${
+                          isDarkMode 
+                            ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-400' 
+                            : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
+                        }`}
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        className={`absolute right-3 top-1/2 -translate-y-1/2 ${isDarkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'}`}
                       >
                         {showPassword ? (
                           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -137,11 +143,11 @@ export default function ResetPasswordPage() {
                         )}
                       </button>
                     </div>
-                    <p className="mt-1.5 text-xs text-gray-500">Minimum 8 characters</p>
+                    <p className={`mt-1.5 text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Minimum 8 characters</p>
                   </div>
 
                   <div>
-                    <label htmlFor="confirmPassword" className="block text-xs font-semibold text-gray-700 mb-1.5">
+                    <label htmlFor="confirmPassword" className={`block text-xs font-semibold mb-1.5 ${isDarkMode ? 'text-white' : 'text-gray-700'}`}>
                       CONFIRM PASSWORD
                     </label>
                     <div className="relative">
@@ -152,12 +158,16 @@ export default function ResetPasswordPage() {
                         required
                         value={formData.confirmPassword}
                         onChange={handleChange}
-                        className="block w-full px-3.5 py-2.5 pr-10 text-sm border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                        className={`block w-full px-3.5 py-2.5 pr-10 text-sm border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all ${
+                          isDarkMode 
+                            ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-400' 
+                            : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
+                        }`}
                       />
                       <button
                         type="button"
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        className={`absolute right-3 top-1/2 -translate-y-1/2 ${isDarkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'}`}
                       >
                         {showConfirmPassword ? (
                           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -185,7 +195,7 @@ export default function ResetPasswordPage() {
             )}
 
             <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600">
+              <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                 <Link to="/login" className="font-semibold text-primary-600 hover:text-primary-700">
                   Back to Login
                 </Link>

@@ -278,8 +278,14 @@ class EmailVerificationView(APIView):
         user.email_verification_sent_at = None
         user.save(update_fields=['email_verified', 'email_verification_token', 'email_verification_sent_at'])
         
+        # Generate JWT tokens for auto-login
+        refresh = RefreshToken.for_user(user)
+        
         return Response({
-            "detail": "Email verified successfully! You can now log in."
+            "detail": "Email verified successfully!",
+            "access": str(refresh.access_token),
+            "refresh": str(refresh),
+            "user": UserSerializer(user).data
         }, status=status.HTTP_200_OK)
 
 

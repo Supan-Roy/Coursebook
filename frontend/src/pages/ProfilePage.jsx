@@ -356,9 +356,6 @@ export default function ProfilePage() {
                 onChange={(e) => setDob(e.target.value)}
                 className={`block w-full px-4 py-3 text-sm border rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent ${isDarkMode ? 'bg-gray-900/50 border-gray-700 text-white placeholder-gray-500' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'}`}
               />
-              <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
-                Stored on this device only; used for birthday greetings.
-              </p>
             </div>
 
             {/* University */}

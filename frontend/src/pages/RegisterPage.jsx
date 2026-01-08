@@ -154,13 +154,12 @@ export default function RegisterPage() {
 
               <div>
                 <label htmlFor="last_name" className={`block text-xs font-semibold mb-1.5 ${isDarkMode ? 'text-white' : 'text-gray-700'}`}>
-                  LAST NAME
+                  LAST NAME <span className="text-gray-500 font-normal">(optional)</span>
                 </label>
                 <input
                   id="last_name"
                   name="last_name"
                   type="text"
-                  required
                   value={formData.last_name}
                   onChange={handleChange}
                   className={`block w-full px-3.5 py-2.5 text-sm border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all ${

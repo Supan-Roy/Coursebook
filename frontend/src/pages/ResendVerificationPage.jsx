@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authService } from '../services';
+import { useTheme } from '../context/ThemeContext';
 import { initFloatingElementInteraction } from '../utils/floatingElementInteraction';
 import CoursebookTextLogo from '../components/CoursebookTextLogo';
 
@@ -9,6 +10,7 @@ export default function ResendVerificationPage() {
   const [status, setStatus] = useState('idle'); // idle, loading, success, error
   const [message, setMessage] = useState('');
   const navigate = useNavigate();
+  const { isDarkMode } = useTheme();
 
   useEffect(() => {
     initFloatingElementInteraction();
@@ -44,13 +46,13 @@ export default function ResendVerificationPage() {
       </div>
       <div className="min-h-screen flex items-center justify-center px-4 relative z-10">
         <div className="w-full max-w-md">
-          <div className="glass-card rounded-2xl p-8">
+          <div className={`glass-card rounded-2xl p-8 ${isDarkMode ? 'bg-gray-900/90 border border-gray-800' : ''}`}>
             <div className="text-center mb-8">
               <div className="flex justify-center items-center mb-4 relative">
                 <img src="/coursebook.svg" alt="Coursebook" className="absolute w-12 h-12" style={{ left: '20px' }} />
-                <CoursebookTextLogo className="w-64 h-16" />
+                <CoursebookTextLogo className="w-64 h-16" isDarkMode={isDarkMode} />
               </div>
-              <p className="text-sm text-gray-400">Resend verification OTP</p>
+              <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`}>Resend verification OTP</p>
             </div>
 
             {status === 'success' ? (
@@ -61,8 +63,8 @@ export default function ResendVerificationPage() {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Email Sent!</h3>
-                  <p className="text-sm text-gray-600 mb-2">{message}</p>
+                  <h3 className={`text-lg font-semibold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Email Sent!</h3>
+                  <p className={`text-sm mb-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{message}</p>
                 </div>
                 <div className="space-y-2">
                   <Link
@@ -89,7 +91,7 @@ export default function ResendVerificationPage() {
                 )}
 
                 <div>
-                  <label htmlFor="email" className="block text-xs font-semibold text-gray-700 mb-1.5">
+                  <label htmlFor="email" className={`block text-xs font-semibold mb-1.5 ${isDarkMode ? 'text-white' : 'text-gray-700'}`}>
                     EMAIL ADDRESS
                   </label>
                   <input
@@ -99,10 +101,14 @@ export default function ResendVerificationPage() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="block w-full px-3.5 py-2.5 text-sm border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                    className={`block w-full px-3.5 py-2.5 text-sm border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all ${
+                      isDarkMode 
+                        ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-400' 
+                        : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
+                    }`}
                     placeholder="you@example.com"
                   />
-                  <p className="mt-1.5 text-xs text-gray-500">
+                  <p className={`mt-1.5 text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                     Enter your email address and we'll send you a new verification OTP code.
                   </p>
                 </div>
@@ -118,7 +124,7 @@ export default function ResendVerificationPage() {
             )}
 
             <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600">
+              <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                 <Link to="/login" className="font-semibold text-primary-600 hover:text-primary-700">
                   Back to Login
                 </Link>
