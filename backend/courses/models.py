@@ -1,6 +1,7 @@
 import uuid
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.text import slugify
 
@@ -23,7 +24,7 @@ class Semester(models.Model):
 class Course(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="courses")
-    code = models.CharField(max_length=120)
+    code = models.CharField(max_length=120, blank=True, default="")
     title = models.CharField(max_length=255, blank=True)
     semester = models.CharField(max_length=100, blank=True, default="")
     folder_slug = models.SlugField(max_length=140)
@@ -32,15 +33,23 @@ class Course(models.Model):
 
     class Meta:
         unique_together = (
-            ("user", "code", "semester"),
             ("user", "folder_slug"),
         )
         ordering = ["semester", "code"]
 
     def __str__(self) -> str:
-        return f"{self.code} ({self.user.email})"
+        display_name = self.code or self.title or "Untitled Course"
+        return f"{display_name} ({self.user.email})"
+
+    def clean(self):
+        """Validate that at least one of code or title is provided."""
+        code = (self.code or "").strip() if self.code else ""
+        title = (self.title or "").strip() if self.title else ""
+        if not code and not title:
+            raise ValidationError("Either course code or course title must be provided.")
 
     def save(self, *args, **kwargs):
+        # Generate folder_slug before validation so required field is populated
         if not self.folder_slug:
             base_slug = slugify(self.code or self.title) or "course"
             slug = base_slug
@@ -49,4 +58,7 @@ class Course(models.Model):
                 slug = f"{base_slug}-{counter}"
                 counter += 1
             self.folder_slug = slug
+
+        # Validate after slug is set
+        self.full_clean()
         super().save(*args, **kwargs)

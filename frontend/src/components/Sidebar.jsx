@@ -43,11 +43,21 @@ export default function Sidebar({
   };
 
   return (
-    <aside
-      className={`fixed left-0 top-0 h-screen z-30 transition-all duration-300 ${
-        collapsed ? 'w-16' : 'w-64'
-      } ${isDarkMode ? 'bg-gray-900 border-r border-gray-800' : 'bg-white border-r border-gray-200'}`}
-    >
+    <>
+      {/* Mobile overlay */}
+      {!collapsed && (
+        <div
+          className="fixed inset-0 bg-black/50 z-20 lg:hidden"
+          onClick={onToggle}
+        />
+      )}
+      <aside
+        className={`fixed left-0 top-0 h-screen z-30 transition-all duration-300 ${
+          collapsed ? 'w-16' : 'w-64'
+        } ${isDarkMode ? 'bg-gray-900 border-r border-gray-800' : 'bg-white border-r border-gray-200'} ${
+          collapsed ? 'translate-x-0' : 'lg:translate-x-0 -translate-x-full lg:translate-x-0'
+        }`}
+      >
       {/* Sidebar Header */}
       <div
         className={`h-16 flex items-center justify-between px-4 border-b ${
@@ -226,6 +236,7 @@ export default function Sidebar({
         onCancel={() => setShowLogoutConfirm(false)}
       />
     </aside>
+    </>
   );
 }
 

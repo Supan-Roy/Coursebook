@@ -35,7 +35,7 @@ from .serializers import (
 )
 from .utils import (
     send_verification_email, send_password_reset_email,
-    generate_password_reset_token
+    generate_password_reset_token, send_account_deletion_email
 )
 
 User = get_user_model()
@@ -79,7 +79,9 @@ class CurrentUserView(generics.RetrieveUpdateAPIView):
         return self.request.user
 
 
+@method_decorator(ratelimit(key='ip', rate='3/h', method='POST'), name='post')
 class AccountDeleteView(APIView):
+    """Request account deletion - sends confirmation email"""
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
@@ -87,7 +89,50 @@ class AccountDeleteView(APIView):
         serializer.is_valid(raise_exception=True)
 
         user = request.user
+        deletion_reasons = serializer.validated_data.get('deletion_reasons', {})
 
+        # Send deletion confirmation email
+        try:
+            send_account_deletion_email(user, deletion_reasons if deletion_reasons else None)
+            return Response({
+                "detail": "Account deletion confirmation email sent. Please check your inbox and click the confirmation link to delete your account."
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(
+                {"detail": "Failed to send deletion confirmation email. Please try again later."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class AccountDeleteConfirmView(APIView):
+    """Confirm account deletion via email link"""
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        token = request.data.get('token')
+        
+        if not token:
+            return Response(
+                {"detail": "Deletion token is required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            user = User.objects.get(account_deletion_token=token)
+        except User.DoesNotExist:
+            return Response(
+                {"detail": "Invalid or expired deletion token."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Check if token has expired (24 hours)
+        if user.account_deletion_sent_at:
+            if timezone.now() > user.account_deletion_sent_at + timedelta(hours=24):
+                return Response(
+                    {"detail": "Deletion token has expired. Please request a new deletion link."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        
         # Delete all materials (DB + Cloudinary) and adjust storage usage
         materials = Material.objects.filter(user=user)
         total_size = 0
@@ -112,9 +157,15 @@ class AccountDeleteView(APIView):
         except Exception:
           pass
 
+        # Store deletion reasons for analytics (optional)
+        deletion_reasons = user.account_deletion_reasons
+        
+        # Delete the user account
         user.delete()
 
-        return Response({"detail": "Account deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+        return Response({
+            "detail": "Account deleted successfully."
+        }, status=status.HTTP_200_OK)
 
 
 @method_decorator(ratelimit(key='ip', rate='5/m', method='POST'), name='post')
@@ -165,7 +216,7 @@ class SecureLoginView(APIView):
         # Check email verification
         if not user.email_verified:
             return Response(
-                {"detail": "Please verify your email address before logging in. Check your inbox for the verification link."},
+                {"detail": "Please verify your email address before logging in. Check your inbox for the verification OTP."},
                 status=status.HTTP_403_FORBIDDEN
             )
         
@@ -186,7 +237,7 @@ class SecureLoginView(APIView):
 
 
 class EmailVerificationView(APIView):
-    """Verify user email with token"""
+    """Verify user email with OTP"""
     permission_classes = [permissions.AllowAny]
     serializer_class = EmailVerificationSerializer
 
@@ -194,21 +245,30 @@ class EmailVerificationView(APIView):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
         
-        token = serializer.validated_data['token']
+        email = serializer.validated_data['email']
+        otp = serializer.validated_data['otp']
         
         try:
-            user = User.objects.get(email_verification_token=token)
+            user = User.objects.get(email=email)
         except User.DoesNotExist:
+            # Don't reveal if email exists or not (security best practice)
             return Response(
-                {"detail": "Invalid verification token."},
+                {"detail": "Invalid email or OTP."},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Check if token has expired (24 hours)
+        # Check if OTP matches
+        if user.email_verification_token != otp:
+            return Response(
+                {"detail": "Invalid email or OTP."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Check if OTP has expired (10 minutes)
         if user.email_verification_sent_at:
-            if timezone.now() > user.email_verification_sent_at + timedelta(hours=24):
+            if timezone.now() > user.email_verification_sent_at + timedelta(minutes=10):
                 return Response(
-                    {"detail": "Verification token has expired. Please request a new one."},
+                    {"detail": "OTP has expired. Please request a new one."},
                     status=status.HTTP_400_BAD_REQUEST
                 )
         
@@ -223,8 +283,8 @@ class EmailVerificationView(APIView):
         }, status=status.HTTP_200_OK)
 
 
-@method_decorator(ratelimit(key='ip', rate='5/h', method='POST'), name='post')
-@method_decorator(ratelimit(key=get_email_from_request, rate='3/h', method='POST'), name='post')
+@method_decorator(ratelimit(key='ip', rate='10/d', method='POST'), name='post')
+@method_decorator(ratelimit(key=get_email_from_request, rate='10/d', method='POST'), name='post')
 class ResendVerificationEmailView(APIView):
     """Resend verification email"""
     permission_classes = [permissions.AllowAny]

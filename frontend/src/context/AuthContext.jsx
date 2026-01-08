@@ -32,6 +32,8 @@ export const AuthProvider = ({ children }) => {
     try {
       await authService.login(email, password);
       setIsAuthenticated(true);
+      // When user logs in, default sidebar to collapsed
+      localStorage.setItem('sidebarCollapsed', 'true');
       return { success: true };
     } catch (error) {
       return {
@@ -53,27 +55,34 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('refresh_token', response.refresh);
         setIsAuthenticated(true);
         setUser(response.user);
+        // Default sidebar to collapsed after successful login
+        localStorage.setItem('sidebarCollapsed', 'true');
         return { success: true };
       } else {
+        // Check if tokens were set anyway (might have been set by interceptor or other means)
+        const hasToken = localStorage.getItem('access_token');
+        if (hasToken) {
+          setIsAuthenticated(true);
+          return { success: true };
+        }
         return {
           success: false,
           error: 'Invalid response from server',
         };
       }
     } catch (error) {
-      // Don't throw or return error immediately - let the callback page check for tokens
-      // The response might have succeeded even if there's an error in processing
-      const errorMessage = error.response?.data?.detail || error.message || '';
-      
-      // Check if tokens were set despite the error
+      // Always check for tokens FIRST - they might have been set despite the error
       const hasToken = localStorage.getItem('access_token');
       if (hasToken) {
-        // Tokens exist - probably succeeded, return success
+        // Tokens exist - definitely succeeded, return success immediately
         setIsAuthenticated(true);
+        localStorage.setItem('sidebarCollapsed', 'true');
+        setLoading(false);
         return { success: true };
       }
       
-      // No tokens - return error, but filter communication errors
+      // No tokens - check if this is a communication error (should be ignored)
+      const errorMessage = error.response?.data?.detail || error.message || '';
       const isCommunicationError = !errorMessage || 
           errorMessage.toLowerCase().includes('network') ||
           errorMessage.toLowerCase().includes('communicat') ||
@@ -83,10 +92,11 @@ export const AuthProvider = ({ children }) => {
       
       if (isCommunicationError) {
         // For communication errors, return success=false but no error message
-        // The callback page will check for tokens
+        // The callback page will check for tokens after a brief delay
         return { success: false };
       }
       
+      // Real error - return it
       return {
         success: false,
         error: errorMessage || 'Google authentication failed',
@@ -143,6 +153,8 @@ export const AuthProvider = ({ children }) => {
     authService.logout();
     setIsAuthenticated(false);
     setUser(null);
+    // In logged-out mode, keep sidebar expanded by default
+    localStorage.setItem('sidebarCollapsed', 'false');
   };
 
   const refreshUser = async () => {

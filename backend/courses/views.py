@@ -14,7 +14,13 @@ class CourseListCreateView(generics.ListCreateAPIView):
         return Course.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        try:
+            serializer.save(user=self.request.user)
+        except Exception as e:
+            # Log the error for debugging
+            import traceback
+            traceback.print_exc()
+            raise
 
 
 class CourseDetailView(generics.RetrieveUpdateDestroyAPIView):

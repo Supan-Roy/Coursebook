@@ -12,12 +12,16 @@ import TrashBinPage from './pages/TrashBinPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsOfServicePage from './pages/TermsOfServicePage';
 import CookiePolicyPage from './pages/CookiePolicyPage';
+import AboutPage from './pages/AboutPage';
+import AP_Page from './pages/AP_Page';
 import UpgradePage from './pages/UpgradePage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import ResendVerificationPage from './pages/ResendVerificationPage';
 import GoogleOAuthCallbackPage from './pages/GoogleOAuthCallbackPage';
+import DeleteAccountPage from './pages/DeleteAccountPage';
+import DeleteAccountConfirmPage from './pages/DeleteAccountConfirmPage';
 
 function App() {
   return (
@@ -28,11 +32,12 @@ function App() {
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-          <Route path="/verify-email/:token" element={<VerifyEmailPage />} />
+          <Route path="/verify-email" element={<VerifyEmailPage />} />
           <Route path="/resend-verification" element={<ResendVerificationPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
           <Route path="/auth/google/callback" element={<GoogleOAuthCallbackPage />} />
+          <Route path="/delete-account-confirm/:token" element={<DeleteAccountConfirmPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route
             path="/course/:courseId"
@@ -59,6 +64,14 @@ function App() {
             }
           />
           <Route
+            path="/delete-account"
+            element={
+              <PrivateRoute>
+                <DeleteAccountPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
             path="/trash"
             element={
               <PrivateRoute>
@@ -74,6 +87,8 @@ function App() {
               </PrivateRoute>
             }
           />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/admin" element={<AP_Page />} />
           <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
           <Route path="/terms-of-service" element={<TermsOfServicePage />} />
           <Route path="/cookie-policy" element={<CookiePolicyPage />} />

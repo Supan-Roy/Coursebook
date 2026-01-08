@@ -135,13 +135,26 @@ class MaterialUploadView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
         
-        # Validate file size (50MB limit)
+        # Validate file size (50MB per-file limit)
         if file.size > 50 * 1024 * 1024:
             return Response(
                 {'detail': 'File size exceeds 50MB limit'}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
+        # Enforce per-user storage quota (e.g. 500MB for free plan)
+        usage, _ = StorageUsage.objects.get_or_create(user=request.user)
+        if usage.used_bytes + file.size > usage.quota_bytes:
+            return Response(
+                {
+                    'detail': 'Storage limit reached. Please delete some files or upgrade your plan to upload more.',
+                    'code': 'quota_exceeded',
+                    'used_bytes': usage.used_bytes,
+                    'quota_bytes': usage.quota_bytes,
+                    'attempted_bytes': file.size,
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         # Save file to Cloudinary
         from cloudinary.uploader import upload as cloudinary_upload
@@ -228,23 +241,31 @@ class FileUploadView(APIView):
         }, status=status.HTTP_201_CREATED)
 
     def _generate_semester_name(self, user):
-        """Generate a unique semester name for the new upload"""
-        # Get all existing semesters for this user
-        existing_semesters = Course.objects.filter(user=user).values_list('semester', flat=True).distinct()
-        
-        # Use "Semester Name" as base
-        base_semester = "Semester Name"
-        
-        # If base semester doesn't exist, use it
-        if base_semester not in existing_semesters:
-            return base_semester
-        
-        # Otherwise, append a counter
-        counter = 2
-        while f"{base_semester} {counter}" in existing_semesters:
-            counter += 1
-        
-        return f"{base_semester} {counter}"
+        """
+        Generate a unique semester name for the new upload.
+        Mirrors the frontend logic: Semester 1, Semester 2, ...
+        """
+        import re
+
+        # Collect semester names from both Course and Semester models
+        course_semesters = Course.objects.filter(user=user).values_list('semester', flat=True).distinct()
+        from courses.models import Semester  # local import to avoid circular
+        db_semesters = Semester.objects.filter(user=user).values_list('name', flat=True).distinct()
+
+        all_semesters = set([s.strip() for s in course_semesters if s] + [s.strip() for s in db_semesters if s])
+
+        pattern = re.compile(r"^Semester\s+(\d+)$", re.IGNORECASE)
+        numbers = []
+        for name in all_semesters:
+            match = pattern.match(name)
+            if match:
+                try:
+                    numbers.append(int(match.group(1)))
+                except ValueError:
+                    continue
+
+        next_number = max(numbers) + 1 if numbers else 1
+        return f"Semester {next_number}"
 
     def _extract_courses_from_file(self, file):
         """Extract course codes and names from PDF or Image file"""

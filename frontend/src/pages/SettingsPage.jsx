@@ -4,10 +4,9 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import Sidebar from '../components/Sidebar';
 import CoursebookTextLogo from '../components/CoursebookTextLogo';
-import { authService } from '../services';
 
 export default function SettingsPage() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const { isDarkMode, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
@@ -34,30 +33,6 @@ export default function SettingsPage() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [showProfileMenu]);
 
-  const [deletePassword, setDeletePassword] = useState('');
-  const [deleteError, setDeleteError] = useState('');
-  const [deleteLoading, setDeleteLoading] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-
-  const handleDeleteAccount = async (e) => {
-    e.preventDefault();
-    setDeleteError('');
-    if (!deletePassword) {
-      setDeleteError('Please enter your password to confirm.');
-      return;
-    }
-    try {
-      setDeleteLoading(true);
-      await authService.deleteAccount(deletePassword);
-      logout();
-      navigate('/login');
-    } catch (err) {
-      const msg = err?.response?.data?.password?.[0] || err?.response?.data?.detail || 'Failed to delete account. Please check your password.';
-      setDeleteError(msg);
-    } finally {
-      setDeleteLoading(false);
-    }
-  };
 
   return (
     <div className={`min-h-screen transition-colors duration-200 flex ${isDarkMode ? 'bg-black text-white' : 'bg-gray-50 text-gray-900'}`}>
@@ -225,15 +200,12 @@ export default function SettingsPage() {
               </div>
             </div>
             <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mb-4`}>
-              Permanently delete your account and data. This action cannot be undone.
+              Permanently delete your account and data. This action cannot be undone. 
+              You'll receive a confirmation email to complete the deletion.
             </p>
             <button
               type="button"
-              onClick={() => {
-                setDeletePassword('');
-                setDeleteError('');
-                setShowDeleteModal(true);
-              }}
+              onClick={() => navigate('/delete-account')}
               className="px-4 py-2 rounded-lg bg-red-600 text-white font-semibold hover:bg-red-500 transition-colors"
             >
               Delete account
@@ -241,57 +213,6 @@ export default function SettingsPage() {
           </section>
         </main>
 
-        {/* Delete Account Modal */}
-        {showDeleteModal && (
-          <div className="fixed inset-0 z-40 flex items-center justify-center px-4" style={{ backdropFilter: 'blur(4px)' }}>
-            <div
-              className={`absolute inset-0 ${isDarkMode ? 'bg-black/70' : 'bg-black/40'}`}
-              onClick={() => !deleteLoading && setShowDeleteModal(false)}
-            />
-            <div
-              className={`relative max-w-md w-full rounded-2xl border shadow-2xl p-6 ${
-                isDarkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-200'
-              }`}
-            >
-              <h2 className={`text-xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Confirm deletion</h2>
-              <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mb-4`}>
-                This will permanently delete your Coursebook account and all associated data. Enter your password to confirm.
-              </p>
-              <form className="space-y-4" onSubmit={handleDeleteAccount}>
-                <input
-                  type="password"
-                  value={deletePassword}
-                  onChange={(e) => setDeletePassword(e.target.value)}
-                  placeholder="Current password"
-                  className={`w-full px-4 py-2 rounded-lg border ${
-                    isDarkMode ? 'bg-gray-950 border-gray-700 text-white' : 'bg-white border-gray-300 text-gray-900'
-                  }`}
-                  disabled={deleteLoading}
-                />
-                {deleteError && <p className="text-sm text-red-500">{deleteError}</p>}
-                <div className="flex justify-end gap-3">
-                  <button
-                    type="button"
-                    onClick={() => !deleteLoading && setShowDeleteModal(false)}
-                    className={`px-4 py-2 rounded-lg font-semibold ${
-                      isDarkMode ? 'bg-gray-800 text-gray-200 hover:bg-gray-700' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-                    }`}
-                    disabled={deleteLoading}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={deleteLoading}
-                    className="px-4 py-2 rounded-lg bg-red-600 text-white font-semibold hover:bg-red-500 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-                  >
-                    {deleteLoading ? 'Deleting…' : 'Delete account'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

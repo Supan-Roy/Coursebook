@@ -220,6 +220,16 @@ export default function DashboardPage() {
     return `Welcome, ${name}`;
   };
 
+  const getFormattedDate = () => {
+    const today = new Date();
+    const day = String(today.getDate()).padStart(2, '0');
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                        'July', 'August', 'September', 'October', 'November', 'December'];
+    const month = monthNames[today.getMonth()];
+    const year = today.getFullYear();
+    return `${day} ${month}, ${year}`;
+  };
+
   const handleUploadSuccess = (result) => {
     loadData();
     setShowUploadModal(false);
@@ -342,27 +352,71 @@ export default function DashboardPage() {
     setEditFormData({ code: course.code, title: course.title || '' });
   };
 
-  const handleCreateNewSemester = async () => {
-    if (!newSemesterName.trim()) {
-      setAlertDialog({
-        isOpen: true,
-        title: 'Missing Information',
-        message: 'Please enter a semester name',
-        type: 'warning'
-      });
-      return;
+  // Generate default semester name (Semester 1, Semester 2, etc.)
+  const generateDefaultSemesterName = () => {
+    try {
+      // Get all existing semester names
+      const semesterNames = new Set();
+      
+      // Add semesters from courses
+      if (groupedBySemester && typeof groupedBySemester === 'object') {
+        Object.keys(groupedBySemester).forEach(sem => {
+          if (sem && sem.trim()) {
+            semesterNames.add(sem.trim());
+          }
+        });
+      }
+      
+      // Add semesters from database
+      if (Array.isArray(semesters)) {
+        semesters.forEach(sem => {
+          if (sem && sem.name && sem.name.trim()) {
+            semesterNames.add(sem.name.trim());
+          }
+        });
+      }
+      
+      const allSemesterNames = Array.from(semesterNames);
+      
+      // Pattern to match "Semester X" where X is a number (case insensitive)
+      const semesterPattern = /^Semester\s+(\d+)$/i;
+      const existingNumbers = allSemesterNames
+        .map(name => {
+          const match = String(name).match(semesterPattern);
+          return match ? parseInt(match[1], 10) : 0;
+        })
+        .filter(num => num > 0);
+      
+      // Find the next available number
+      let nextNumber = 1;
+      if (existingNumbers.length > 0) {
+        nextNumber = Math.max(...existingNumbers) + 1;
+      }
+      
+      const generatedName = `Semester ${nextNumber}`;
+      console.log('Generated semester name:', generatedName, 'from existing:', allSemesterNames, 'existing numbers:', existingNumbers);
+      return generatedName;
+    } catch (error) {
+      console.error('Error generating semester name:', error);
+      // Fallback to Semester 1 if there's any error
+      return 'Semester 1';
     }
+  };
+
+  const handleCreateNewSemester = async () => {
+    const defaultName = generateDefaultSemesterName();
+    console.log('Creating semester with name:', defaultName);
 
     try {
       // Create a blank semester without any courses
       await semesterService.create({
-        name: newSemesterName.trim(),
+        name: defaultName,
       });
       setCreatingNewSemester(false);
       setNewSemesterName('');
       
       // Add new semester to the beginning of the order
-      setSemesterOrder([newSemesterName.trim(), ...semesterOrder]);
+      setSemesterOrder([defaultName, ...semesterOrder]);
       
       loadData();
     } catch (error) {
@@ -377,31 +431,45 @@ export default function DashboardPage() {
   };
 
   const handleAddNewCourse = async (semesterName) => {
-    if (!newCourseData.code.trim()) {
+    // At least one field (code or title) must be filled
+    if (!newCourseData.code.trim() && !newCourseData.title.trim()) {
       setAlertDialog({
         isOpen: true,
         title: 'Missing Information',
-        message: 'Please enter a course code',
+        message: 'Please enter either a course code or course title',
         type: 'warning'
       });
       return;
     }
 
     try {
-      await courseService.create({
-        code: newCourseData.code.toUpperCase().trim(),
-        title: newCourseData.title.trim(),
+      const coursePayload = {
+        code: newCourseData.code.trim() ? newCourseData.code.toUpperCase().trim() : '',
+        title: newCourseData.title.trim() || '',
         semester: semesterName,
-      });
+      };
+      console.log('Creating course with payload:', coursePayload);
+      const result = await courseService.create(coursePayload);
+      console.log('Course created successfully:', result);
+      // Close the form after adding course
       setAddingCourseToSemester(null);
       setNewCourseData({ code: '', title: '' });
       loadData();
     } catch (error) {
       console.error('Failed to create course:', error);
+      console.error('Error response:', error.response);
+      console.error('Error response data:', error.response?.data);
+      const errorMessage = error.response?.data?.detail || 
+                          error.response?.data?.code?.[0] ||
+                          error.response?.data?.title?.[0] ||
+                          error.response?.data?.non_field_errors?.[0] ||
+                          (typeof error.response?.data === 'object' ? JSON.stringify(error.response?.data) : null) ||
+                          error.message || 
+                          'Failed to create course';
       setAlertDialog({
         isOpen: true,
         title: 'Error',
-        message: 'Failed to create course',
+        message: errorMessage,
         type: 'error'
       });
     }
@@ -518,7 +586,7 @@ export default function DashboardPage() {
       />
 
       {/* Main Content */}
-      <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
+      <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'lg:ml-64 ml-0'}`}>
       {/* Header */}
       <header
         className={`border-b sticky top-0 z-20 backdrop-blur-sm shadow bg-gradient-to-r transition-colors ${
@@ -529,14 +597,49 @@ export default function DashboardPage() {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-3">
-              <img src="/coursebook.svg" alt="Coursebook" className="w-10 h-10" />
-              <CoursebookTextLogo className="w-48 h-12" isDarkMode={isDarkMode} showUnderline={false} />
+            <div className="flex items-center gap-2 sm:gap-3">
+              {/* Mobile menu button */}
+              <button
+                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                className={`lg:hidden p-2 rounded-lg transition-colors ${
+                  isDarkMode ? 'hover:bg-gray-800 text-gray-400' : 'hover:bg-gray-100 text-gray-600'
+                }`}
+                aria-label="Toggle menu"
+              >
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+              <img src="/coursebook.svg" alt="Coursebook" className="w-8 h-8 sm:w-10 sm:h-10" />
+              <CoursebookTextLogo className="w-32 h-10 sm:w-48 sm:h-12 hidden sm:block" isDarkMode={isDarkMode} showUnderline={false} />
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
               {isAuthenticated ? (
                 <>
-                  <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  <div className="hidden lg:flex flex-col items-end">
+                    <span className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
+                      {(() => {
+                        const greeting = getGreeting();
+                        const name = user?.first_name && user?.last_name
+                          ? `${user.first_name} ${user.last_name}`
+                          : user?.first_name || 'Student';
+                        if (greeting.includes(', ')) {
+                          const parts = greeting.split(', ');
+                          const message = parts.slice(0, -1).join(', ');
+                          return (
+                            <>
+                              {message}, <span className={`font-semibold ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>{name}</span>{greeting.endsWith('!') ? '!' : ''}
+                            </>
+                          );
+                        }
+                        return greeting;
+                      })()}
+                    </span>
+                    <span className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+                      {getFormattedDate()}
+                    </span>
+                  </div>
+                  <span className={`text-xs sm:text-sm lg:hidden ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
                     {(() => {
                       const greeting = getGreeting();
                       const name = user?.first_name && user?.last_name
@@ -657,16 +760,16 @@ export default function DashboardPage() {
                   </button>
                   
                   {/* Login/Signup buttons for unauthenticated users */}
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 sm:gap-2">
                     <button
                       onClick={() => navigate('/login')}
-                      className={`px-4 py-2 text-sm font-medium rounded-lg transition-all border ${isDarkMode ? 'text-gray-300 hover:text-white hover:bg-gray-800 border-gray-700 hover:border-sky-500/50' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100 border-gray-300 hover:border-sky-500/50'}`}
+                      className={`px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-lg transition-all border ${isDarkMode ? 'text-gray-300 hover:text-white hover:bg-gray-800 border-gray-700 hover:border-sky-500/50' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100 border-gray-300 hover:border-sky-500/50'}`}
                     >
                       Sign In
                     </button>
                     <button
                       onClick={() => navigate('/register')}
-                      className="px-4 py-2 text-sm font-medium rounded-lg bg-sky-600 text-white hover:bg-sky-700 transition-all"
+                      className="px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium rounded-lg bg-sky-600 text-white hover:bg-sky-700 transition-all"
                     >
                       Sign Up
                     </button>
@@ -681,10 +784,10 @@ export default function DashboardPage() {
       {/* Secondary Navigation */}
       <div className={`border-b sticky top-16 z-10 backdrop-blur-sm transition-colors ${isDarkMode ? 'border-gray-800 bg-black/80' : 'border-gray-200 bg-white/80'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex gap-1">
+          <div className="flex gap-1 overflow-x-auto scrollbar-hide">
             <button
               onClick={() => setActiveTab('semesters')}
-              className={`px-6 py-3 font-medium text-sm transition-all duration-200 border-b-2 ${
+              className={`px-3 sm:px-6 py-2 sm:py-3 font-medium text-xs sm:text-sm transition-all duration-200 border-b-2 whitespace-nowrap ${
                 activeTab === 'semesters'
                   ? isDarkMode
                     ? 'text-blue-400 border-blue-400'
@@ -694,8 +797,8 @@ export default function DashboardPage() {
                   : 'text-gray-600 border-transparent hover:text-gray-900'
               }`}
             >
-              <div className="flex items-center gap-2">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                 </svg>
                 Semesters
@@ -703,7 +806,7 @@ export default function DashboardPage() {
             </button>
             <button
               onClick={() => setActiveTab('todos')}
-              className={`px-6 py-3 font-medium text-sm transition-all duration-200 border-b-2 ${
+              className={`px-3 sm:px-6 py-2 sm:py-3 font-medium text-xs sm:text-sm transition-all duration-200 border-b-2 whitespace-nowrap ${
                 activeTab === 'todos'
                   ? isDarkMode
                     ? 'text-blue-400 border-blue-400'
@@ -713,8 +816,8 @@ export default function DashboardPage() {
                   : 'text-gray-600 border-transparent hover:text-gray-900'
               }`}
             >
-              <div className="flex items-center gap-2">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                 </svg>
                 My Plans
@@ -722,7 +825,7 @@ export default function DashboardPage() {
             </button>
             <button
               onClick={() => setActiveTab('toolkit')}
-              className={`px-6 py-3 font-medium text-sm transition-all duration-200 border-b-2 ${
+              className={`px-3 sm:px-6 py-2 sm:py-3 font-medium text-xs sm:text-sm transition-all duration-200 border-b-2 whitespace-nowrap ${
                 activeTab === 'toolkit'
                   ? isDarkMode
                     ? 'text-blue-400 border-blue-400'
@@ -732,8 +835,8 @@ export default function DashboardPage() {
                   : 'text-gray-600 border-transparent hover:text-gray-900'
               }`}
             >
-              <div className="flex items-center gap-2">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
                 </svg>
                 PDF Toolkit
@@ -750,76 +853,29 @@ export default function DashboardPage() {
         ) : activeTab === 'semesters' ? (
           <>
             {/* Create New Semester Section */}
-            <div className={`rounded-2xl p-8 mb-8 border-2 border-dashed transition-colors ${isDarkMode ? 'border-gray-700/50 hover:border-sky-500/50 bg-gray-900/30' : 'border-gray-300 hover:border-sky-400 bg-gray-50'}`}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8 border-2 border-dashed transition-colors ${isDarkMode ? 'border-gray-700/50 hover:border-sky-500/50 bg-gray-900/30' : 'border-gray-300 hover:border-sky-400 bg-gray-50'}`}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 {/* Create Semester Button */}
-                {creatingNewSemester ? (
-                  <div className={`border rounded-xl p-6 transition-all ${isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-white border-gray-200'}`}>
-                    <h3 className={`text-lg font-semibold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Create New Semester</h3>
-                    <input
-                      type="text"
-                      value={newSemesterName}
-                      onChange={(e) => setNewSemesterName(e.target.value)}
-                      placeholder="Enter semester name (e.g., Fall 2024)"
-                      autoFocus
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          handleCreateNewSemester();
-                        } else if (e.key === 'Escape') {
-                          setCreatingNewSemester(false);
-                          setNewSemesterName('');
-                        }
-                      }}
-                      className={`w-full px-3 py-2 mb-3 rounded-lg border-2 text-sm ${
-                        isDarkMode
-                          ? 'bg-gray-900 border-sky-500 text-white'
-                          : 'bg-white border-sky-400 text-gray-900'
-                      }`}
-                    />
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleCreateNewSemester()}
-                        className={`flex-1 px-3 py-2 text-sm font-semibold rounded-lg transition-colors text-white bg-sky-500 hover:bg-sky-600`}
-                      >
-                        Create
-                      </button>
-                      <button
-                        onClick={() => {
-                          setCreatingNewSemester(false);
-                          setNewSemesterName('');
-                        }}
-                        className={`flex-1 px-3 py-2 text-sm font-semibold rounded-lg transition-colors ${
-                          isDarkMode
-                            ? 'bg-gray-700 hover:bg-gray-600 text-gray-300'
-                            : 'bg-gray-300 hover:bg-gray-400 text-gray-700'
-                        }`}
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => {
-                      if (!isAuthenticated) {
-                        navigate('/login');
-                        return;
-                      }
-                      setCreatingNewSemester(true);
-                    }}
-                    className={`border-2 rounded-xl p-6 transition-all flex flex-col items-center justify-center hover:shadow-xl hover:scale-[1.02] ${isDarkMode ? 'bg-gradient-to-br from-orange-600 to-orange-700 border-orange-500' : 'bg-gradient-to-br from-orange-400 to-orange-500 border-orange-400'}`}
-                  >
-                    <svg className="w-8 h-8 mb-2 text-white drop-shadow-lg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                    <p className="text-sm font-semibold text-white drop-shadow-md">
-                      Create New Semester
-                    </p>
-                    <p className="text-xs mt-1 text-white/90">
-                      Create your semester manually
-                    </p>
-                  </button>
-                )}
+                <button
+                  onClick={() => {
+                    if (!isAuthenticated) {
+                      navigate('/login');
+                      return;
+                    }
+                    handleCreateNewSemester();
+                  }}
+                  className={`border-2 rounded-lg sm:rounded-xl p-4 sm:p-6 transition-all flex flex-col items-center justify-center hover:shadow-xl hover:scale-[1.02] active:scale-95 ${isDarkMode ? 'bg-gradient-to-br from-orange-600 to-orange-700 border-orange-500' : 'bg-gradient-to-br from-orange-400 to-orange-500 border-orange-400'}`}
+                >
+                  <svg className="w-6 h-6 sm:w-8 sm:h-8 mb-1.5 sm:mb-2 text-white drop-shadow-lg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  <p className="text-xs sm:text-sm font-semibold text-white drop-shadow-md">
+                    Create New Semester
+                  </p>
+                  <p className="text-[10px] sm:text-xs mt-0.5 sm:mt-1 text-white/90 text-center">
+                    Create your semester manually
+                  </p>
+                </button>
 
                 {/* Upload Routine Button */}
                 <button
@@ -830,15 +886,15 @@ export default function DashboardPage() {
                     }
                     setShowUploadModal(true);
                   }}
-                  className={`border-2 rounded-xl p-6 transition-all flex flex-col items-center justify-center hover:shadow-xl hover:scale-[1.02] ${isDarkMode ? 'bg-gradient-to-br from-purple-600 to-purple-700 border-purple-500' : 'bg-gradient-to-br from-purple-400 to-purple-500 border-purple-400'}`}
+                  className={`border-2 rounded-lg sm:rounded-xl p-4 sm:p-6 transition-all flex flex-col items-center justify-center hover:shadow-xl hover:scale-[1.02] active:scale-95 ${isDarkMode ? 'bg-gradient-to-br from-purple-600 to-purple-700 border-purple-500' : 'bg-gradient-to-br from-purple-400 to-purple-500 border-purple-400'}`}
                 >
-                  <svg className="w-8 h-8 mb-2 text-white drop-shadow-lg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-6 h-6 sm:w-8 sm:h-8 mb-1.5 sm:mb-2 text-white drop-shadow-lg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                   </svg>
-                  <p className="text-sm font-semibold text-white drop-shadow-md">
+                  <p className="text-xs sm:text-sm font-semibold text-white drop-shadow-md">
                     Upload Routine
                   </p>
-                  <p className="text-xs mt-1 text-white/90">
+                  <p className="text-[10px] sm:text-xs mt-0.5 sm:mt-1 text-white/90 text-center">
                     Extract courses from PDF or Image
                   </p>
                 </button>
@@ -847,10 +903,10 @@ export default function DashboardPage() {
 
             {/* Semesters Section */}
             {semesterList.length === 0 ? (
-              <div className={`rounded-2xl p-8 mb-8 border transition-colors ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200'}`}>
-                <div className={`text-center py-16 border-2 border-dashed rounded-xl ${isDarkMode ? 'border-gray-700' : 'border-gray-300'}`}>
+              <div className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8 border transition-colors ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200'}`}>
+                <div className={`text-center py-8 sm:py-12 lg:py-16 border-2 border-dashed rounded-lg sm:rounded-xl ${isDarkMode ? 'border-gray-700' : 'border-gray-300'}`}>
                   <svg
-                    className={`mx-auto h-12 w-12 ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}
+                    className={`mx-auto h-8 w-8 sm:h-12 sm:w-12 ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -862,19 +918,19 @@ export default function DashboardPage() {
                       d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
                     />
                   </svg>
-                  <h3 className={`mt-4 text-lg font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>No semesters yet</h3>
-                  <p className={`mt-2 text-sm ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>Create or Upload a routine to create your first semester</p>
+                  <h3 className={`mt-3 sm:mt-4 text-base sm:text-lg font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>No semesters yet</h3>
+                  <p className={`mt-1.5 sm:mt-2 text-xs sm:text-sm px-4 ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>Create or Upload a routine to create your first semester</p>
                 </div>
               </div>
             ) : (
               semesterList.map((semesterName) => (
                 <div 
                   key={semesterName}
-                  className={`rounded-2xl p-8 mb-8 border transition-all hover:shadow-lg ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200'}`}
+                  className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8 border transition-all hover:shadow-lg ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200'}`}
                 >
-                  <div className="flex justify-between items-center mb-6">
-                    <div>
-                      <div className="flex items-center gap-3 mb-2">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-0 mb-4 sm:mb-6">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 sm:gap-3 mb-1.5 sm:mb-2">
                         {editingSemester === semesterName ? (
                           <input
                             type="text"
@@ -889,32 +945,69 @@ export default function DashboardPage() {
                               }
                             }}
                             autoFocus
-                            className={`text-2xl font-bold px-2 py-1 rounded border-2 border-sky-500 ${
+                            className={`text-lg sm:text-xl lg:text-2xl font-bold px-2 py-1 rounded border-2 border-sky-500 w-full sm:w-auto ${
                               isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
                             }`}
                           />
                         ) : (
-                          <h2 
-                            className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} ${isAuthenticated ? 'cursor-pointer hover:text-sky-400' : 'cursor-not-allowed opacity-60'} transition-colors`}
-                            onClick={() => {
-                              if (!isAuthenticated) {
-                                navigate('/login');
-                                return;
-                              }
-                              setEditingSemester(semesterName);
-                              setEditingSemesterName(semesterName);
-                            }}
-                          >
-                            {semesterName}
-                          </h2>
+                          <>
+                            <h2 
+                              className={`text-lg sm:text-xl lg:text-2xl font-bold break-words ${isDarkMode ? 'text-white' : 'text-gray-900'}`}
+                            >
+                              {semesterName}
+                            </h2>
+                            {isAuthenticated && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingSemester(semesterName);
+                                  setEditingSemesterName(semesterName);
+                                }}
+                                className={`p-1 sm:p-1.5 rounded-lg transition-all flex-shrink-0 ${
+                                  isDarkMode
+                                    ? 'hover:bg-blue-500/20 text-gray-400 hover:text-blue-400'
+                                    : 'hover:bg-blue-100 text-gray-500 hover:text-blue-600'
+                                }`}
+                                title="Edit semester name"
+                              >
+                                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                              </button>
+                            )}
+                          </>
                         )}
                       </div>
-                      <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      <p className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                         {(groupedBySemester[semesterName] || []).length} {(groupedBySemester[semesterName] || []).length === 1 ? 'course' : 'courses'}
                       </p>
                     </div>
+                    {isAuthenticated && (
+                      <div className="flex items-center gap-1.5 sm:gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (!isAuthenticated) {
+                              navigate('/login');
+                              return;
+                            }
+                            handleDeleteAllCourses(semesterName);
+                          }}
+                          className={`p-2 rounded-lg transition-all ${
+                            isDarkMode
+                              ? 'hover:bg-red-500/20 text-gray-400 hover:text-red-400'
+                              : 'hover:bg-red-100 text-gray-500 hover:text-red-600'
+                          }`}
+                          title="Delete semester"
+                        >
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
+                    )}
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                     {(groupedBySemester[semesterName] || []).map((course) => (
                       <div
                         key={course.id}
@@ -927,49 +1020,207 @@ export default function DashboardPage() {
                             navigate(`/course/${course.id}`);
                           }
                         }}
-                        className={`group border-2 rounded-xl p-6 transition-all duration-200 relative shadow-lg ${isAuthenticated ? 'hover:shadow-xl hover:scale-[1.02] cursor-pointer' : 'cursor-not-allowed opacity-60'} min-h-[180px] flex flex-col ${isDarkMode ? 'bg-gradient-to-br from-blue-600 to-blue-700 border-blue-500' : 'bg-gradient-to-br from-blue-600 to-blue-700 border-blue-500'}`}
+                        className={`group border-2 rounded-lg sm:rounded-xl p-4 sm:p-6 transition-all duration-200 relative shadow-lg ${isAuthenticated ? 'hover:shadow-xl hover:scale-[1.02] active:scale-95 cursor-pointer' : 'cursor-not-allowed opacity-60'} min-h-[160px] sm:min-h-[180px] flex flex-col ${isDarkMode ? 'bg-gradient-to-br from-blue-600 to-blue-700 border-blue-500' : 'bg-gradient-to-br from-blue-600 to-blue-700 border-blue-500'}`}
                       >
-                        <h3 className="font-bold text-2xl mb-2 text-white drop-shadow-md">{course.code}</h3>
-                        {course.title && (
-                          <p className="text-base line-clamp-2 leading-relaxed text-white/90">{course.title}</p>
+                        {/* Edit/Delete buttons - top right */}
+                        {isAuthenticated && (
+                          <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (!isAuthenticated) {
+                                  navigate('/login');
+                                  return;
+                                }
+                                startEditCourse(course);
+                              }}
+                              className="p-1.5 rounded-lg bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all"
+                              title="Edit course"
+                            >
+                              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (!isAuthenticated) {
+                                  navigate('/login');
+                                  return;
+                                }
+                                handleDeleteCourse(course.id);
+                              }}
+                              className="p-1.5 rounded-lg bg-white/20 backdrop-blur-sm hover:bg-red-500/50 transition-all"
+                              title="Delete course"
+                            >
+                              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </div>
                         )}
-                        <div className="flex items-center justify-between pt-4 border-t border-white/20 mt-auto">
-                          <span className="text-sm font-medium text-white/80">
-                            {materials.filter((m) => m.course === course.id).length} {materials.filter((m) => m.course === course.id).length === 1 ? 'file' : 'files'}
-                          </span>
-                        </div>
+                        
+                        {/* Course content */}
+                        {editingCourse === course.id ? (
+                          <div className="flex-1 space-y-3" onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="text"
+                              value={editFormData.code}
+                              onChange={(e) => setEditFormData({ ...editFormData, code: e.target.value })}
+                              placeholder="Course code"
+                              className="w-full px-3 py-2 rounded-lg bg-white/20 backdrop-blur-sm text-white placeholder-white/60 border-2 border-white/30 focus:border-white focus:outline-none"
+                            />
+                            <input
+                              type="text"
+                              value={editFormData.title}
+                              onChange={(e) => setEditFormData({ ...editFormData, title: e.target.value })}
+                              placeholder="Course title"
+                              className="w-full px-3 py-2 rounded-lg bg-white/20 backdrop-blur-sm text-white placeholder-white/60 border-2 border-white/30 focus:border-white focus:outline-none"
+                            />
+                            <div className="flex gap-2">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleUpdateCourse(course.id);
+                                }}
+                                className="flex-1 px-4 py-2 rounded-lg bg-white/30 hover:bg-white/40 text-white font-semibold transition-all"
+                              >
+                                Save
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingCourse(null);
+                                  setEditFormData({ code: '', title: '' });
+                                }}
+                                className="flex-1 px-4 py-2 rounded-lg bg-white/20 hover:bg-white/30 text-white font-semibold transition-all"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <h3 className="font-bold text-lg sm:text-xl lg:text-2xl mb-1.5 sm:mb-2 text-white drop-shadow-md break-words">{course.code}</h3>
+                            {course.title && (
+                              <p className="text-sm sm:text-base line-clamp-2 leading-relaxed text-white/90 break-words">{course.title}</p>
+                            )}
+                            <div className="flex items-center justify-between pt-3 sm:pt-4 border-t border-white/20 mt-auto">
+                              <span className="text-xs sm:text-sm font-medium text-white/80">
+                                {materials.filter((m) => m.course === course.id).length} {materials.filter((m) => m.course === course.id).length === 1 ? 'file' : 'files'}
+                              </span>
+                            </div>
+                          </>
+                        )}
                       </div>
                     ))}
+
+                    {isAuthenticated && (
+                      <div
+                        className={`border-2 rounded-lg sm:rounded-xl p-4 sm:p-6 transition-all flex flex-col justify-center items-center gap-3 ${
+                          isDarkMode ? 'border-dashed border-gray-700 bg-gray-900/40 hover:border-sky-500/60' : 'border-dashed border-gray-300 bg-gray-50 hover:border-sky-400/60'
+                        }`}
+                      >
+                        {addingCourseToSemester === semesterName ? (
+                          <div className="w-full space-y-3">
+                            <input
+                              type="text"
+                              value={newCourseData.code}
+                              onChange={(e) => setNewCourseData({ ...newCourseData, code: e.target.value })}
+                              placeholder="Course code"
+                              className={`w-full px-3 py-2 rounded-lg border-2 text-sm ${
+                                isDarkMode
+                                  ? 'bg-gray-900 border-sky-500 text-white placeholder-gray-400'
+                                  : 'bg-white border-sky-400 text-gray-900 placeholder-gray-400'
+                              }`}
+                              autoFocus
+                            />
+                            <input
+                              type="text"
+                              value={newCourseData.title}
+                              onChange={(e) => setNewCourseData({ ...newCourseData, title: e.target.value })}
+                              placeholder="Course title"
+                              className={`w-full px-3 py-2 rounded-lg border-2 text-sm ${
+                                isDarkMode
+                                  ? 'bg-gray-900 border-sky-500 text-white placeholder-gray-400'
+                                  : 'bg-white border-sky-400 text-gray-900 placeholder-gray-400'
+                              }`}
+                            />
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleAddNewCourse(semesterName)}
+                                className="flex-1 px-3 py-2 text-sm font-semibold rounded-lg transition-colors text-white bg-sky-500 hover:bg-sky-600"
+                              >
+                                Done
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setAddingCourseToSemester(null);
+                                  setNewCourseData({ code: '', title: '' });
+                                }}
+                                className={`flex-1 px-3 py-2 text-sm font-semibold rounded-lg transition-colors ${
+                                  isDarkMode
+                                    ? 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                                    : 'bg-gray-300 hover:bg-gray-400 text-gray-700'
+                                }`}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              if (!isAuthenticated) {
+                                navigate('/login');
+                                return;
+                              }
+                              setAddingCourseToSemester(semesterName);
+                              setNewCourseData({ code: '', title: '' });
+                            }}
+                            className="w-full flex flex-col items-center justify-center gap-2 text-center"
+                          >
+                            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${isDarkMode ? 'bg-sky-500/20 text-sky-300' : 'bg-sky-100 text-sky-600'}`}>
+                              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                              </svg>
+                            </div>
+                            <p className={`text-sm font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Add Course</p>
+                            <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Add multiple courses quickly</p>
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))
             )}
             {/* Online Compiler CTA - Only in Semesters tab */}
-            <div className={`rounded-2xl overflow-hidden mb-8 border-2 transition-all hover:shadow-2xl hover:scale-[1.02] ${isDarkMode ? 'bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-600 border-emerald-500' : 'bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 border-emerald-400'}`}>
+            <div className={`rounded-xl sm:rounded-2xl overflow-hidden mb-6 sm:mb-8 border-2 transition-all hover:shadow-2xl hover:scale-[1.02] active:scale-95 ${isDarkMode ? 'bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-600 border-emerald-500' : 'bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 border-emerald-400'}`}>
               <a 
                 href="https://compiler.supanroy.com" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="block p-8 relative group"
+                className="block p-4 sm:p-6 lg:p-8 relative group"
               >
                 {/* Background Pattern */}
                 <div className="absolute inset-0 opacity-10">
-                  <div className="absolute top-4 right-4 text-white/20 text-6xl font-mono">&lt;/&gt;</div>
-                  <div className="absolute bottom-4 left-4 text-white/20 text-4xl font-mono">{ }</div>
+                  <div className="absolute top-2 right-2 sm:top-4 sm:right-4 text-white/20 text-3xl sm:text-4xl lg:text-6xl font-mono">&lt;/&gt;</div>
+                  <div className="absolute bottom-2 left-2 sm:bottom-4 sm:left-4 text-white/20 text-2xl sm:text-3xl lg:text-4xl font-mono">{ }</div>
                 </div>
 
-                <div className="relative flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="relative flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6">
                   {/* Left Content */}
                   <div className="flex-1 text-center md:text-left">
-                    <div className="flex items-center justify-center md:justify-start gap-3 mb-3">
-                      <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                        <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <div className="flex items-center justify-center md:justify-start gap-2 sm:gap-3 mb-2 sm:mb-3">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                        <svg className="w-5 h-5 sm:w-6 sm:h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                         </svg>
                       </div>
-                      <h2 className="text-2xl font-bold text-white drop-shadow-lg">Try Our Online Compiler</h2>
+                      <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-white drop-shadow-lg">Try Our Online Compiler</h2>
                     </div>
-                    <p className="text-white/90 text-base mb-2 drop-shadow">
+                    <p className="text-white/90 text-sm sm:text-base mb-2 drop-shadow">
                       Write, compile, and execute code in multiple languages - C++, Python, Java, JavaScript & more!
                     </p>
                     <div className="flex flex-wrap gap-2 justify-center md:justify-start">
@@ -980,10 +1231,10 @@ export default function DashboardPage() {
                   </div>
 
                   {/* Right CTA Button */}
-                  <div className="flex-shrink-0">
-                    <div className="px-8 py-4 rounded-xl bg-white text-emerald-600 font-bold text-lg shadow-xl group-hover:shadow-2xl group-hover:scale-110 transition-all flex items-center gap-3">
+                  <div className="flex-shrink-0 w-full md:w-auto">
+                    <div className="px-4 sm:px-6 lg:px-8 py-3 sm:py-4 rounded-lg sm:rounded-xl bg-white text-emerald-600 font-bold text-sm sm:text-base lg:text-lg shadow-xl group-hover:shadow-2xl group-hover:scale-110 transition-all flex items-center justify-center gap-2 sm:gap-3">
                       <span>Launch Compiler</span>
-                      <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                       </svg>
                     </div>
@@ -1003,35 +1254,35 @@ export default function DashboardPage() {
         ) : activeTab === 'toolkit' ? (
           <div>
             {/* Toolkit Section */}
-            <div className="mb-8">
-              <h1 className={`text-3xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Toolkit</h1>
-              <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Convert files and secure your documents with our powerful tools.</p>
+            <div className="mb-6 sm:mb-8">
+              <h1 className={`text-2xl sm:text-3xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Toolkit</h1>
+              <p className={`text-sm sm:text-base ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Convert files and secure your documents with our powerful tools.</p>
             </div>
 
             {/* Toolkit Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {/* PDF Converter */}
               <div 
                 onClick={() => setShowDocumentToPDF(true)}
-                className={`rounded-2xl p-6 border-2 transition-all hover:shadow-lg cursor-pointer hover:border-sky-400 ${isDarkMode ? 'bg-gray-900/50 border-gray-700 hover:bg-gray-800/70' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center">
-                    <FaFileImport className="w-6 h-6 text-white" />
+                className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 border-2 transition-all hover:shadow-lg cursor-pointer active:scale-95 hover:border-sky-400 ${isDarkMode ? 'bg-gray-900/50 border-gray-700 hover:bg-gray-800/70' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
+                <div className="flex items-center justify-between mb-3 sm:mb-4">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center">
+                    <FaFileImport className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                   </div>
-                  <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </div>
-                <h3 className={`font-semibold text-lg mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Document to PDF</h3>
-                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Convert Word, Excel, PowerPoint and more to PDF</p>
+                <h3 className={`font-semibold text-base sm:text-lg mb-1.5 sm:mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Document to PDF</h3>
+                <p className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Convert Word, Excel, PowerPoint and more to PDF</p>
               </div>
 
               {/* Images to PDF */}
               <div 
                 onClick={() => setShowImagesToPDF(true)}
-                className={`rounded-2xl p-6 border-2 transition-all hover:shadow-lg cursor-pointer hover:border-sky-400 ${isDarkMode ? 'bg-gray-900/50 border-gray-700 hover:bg-gray-800/70' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center">
+                className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 border-2 transition-all hover:shadow-lg cursor-pointer active:scale-95 hover:border-sky-400 ${isDarkMode ? 'bg-gray-900/50 border-gray-700 hover:bg-gray-800/70' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
+                <div className="flex items-center justify-between mb-3 sm:mb-4">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center">
                     <FaImages className="w-6 h-6 text-white" />
                   </div>
                   <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1039,15 +1290,15 @@ export default function DashboardPage() {
                   </svg>
                 </div>
                 <h3 className={`font-semibold text-lg mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Images to PDF</h3>
-                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Combine multiple images into a PDF without extra margins</p>
+                <p className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Combine multiple images into a PDF without extra margins</p>
               </div>
 
               {/* Add Page Numbers */}
               <div 
                 onClick={() => setShowAddPageNumbers(true)}
-                className={`rounded-2xl p-6 border-2 transition-all hover:shadow-lg cursor-pointer hover:border-sky-400 ${isDarkMode ? 'bg-gray-900/50 border-gray-700 hover:bg-gray-800/70' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center">
+                className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 border-2 transition-all hover:shadow-lg cursor-pointer active:scale-95 hover:border-sky-400 ${isDarkMode ? 'bg-gray-900/50 border-gray-700 hover:bg-gray-800/70' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
+                <div className="flex items-center justify-between mb-3 sm:mb-4">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center">
                     <FaHashtag className="w-6 h-6 text-white" />
                   </div>
                   <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1055,15 +1306,15 @@ export default function DashboardPage() {
                   </svg>
                 </div>
                 <h3 className={`font-semibold text-lg mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Add Page Numbers</h3>
-                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Add customizable page numbers to your PDF</p>
+                <p className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Add customizable page numbers to your PDF</p>
               </div>
 
               {/* PDF Merger */}
               <div 
                 onClick={() => setShowMergePDFs(true)}
-                className={`rounded-2xl p-6 border-2 transition-all hover:shadow-lg cursor-pointer hover:border-sky-400 ${isDarkMode ? 'bg-gray-900/50 border-gray-700 hover:bg-gray-800/70' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 border-2 transition-all hover:shadow-lg cursor-pointer active:scale-95 hover:border-sky-400 ${isDarkMode ? 'bg-gray-900/50 border-gray-700 hover:bg-gray-800/70' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
+                <div className="flex items-center justify-between mb-3 sm:mb-4">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
                     <FaObjectGroup className="w-6 h-6 text-white" />
                   </div>
                   <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1071,15 +1322,15 @@ export default function DashboardPage() {
                   </svg>
                 </div>
                 <h3 className={`font-semibold text-lg mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Merge PDFs</h3>
-                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Combine multiple PDF files into one</p>
+                <p className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Combine multiple PDF files into one</p>
               </div>
 
               {/* Password Protect PDF */}
               <div 
                 onClick={() => setShowSecurePDF(true)}
-                className={`rounded-2xl p-6 border-2 transition-all hover:shadow-lg cursor-pointer hover:border-sky-400 ${isDarkMode ? 'bg-gray-900/50 border-gray-700 hover:bg-gray-800/70' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
+                className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 border-2 transition-all hover:shadow-lg cursor-pointer active:scale-95 hover:border-sky-400 ${isDarkMode ? 'bg-gray-900/50 border-gray-700 hover:bg-gray-800/70' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
+                <div className="flex items-center justify-between mb-3 sm:mb-4">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
                     <FaLock className="w-6 h-6 text-white" />
                   </div>
                   <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1087,15 +1338,15 @@ export default function DashboardPage() {
                   </svg>
                 </div>
                 <h3 className={`font-semibold text-lg mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Secure PDF</h3>
-                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Lock your PDFs with password protection</p>
+                <p className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Lock your PDFs with password protection</p>
               </div>
 
               {/* PDF Splitter */}
               <div 
                 onClick={() => setShowSplitPDF(true)}
-                className={`rounded-2xl p-6 border-2 transition-all hover:shadow-lg cursor-pointer hover:border-sky-400 ${isDarkMode ? 'bg-gray-900/50 border-gray-700 hover:bg-gray-800/70' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-yellow-500 to-yellow-600 flex items-center justify-center">
+                className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 border-2 transition-all hover:shadow-lg cursor-pointer active:scale-95 hover:border-sky-400 ${isDarkMode ? 'bg-gray-900/50 border-gray-700 hover:bg-gray-800/70' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
+                <div className="flex items-center justify-between mb-3 sm:mb-4">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-gradient-to-br from-yellow-500 to-yellow-600 flex items-center justify-center">
                     <FaCut className="w-6 h-6 text-white" />
                   </div>
                   <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1103,15 +1354,15 @@ export default function DashboardPage() {
                   </svg>
                 </div>
                 <h3 className={`font-semibold text-lg mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Split PDF</h3>
-                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Extract specific pages from your PDF</p>
+                <p className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Extract specific pages from your PDF</p>
               </div>
 
               {/* PDF Compressor */}
               <div 
                 onClick={() => setShowCompressPDF(true)}
-                className={`rounded-2xl p-6 border-2 transition-all hover:shadow-lg cursor-pointer hover:border-sky-400 ${isDarkMode ? 'bg-gray-900/50 border-gray-700 hover:bg-gray-800/70' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
+                className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 border-2 transition-all hover:shadow-lg cursor-pointer active:scale-95 hover:border-sky-400 ${isDarkMode ? 'bg-gray-900/50 border-gray-700 hover:bg-gray-800/70' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
+                <div className="flex items-center justify-between mb-3 sm:mb-4">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
                     <FaCompress className="w-6 h-6 text-white" />
                   </div>
                   <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1119,15 +1370,15 @@ export default function DashboardPage() {
                   </svg>
                 </div>
                 <h3 className={`font-semibold text-lg mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Compress PDF</h3>
-                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Reduce PDF file size while maintaining quality</p>
+                <p className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Reduce PDF file size while maintaining quality</p>
               </div>
 
               {/* Watermark PDF */}
               <div 
                 onClick={() => setShowWatermarkPDF(true)}
-                className={`rounded-2xl p-6 border-2 transition-all hover:shadow-lg cursor-pointer hover:border-sky-400 ${isDarkMode ? 'bg-gray-900/50 border-gray-700 hover:bg-gray-800/70' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
+                className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 border-2 transition-all hover:shadow-lg cursor-pointer active:scale-95 hover:border-sky-400 ${isDarkMode ? 'bg-gray-900/50 border-gray-700 hover:bg-gray-800/70' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
+                <div className="flex items-center justify-between mb-3 sm:mb-4">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
                     <FaTint className="w-6 h-6 text-white" />
                   </div>
                   <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1135,15 +1386,15 @@ export default function DashboardPage() {
                   </svg>
                 </div>
                 <h3 className={`font-semibold text-lg mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Watermark PDF</h3>
-                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Add text or image watermarks to protect your documents</p>
+                <p className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Add text or image watermarks to protect your documents</p>
               </div>
 
               {/* Edit / Annotate PDF */}
               <div 
                 onClick={() => setShowEditPDF(true)}
-                className={`rounded-2xl p-6 border-2 transition-all hover:shadow-lg cursor-pointer hover:border-sky-400 ${isDarkMode ? 'bg-gray-900/50 border-gray-700 hover:bg-gray-800/70' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
+                className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 border-2 transition-all hover:shadow-lg cursor-pointer active:scale-95 hover:border-sky-400 ${isDarkMode ? 'bg-gray-900/50 border-gray-700 hover:bg-gray-800/70' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
+                <div className="flex items-center justify-between mb-3 sm:mb-4">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
                     <FaEdit className="w-6 h-6 text-white" />
                   </div>
                   <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1151,26 +1402,26 @@ export default function DashboardPage() {
                   </svg>
                 </div>
                 <h3 className={`font-semibold text-lg mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Edit PDF</h3>
-                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Annotate, add text, and highlight content</p>
+                <p className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Annotate, add text, and highlight content</p>
               </div>
             </div>
 
             {/* Coming Soon Message */}
-            <div className={`mt-12 p-8 rounded-2xl border-2 border-dashed text-center ${isDarkMode ? 'border-gray-700/50 bg-gray-900/30' : 'border-gray-300 bg-gray-50'}`}>
-              <svg className="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className={`mt-8 sm:mt-12 p-6 sm:p-8 rounded-xl sm:rounded-2xl border-2 border-dashed text-center ${isDarkMode ? 'border-gray-700/50 bg-gray-900/30' : 'border-gray-300 bg-gray-50'}`}>
+              <svg className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
               </svg>
-              <h3 className={`text-xl font-semibold mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>More Toolkit Features Coming Soon</h3>
-              <p className={`${isDarkMode ? 'text-gray-500' : 'text-gray-600'}`}>Click on any tool above to explore its features when available</p>
+              <h3 className={`text-lg sm:text-xl font-semibold mb-1.5 sm:mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>More Toolkit Features Coming Soon</h3>
+              <p className={`text-sm sm:text-base ${isDarkMode ? 'text-gray-500' : 'text-gray-600'}`}>Click on any tool above to explore its features when available</p>
             </div>
           </div>
         ) : null}
 
-        {/* Recent Materials - Only show for authenticated users */}
-        {isAuthenticated && (
+        {/* Recent Materials & Storage - Only on Semesters tab for authenticated users */}
+        {activeTab === 'semesters' && isAuthenticated && (
           <>
-            <div className={`rounded-2xl p-8 border transition-colors ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200'}`}>
-          <h2 className={`text-lg font-bold mb-6 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Recent Files</h2>
+            <div className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 border transition-colors ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200'}`}>
+          <h2 className={`text-base sm:text-lg font-bold mb-4 sm:mb-6 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Recent Files</h2>
 
           {materials.filter(m => {
             const course = courses.find(c => c.id === m.course);
@@ -1195,56 +1446,58 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {materials.filter(m => {
-                const course = courses.find(c => c.id === m.course);
-                return course && course.code !== 'ROUTINE';
-              }).slice(0, 5).map((material) => (
-                <div
-                  key={material.id}
-                  className={`flex items-center justify-between p-4 border rounded-lg transition-all group ${isDarkMode ? 'border-gray-700/30 hover:border-sky-500/30 bg-gray-900/30 hover:bg-gray-900/50' : 'border-gray-200 hover:border-sky-500/30 bg-gray-50 hover:bg-gray-100'}`}
-                >
-                  <div className="flex items-center space-x-3 flex-1 min-w-0">
-                    <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-sky-500/20 to-cyan-500/20 rounded-lg flex items-center justify-center group-hover:from-sky-500/40 group-hover:to-cyan-500/40 transition-colors border border-sky-500/20">
-                      <svg
-                        className="h-5 w-5 text-sky-400 group-hover:text-cyan-300 transition-colors"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-                        />
-                      </svg>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-medium truncate ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{material.filename}</p>
-                      <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>{formatBytes(material.size_bytes)}</p>
-                    </div>
-                  </div>
+              {materials
+                .filter((m) => {
+                  const course = courses.find((c) => c.id === m.course);
+                  return course && course.code !== 'ROUTINE';
+                })
+                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+                .slice(0, 5)
+                .map((material) => (
                   <a
+                    key={material.id}
                     href={`${BACKEND_BASE_URL}/materials/files/${material.id}/`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="ml-3 px-3 py-1.5 text-xs font-semibold text-sky-300 hover:text-sky-200 hover:bg-sky-500/10 rounded-lg transition-all border border-sky-500/20 hover:border-sky-500/50"
+                    className={`flex items-center justify-between p-4 border rounded-lg transition-all group cursor-pointer no-underline ${isDarkMode ? 'border-gray-700/30 hover:border-sky-500/30 bg-gray-900/30 hover:bg-gray-900/50' : 'border-gray-200 hover:border-sky-500/30 bg-gray-50 hover:bg-gray-100'}`}
                   >
-                    View
+                    <div className="flex items-center space-x-3 flex-1 min-w-0">
+                      <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-sky-500/20 to-cyan-500/20 rounded-lg flex items-center justify-center group-hover:from-sky-500/40 group-hover:to-cyan-500/40 transition-colors border border-sky-500/20">
+                        <svg
+                          className="h-5 w-5 text-sky-400 group-hover:text-cyan-300 transition-colors"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                          />
+                        </svg>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm font-medium truncate ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{material.filename}</p>
+                        <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>{formatBytes(material.size_bytes)}</p>
+                      </div>
+                    </div>
+                    <span className="ml-3 px-3 py-1.5 text-xs font-semibold text-sky-300 group-hover:text-sky-200 rounded-lg transition-all border border-sky-500/20 group-hover:border-sky-500/50 bg-sky-500/5">
+                      View
+                    </span>
                   </a>
-                </div>
-              ))}
+                ))}
             </div>
           )}
             </div>
 
             {/* Storage Usage Card */}
             {usage && (
-          <div className={`rounded-2xl p-8 mb-8 border transition-colors ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200'}`}>
-            <div className="flex items-center justify-between mb-6">
+          <div className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8 mt-4 sm:mt-6 border transition-colors ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200'}`}>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-4 sm:mb-6">
               <div>
                 <h2 className={`text-lg font-bold mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Storage Usage</h2>
-                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Your account storage capacity</p>
+                <p className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Your account storage capacity</p>
               </div>
               <span className="text-3xl font-bold text-sky-400">{getStoragePercentage().toFixed(0)}%</span>
             </div>
@@ -1294,6 +1547,14 @@ export default function DashboardPage() {
                     className={`text-sm hover:text-sky-400 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}
                   >
                     Dashboard
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    onClick={() => navigate('/about')}
+                    className={`text-sm hover:text-sky-400 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}
+                  >
+                    About
                   </button>
                 </li>
                 <li>

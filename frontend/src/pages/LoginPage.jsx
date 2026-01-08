@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import CoursebookTextLogo from '../components/CoursebookTextLogo';
 import { authService } from '../services';
 
@@ -12,6 +13,7 @@ export default function LoginPage() {
   const [infoMessage, setInfoMessage] = useState('');
   const [googleLoading, setGoogleLoading] = useState(false);
   const { login, loading, isAuthenticated } = useAuth();
+  const { isDarkMode } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -59,17 +61,17 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-gray-50">
+    <div className={`min-h-screen flex items-center justify-center px-4 py-6 sm:py-8 transition-colors ${isDarkMode ? 'bg-black' : 'bg-gray-50'}`}>
           <div className="w-full max-w-md">
-          <div className="bg-white rounded-2xl p-8 shadow-lg">
+          <div className={`rounded-xl sm:rounded-2xl p-6 sm:p-8 shadow-lg transition-colors ${isDarkMode ? 'bg-gray-900 border border-gray-800' : 'bg-white'}`}>
             <div className="text-center mb-8">
               <Link to="/dashboard" className="block">
                 <div className="flex justify-center items-center mb-4 relative cursor-pointer hover:opacity-80 transition-opacity">
                   <img src="/coursebook.svg" alt="Coursebook" className="absolute w-12 h-12" style={{ left: '20px' }} />
-                  <CoursebookTextLogo className="w-64 h-16" isDarkMode={false} />
+                  <CoursebookTextLogo className="w-64 h-16" isDarkMode={isDarkMode} />
                 </div>
               </Link>
-              <p className="text-sm text-gray-400">Sign in to your account</p>
+              <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`}>Sign in to your account</p>
             </div>
 
         <form className="space-y-4" onSubmit={handleSubmit}>
@@ -84,9 +86,9 @@ export default function LoginPage() {
               {error.includes('verify') && (
                 <p className="text-xs text-red-300 mt-2">
                   <Link to="/resend-verification" className="underline hover:text-red-200">
-                    Resend verification email
+                    Resend verification OTP
                   </Link>
-                  {' '}or check your backend console in development mode.
+                  {' '}or check your email inbox.
                 </p>
               )}
             </div>
@@ -94,7 +96,7 @@ export default function LoginPage() {
 
           <div className="space-y-3">
             <div>
-              <label htmlFor="email" className="block text-xs font-semibold text-gray-700 mb-1.5">
+              <label htmlFor="email" className={`block text-xs font-semibold mb-1.5 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                 EMAIL ADDRESS
               </label>
               <input
@@ -104,13 +106,17 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="block w-full px-3.5 py-2.5 text-sm border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                className={`block w-full px-3.5 py-2.5 text-sm border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all ${
+                  isDarkMode 
+                    ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-400' 
+                    : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
+                }`}
                 placeholder="you@example.com"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-xs font-semibold text-gray-700 mb-1.5">
+              <label htmlFor="password" className={`block text-xs font-semibold mb-1.5 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                 PASSWORD
               </label>
               <div className="relative">
@@ -121,12 +127,16 @@ export default function LoginPage() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full px-3.5 py-2.5 pr-10 text-sm border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                  className={`block w-full px-3.5 py-2.5 pr-10 text-sm border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all ${
+                    isDarkMode 
+                      ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-400' 
+                      : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
+                  }`}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className={`absolute right-3 top-1/2 -translate-y-1/2 ${isDarkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'}`}
                 >
                   {showPassword ? (
                     <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -155,10 +165,10 @@ export default function LoginPage() {
         <div className="mt-4">
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300"></div>
+              <div className={`w-full border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-300'}`}></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">Or continue with</span>
+              <span className={`px-2 ${isDarkMode ? 'bg-gray-900 text-gray-400' : 'bg-white text-gray-500'}`}>Or continue with</span>
             </div>
           </div>
 
@@ -166,16 +176,17 @@ export default function LoginPage() {
             type="button"
             onClick={handleGoogleLogin}
             disabled={loading || googleLoading}
-            className="mt-4 w-full flex justify-center items-center gap-3 py-2.5 px-4 border-2 border-gray-300 rounded-lg text-sm font-semibold text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+            className={`mt-4 w-full flex justify-center items-center py-2.5 px-4 border-2 rounded-lg text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm ${
+              isDarkMode
+                ? 'border-gray-700 text-gray-200 bg-gray-800 hover:bg-gray-700 focus:ring-offset-gray-900'
+                : 'border-gray-300 text-gray-700 bg-white hover:bg-gray-50 focus:ring-offset-white'
+            } ${googleLoading ? '' : 'gap-3'}`}
           >
             {googleLoading ? (
-              <>
-                <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <span>Connecting...</span>
-              </>
+              <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
             ) : (
               <>
                 <svg className="h-5 w-5" viewBox="0 0 24 24">
@@ -191,13 +202,13 @@ export default function LoginPage() {
         </div>
 
         <div className="mt-6 space-y-3 text-center">
-          <p className="text-sm text-gray-600">
+          <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
             Don't have an account?{' '}
             <Link to="/register" className="font-semibold text-primary-600 hover:text-primary-700">
               Create account
             </Link>
           </p>
-          <p className="text-sm text-gray-600">
+          <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
             <Link to="/forgot-password" className="font-semibold text-primary-600 hover:text-primary-700">
               Forgot password?
             </Link>

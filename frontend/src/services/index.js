@@ -23,8 +23,8 @@ export const authService = {
     return response.data;
   },
 
-  async verifyEmail(token) {
-    const response = await api.post('/auth/verify-email/', { token });
+  async verifyEmail(email, otp) {
+    const response = await api.post('/auth/verify-email/', { email, otp });
     return response.data;
   },
 
@@ -66,8 +66,16 @@ export const authService = {
     return response.data;
   },
 
-  async deleteAccount(password) {
-    await api.post('/auth/delete-account/', { password });
+  async requestAccountDeletion(deletionReasons) {
+    const response = await api.post('/auth/delete-account/', { 
+      deletion_reasons: deletionReasons 
+    });
+    return response.data;
+  },
+
+  async confirmAccountDeletion(token) {
+    const response = await api.post('/auth/delete-account-confirm/', { token });
+    return response.data;
   },
 
   logout() {

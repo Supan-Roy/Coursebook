@@ -50,7 +50,7 @@ export default function ResendVerificationPage() {
                 <img src="/coursebook.svg" alt="Coursebook" className="absolute w-12 h-12" style={{ left: '20px' }} />
                 <CoursebookTextLogo className="w-64 h-16" />
               </div>
-              <p className="text-sm text-gray-400">Resend verification email</p>
+              <p className="text-sm text-gray-400">Resend verification OTP</p>
             </div>
 
             {status === 'success' ? (
@@ -63,16 +63,22 @@ export default function ResendVerificationPage() {
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Email Sent!</h3>
                   <p className="text-sm text-gray-600 mb-2">{message}</p>
-                  <p className="text-xs text-gray-500">
-                    <strong>Development mode:</strong> Check your backend terminal/console for the verification link.
-                  </p>
                 </div>
-                <Link
-                  to="/login"
-                  className="inline-block w-full py-2.5 px-4 border border-transparent rounded-lg text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 transition-colors"
-                >
-                  Back to Login
-                </Link>
+                <div className="space-y-2">
+                  <Link
+                    to="/verify-email"
+                    state={{ email }}
+                    className="inline-block w-full py-2.5 px-4 border border-transparent rounded-lg text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 transition-colors"
+                  >
+                    Go to Verification Page
+                  </Link>
+                  <Link
+                    to="/login"
+                    className="inline-block w-full py-2.5 px-4 border border-primary-600 rounded-lg text-sm font-semibold text-primary-600 hover:bg-primary-50 transition-colors"
+                  >
+                    Back to Login
+                  </Link>
+                </div>
               </div>
             ) : (
               <form className="space-y-4" onSubmit={handleSubmit}>
@@ -97,7 +103,7 @@ export default function ResendVerificationPage() {
                     placeholder="you@example.com"
                   />
                   <p className="mt-1.5 text-xs text-gray-500">
-                    Enter your email address and we'll send you a new verification link.
+                    Enter your email address and we'll send you a new verification OTP code.
                   </p>
                 </div>
 
@@ -106,7 +112,7 @@ export default function ResendVerificationPage() {
                   disabled={status === 'loading'}
                   className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
                 >
-                  {status === 'loading' ? 'Sending...' : 'Resend Verification Email'}
+                  {status === 'loading' ? 'Sending...' : 'Resend Verification OTP'}
                 </button>
               </form>
             )}

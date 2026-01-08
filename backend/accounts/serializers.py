@@ -34,13 +34,14 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 
 class AccountDeleteSerializer(serializers.Serializer):
-    password = serializers.CharField(write_only=True)
-
-    def validate_password(self, value):
-        user = self.context["request"].user
-        if not user.check_password(value):
-            raise serializers.ValidationError("Incorrect password.")
-        return value
+    deletion_reasons = serializers.DictField(
+        child=serializers.BooleanField(),
+        required=False,
+        allow_empty=True,
+        help_text="Optional checkboxes for deletion reasons"
+    )
+    
+    # No password required - email verification will be used instead
 
 
 class LoginSerializer(serializers.Serializer):
@@ -49,7 +50,8 @@ class LoginSerializer(serializers.Serializer):
 
 
 class EmailVerificationSerializer(serializers.Serializer):
-    token = serializers.CharField()
+    email = serializers.EmailField()
+    otp = serializers.CharField(max_length=6, min_length=6)
 
 
 class PasswordResetRequestSerializer(serializers.Serializer):

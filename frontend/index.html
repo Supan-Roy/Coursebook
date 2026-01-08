@@ -5,6 +5,30 @@
     <link rel="icon" type="image/svg+xml" href="/coursebook.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Coursebook</title>
+    <script>
+      // Apply theme immediately to prevent flash
+      (function() {
+        const saved = localStorage.getItem('theme');
+        let isDark;
+        
+        if (saved) {
+          isDark = saved === 'dark';
+        } else {
+          // No saved preference - use system theme
+          if (window.matchMedia) {
+            isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          } else {
+            isDark = false;
+          }
+        }
+        
+        if (isDark) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

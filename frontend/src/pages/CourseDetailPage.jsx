@@ -82,7 +82,7 @@ export default function CourseDetailPage() {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('course', courseId);
-        
+
         return materialService.upload(formData);
       });
 
@@ -90,12 +90,31 @@ export default function CourseDetailPage() {
       loadCourseData();
     } catch (error) {
       console.error('Failed to upload files:', error);
-      setAlertDialog({
-        isOpen: true,
-        title: 'Upload Error',
-        message: 'Failed to upload some files. Please try again.',
-        type: 'error'
-      });
+
+      const errorCode = error.response?.data?.code;
+      const errorDetail = error.response?.data?.detail;
+
+      if (errorCode === 'quota_exceeded') {
+        // Show quota exceeded dialog with Upgrade option
+        setConfirmDialog({
+          isOpen: true,
+          title: 'Storage limit reached',
+          message:
+            errorDetail ||
+            'You have reached your 500 MB free storage limit. Please delete some files from your courses or Trash Bin, or upgrade your plan for more space.',
+          type: 'warning',
+          onConfirm: () => {
+            navigate('/upgrade');
+          },
+        });
+      } else {
+        setAlertDialog({
+          isOpen: true,
+          title: 'Upload Error',
+          message: errorDetail || 'Failed to upload some files. Please try again.',
+          type: 'error',
+        });
+      }
     } finally {
       setUploading(false);
     }
@@ -511,15 +530,10 @@ export default function CourseDetailPage() {
                               url: shareUrl,
                             });
                           } catch (err) {
-                            if (err.name !== 'AbortError') {
-                              navigator.clipboard.writeText(shareUrl);
-                              alert('Link copied to clipboard!');
-                            }
+                            // User cancelled or share failed - silently handle
                           }
-                        } else {
-                          navigator.clipboard.writeText(shareUrl);
-                          alert('Link copied to clipboard!');
                         }
+                        // No clipboard fallback - only use system share dialog
                       }}
                       className={`p-2 rounded-lg transition-all ${
                         isDarkMode

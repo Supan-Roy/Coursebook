@@ -29,6 +29,11 @@ class User(AbstractUser):
     # Password reset fields
     password_reset_token = models.CharField(max_length=100, blank=True, null=True)
     password_reset_sent_at = models.DateTimeField(null=True, blank=True)
+    
+    # Account deletion fields
+    account_deletion_token = models.CharField(max_length=100, blank=True, null=True)
+    account_deletion_sent_at = models.DateTimeField(null=True, blank=True)
+    account_deletion_reasons = models.TextField(blank=True, null=True)  # Store JSON string of selected reasons
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
