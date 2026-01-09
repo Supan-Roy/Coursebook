@@ -169,20 +169,8 @@ export default function ProfilePage() {
         email: user.email || '',
         university: user.university || '',
       });
-      // Load DOB from backend first, fallback to localStorage for backward compatibility
-      const backendDob = user.date_of_birth || '';
       const savedDob = typeof window !== 'undefined' ? localStorage.getItem(DOB_STORAGE_KEY) : '';
-      setDob(backendDob || savedDob || '');
-      
-      // If we have localStorage DOB but no backend DOB, sync it to backend on next save
-      // If we have backend DOB, sync it to localStorage for offline access
-      if (typeof window !== 'undefined') {
-        if (backendDob && backendDob !== savedDob) {
-          localStorage.setItem(DOB_STORAGE_KEY, backendDob);
-        } else if (!backendDob && savedDob) {
-          // Keep localStorage value, will be synced to backend on next profile update
-        }
-      }
+      setDob(savedDob || '');
     }
   }, [user]);
 
@@ -344,14 +332,8 @@ export default function ProfilePage() {
     setMessage({ type: '', text: '' });
 
     try {
-      // Include DOB in the profile update to sync with backend
-      const profileData = {
-        ...formData,
-        date_of_birth: dob || null,
-      };
-      await authService.updateProfile(profileData);
+      await authService.updateProfile(formData);
       await refreshUser();
-      // Also update localStorage for offline access and backward compatibility
       if (typeof window !== 'undefined') {
         if (dob) {
           localStorage.setItem(DOB_STORAGE_KEY, dob);
@@ -683,27 +665,11 @@ export default function ProfilePage() {
               <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Email cannot be changed</p>
             </div>
 
-            {/* Date of Birth */}
+            {/* Date of Birth (local only) */}
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <label htmlFor="dob" className={`block text-sm font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                  Date of Birth
-                </label>
-                {isEditing && dob && (
-                  <button
-                    type="button"
-                    onClick={() => setDob('')}
-                    className={`text-xs px-2 py-1 rounded transition-colors ${
-                      isDarkMode
-                        ? 'text-red-400 hover:text-red-300 hover:bg-red-500/10'
-                        : 'text-red-600 hover:text-red-700 hover:bg-red-50'
-                    }`}
-                    title="Remove date of birth"
-                  >
-                    Remove
-                  </button>
-                )}
-              </div>
+              <label htmlFor="dob" className={`block text-sm font-semibold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                Date of Birth
+              </label>
               <DatePicker
                 value={dob}
                 onChange={setDob}

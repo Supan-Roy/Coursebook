@@ -184,16 +184,9 @@ export default function DashboardPage() {
   }, [isAuthenticated]); // Reload data when authentication changes
 
   useEffect(() => {
-    // Load DOB from user object (backend) first, fallback to localStorage
-    const backendDob = user?.date_of_birth || '';
     const savedDob = typeof window !== 'undefined' ? localStorage.getItem(DOB_STORAGE_KEY) : '';
-    setDob(backendDob || savedDob || '');
-    
-    // Sync backend DOB to localStorage for offline access
-    if (typeof window !== 'undefined' && backendDob && backendDob !== savedDob) {
-      localStorage.setItem(DOB_STORAGE_KEY, backendDob);
-    }
-  }, [user]);
+    setDob(savedDob || '');
+  }, []);
 
   const loadData = async () => {
     // For unauthenticated users, just set loading to false
