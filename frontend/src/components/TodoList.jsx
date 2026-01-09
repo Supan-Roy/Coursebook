@@ -434,11 +434,11 @@ const MyPlans = ({ isDarkMode }) => {
 
   if (categories.length === 0) {
     return (
-      <div className="max-w-6xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-2.5 sm:py-3 md:py-4 lg:py-6 xl:py-8">
-        <h1 className={`text-xl sm:text-2xl md:text-3xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+      <div className="max-w-7xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-2.5 sm:py-3 md:py-4 lg:py-6 xl:py-8">
+        <h1 className={`text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold mb-3 sm:mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
           My Plans
         </h1>
-        <div className={`text-center py-8 sm:py-12 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+        <div className={`text-center py-6 sm:py-8 md:py-12 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
           <p className="text-base sm:text-lg mb-4">No categories yet. Create one to get started!</p>
         </div>
       </div>
@@ -450,20 +450,20 @@ const MyPlans = ({ isDarkMode }) => {
   const completedTodos = categoryTodos.filter((t) => t.is_completed);
 
   return (
-    <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
+    <div className="max-w-7xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-2.5 sm:py-3 md:py-4 lg:py-6 xl:py-8">
       {/* Header */}
-      <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
-        <div>
-          <h1 className={`text-xl sm:text-2xl md:text-3xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+      <div className="mb-4 sm:mb-5 md:mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 sm:gap-3">
+        <div className="flex-1 min-w-0">
+          <h1 className={`text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold mb-1 sm:mb-1.5 md:mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
             My Plans
           </h1>
-          <p className={`text-sm sm:text-base ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+          <p className={`text-xs sm:text-sm md:text-base ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
             {activeTodos.length} active, {completedTodos.length} completed in {categories.find(c => c.id === activeCategory)?.name}
           </p>
         </div>
         <button
           onClick={toggleNotifications}
-          className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
+          className={`px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${
             notificationsEnabled
               ? isDarkMode
                 ? 'bg-green-900/40 border border-green-500 text-green-300'
@@ -480,23 +480,23 @@ const MyPlans = ({ isDarkMode }) => {
       </div>
 
       {/* Category Slider */}
-      <div className="mb-6 sm:mb-8">
-        <div className="flex items-center gap-2">
+      <div className="mb-4 sm:mb-5 md:mb-6">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           <button
             onClick={() => scrollSlider('left')}
-            className={`p-2 rounded-lg transition-all flex-shrink-0 ${
+            className={`p-1.5 sm:p-2 rounded-lg transition-all flex-shrink-0 ${
               isDarkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-gray-200 hover:bg-gray-300'
             }`}
           >
-            <FiChevronLeft className="w-5 h-5" />
+            <FiChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
 
           <div
             ref={sliderRef}
-            className="flex-1 overflow-x-auto scrollbar-hide scroll-smooth"
+            className="flex-1 overflow-x-auto scrollbar-hide scroll-smooth -mx-2 sm:-mx-3 md:mx-0 px-2 sm:px-3 md:px-0"
             style={{ scrollBehavior: 'smooth' }}
           >
-            <div className="flex gap-2 sm:gap-3 pb-2">
+            <div className="flex gap-1.5 sm:gap-2 md:gap-3 pb-2">
               {categories.map(category => {
                 const isActive = activeCategory === category.id;
                 const isDefault = isDefaultCategory(category);
@@ -518,7 +518,7 @@ const MyPlans = ({ isDarkMode }) => {
                 return (
                   <div
                     key={category.id}
-                    className={`flex-shrink-0 relative group overflow-visible ${baseClasses} px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg transition-all duration-200 min-w-max ${deleteMode && !isDefault ? 'border-2 border-red-400/70' : ''}`}
+                    className={`flex-shrink-0 relative group overflow-visible ${baseClasses} px-2.5 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 rounded-lg transition-all duration-200 min-w-max ${deleteMode && !isDefault ? 'border-2 border-red-400/70' : ''}`}
                     onClick={handleCategoryClick}
                     style={{ cursor: deleteMode && !isDefault ? 'pointer' : 'default' }}
                   >
@@ -561,7 +561,7 @@ const MyPlans = ({ isDarkMode }) => {
                             e.stopPropagation();
                             setActiveCategory(category.id);
                           }}
-                          className={`text-base sm:text-lg font-medium transition-all ${
+                          className={`text-sm sm:text-base md:text-lg font-medium transition-all ${
                             isActive
                               ? 'text-white'
                               : (isDarkMode ? 'text-gray-300' : 'text-gray-700')
@@ -609,11 +609,11 @@ const MyPlans = ({ isDarkMode }) => {
                     }
                     setShowAddCategory(true);
                   }}
-                  className={`flex-shrink-0 px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg border-2 border-dashed transition-all text-sm sm:text-base ${
+                  className={`flex-shrink-0 px-2.5 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 rounded-lg border-2 border-dashed transition-all text-xs sm:text-sm md:text-base ${
                     isDarkMode
                       ? 'border-gray-700 hover:border-gray-600 text-gray-400 hover:text-gray-300 hover:bg-gray-800'
                       : 'border-gray-400 hover:border-gray-500 text-gray-600 hover:text-gray-700 hover:bg-gray-100'
-                  } min-w-max font-medium flex items-center gap-2`}
+                  } min-w-max font-medium flex items-center gap-1.5 sm:gap-2`}
                 >
                   <FiPlus className="w-4 h-4" />
                   <span className="hidden sm:inline">Add Category</span>
@@ -655,14 +655,14 @@ const MyPlans = ({ isDarkMode }) => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
             <button
               onClick={() => scrollSlider('right')}
-              className={`p-2 rounded-lg transition-all ${
+              className={`p-1.5 sm:p-2 rounded-lg transition-all flex-shrink-0 ${
                 isDarkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-gray-200 hover:bg-gray-300'
               }`}
             >
-              <FiChevronRight className="w-5 h-5" />
+              <FiChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
 
             <button
@@ -673,7 +673,7 @@ const MyPlans = ({ isDarkMode }) => {
                 }
                 setDeleteMode((prev) => !prev);
               }}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all border ${
+              className={`px-2 sm:px-2.5 md:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all border whitespace-nowrap ${
                 deleteMode
                   ? isDarkMode
                     ? 'bg-red-900/40 border-red-500 text-red-300'
@@ -684,7 +684,8 @@ const MyPlans = ({ isDarkMode }) => {
               }`}
               title="Delete a category"
             >
-              {deleteMode ? 'Select category to delete' : 'Delete category'}
+              <span className="hidden sm:inline">{deleteMode ? 'Select category to delete' : 'Delete category'}</span>
+              <span className="sm:hidden">{deleteMode ? 'Select' : 'Delete'}</span>
             </button>
           </div>
         </div>
@@ -700,14 +701,14 @@ const MyPlans = ({ isDarkMode }) => {
             }
             setIsAddingTodo(true);
           }}
-          className={`w-full mb-4 sm:mb-6 p-3 sm:p-4 rounded-xl border-2 border-dashed transition-all duration-200 flex items-center justify-center gap-2 ${
+          className={`w-full mb-3 sm:mb-4 md:mb-6 p-2.5 sm:p-3 md:p-4 rounded-xl border-2 border-dashed transition-all duration-200 flex items-center justify-center gap-1.5 sm:gap-2 ${
             isDarkMode
               ? 'border-gray-700 hover:border-blue-500 text-gray-400 hover:text-blue-400'
               : 'border-gray-300 hover:border-blue-500 text-gray-600 hover:text-blue-600'
           }`}
         >
-          <FiPlus className="w-5 h-5" />
-          <span className="font-medium">Add New Todo</span>
+          <FiPlus className="w-4 h-4 sm:w-5 sm:h-5" />
+          <span className="font-medium text-sm sm:text-base">Add New Todo</span>
         </button>
       )}
 
@@ -715,7 +716,7 @@ const MyPlans = ({ isDarkMode }) => {
       {isAddingTodo && (
         <form
           onSubmit={handleAddTodo}
-          className={`mb-4 sm:mb-6 p-4 sm:p-6 rounded-xl border-2 animate-slideDown ${
+          className={`mb-3 sm:mb-4 md:mb-6 p-3 sm:p-4 md:p-6 rounded-xl border-2 animate-slideDown ${
             isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
           }`}
         >
@@ -796,15 +797,15 @@ const MyPlans = ({ isDarkMode }) => {
 
       {/* Active Todos */}
       {activeTodos.length > 0 && (
-        <div className="mb-8">
-          <h2 className={`text-lg sm:text-xl font-semibold mb-3 sm:mb-4 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+        <div className="mb-4 sm:mb-5 md:mb-6 lg:mb-8">
+          <h2 className={`text-base sm:text-lg md:text-xl font-semibold mb-2.5 sm:mb-3 md:mb-4 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
             Active Tasks
           </h2>
-          <div className="space-y-2.5 sm:space-y-3">
+          <div className="space-y-2 sm:space-y-2.5 md:space-y-3">
             {activeTodos.map((todo, index) => (
               <div
                 key={todo.id}
-                className={`p-3 sm:p-4 rounded-xl border-2 transition-all duration-200 hover:shadow-lg animate-fadeIn ${
+                className={`p-2.5 sm:p-3 md:p-4 rounded-xl border-2 transition-all duration-200 hover:shadow-lg animate-fadeIn ${
                   isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
                 }`}
                 style={{ animationDelay: `${index * 50}ms` }}
@@ -878,65 +879,65 @@ const MyPlans = ({ isDarkMode }) => {
                   </form>
                 ) : (
                   /* Display Mode */
-                <div className="flex items-start gap-4">
+                <div className="flex items-start gap-2 sm:gap-3 md:gap-4">
                   <button
                     onClick={() => toggleComplete(todo)}
-                    className={`mt-1 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
+                    className={`mt-0.5 sm:mt-1 w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 flex items-center justify-center transition-all duration-200 flex-shrink-0 ${
                       isDarkMode
                         ? 'border-gray-600 hover:border-blue-400'
                         : 'border-gray-400 hover:border-blue-600'
                     }`}
                   >
-                    {todo.is_completed && <FiCheck className="w-4 h-4 text-blue-500" />}
+                    {todo.is_completed && <FiCheck className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500" />}
                   </button>
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between gap-4 mb-2">
-                      <h3 className={`text-base sm:text-lg font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2 sm:gap-3 md:gap-4 mb-1.5 sm:mb-2">
+                      <h3 className={`text-sm sm:text-base md:text-lg font-medium flex-1 min-w-0 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                         {todo.title}
                       </h3>
-                      <div className="flex items-center gap-2">
-                        <span className={`flex items-center gap-1 px-2 py-1 rounded-lg border text-xs font-medium ${getPriorityColor(todo.priority)}`}>
+                      <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 flex-shrink-0">
+                        <span className={`flex items-center gap-0.5 sm:gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg border text-[10px] sm:text-xs font-medium ${getPriorityColor(todo.priority)}`}>
                           {getPriorityIcon(todo.priority)}
-                          {todo.priority}
+                          <span className="hidden sm:inline">{todo.priority}</span>
                         </span>
                         <button
                           onClick={() => startEditTodo(todo)}
-                          className={`p-2 rounded-lg transition-all duration-200 ${
+                          className={`p-1.5 sm:p-2 rounded-lg transition-all duration-200 flex-shrink-0 ${
                             isDarkMode
                               ? 'hover:bg-blue-900/30 text-blue-400'
                               : 'hover:bg-blue-50 text-blue-600'
                           }`}
                           title="Edit task"
                         >
-                          <FiEdit2 className="w-4 h-4" />
+                          <FiEdit2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         </button>
                         <button
                           onClick={() => deleteTodo(todo.id)}
-                          className={`p-2 rounded-lg transition-all duration-200 ${
+                          className={`p-1.5 sm:p-2 rounded-lg transition-all duration-200 flex-shrink-0 ${
                             isDarkMode
                               ? 'hover:bg-red-900/30 text-red-400'
                               : 'hover:bg-red-50 text-red-600'
                           }`}
                           title="Delete task"
                         >
-                          <FiTrash2 className="w-4 h-4" />
+                          <FiTrash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         </button>
                       </div>
                     </div>
                     {todo.description && (
-                      <p className={`text-sm mb-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      <p className={`text-xs sm:text-sm mb-1.5 sm:mb-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                         {todo.description}
                       </p>
                     )}
                     {todo.due_date && (
                       <div
-                        className={`flex items-center gap-2 flex-wrap text-xs ${
+                        className={`flex items-center gap-1.5 sm:gap-2 flex-wrap text-[10px] sm:text-xs ${
                           isOverdue(todo)
                             ? (isDarkMode ? 'text-red-400' : 'text-red-600')
                             : (isDarkMode ? 'text-gray-500' : 'text-gray-500')
                         }`}
                       >
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-0.5 sm:gap-1">
                           <FiClock className="w-3 h-3" />
                           <span>
                             Due: {formatDate(todo.due_date)}
@@ -961,61 +962,61 @@ const MyPlans = ({ isDarkMode }) => {
 
       {/* Completed Todos */}
       {completedTodos.length > 0 && (
-        <div className="mt-4 sm:mt-6">
+        <div className="mt-3 sm:mt-4 md:mt-6">
           <button
             onClick={() => setShowCompleted(!showCompleted)}
-            className={`w-full flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border-2 transition-all font-semibold text-sm sm:text-base ${
+            className={`w-full flex items-center justify-between px-2.5 sm:px-3 md:px-4 py-2 sm:py-2.5 md:py-3 rounded-lg border-2 transition-all font-semibold text-xs sm:text-sm md:text-base ${
               isDarkMode
                 ? 'border-gray-700 bg-gray-800 text-gray-200 hover:bg-gray-750'
                 : 'border-gray-200 bg-gray-50 text-gray-800 hover:bg-gray-100'
             }`}
           >
             <span>Completed Tasks ({completedTodos.length})</span>
-            <span className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            <span className={`text-[10px] sm:text-xs md:text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
               {showCompleted ? 'Hide' : 'Show'}
             </span>
           </button>
 
           {showCompleted && (
-            <div className="space-y-2.5 sm:space-y-3 mt-3 sm:mt-4">
+            <div className="space-y-2 sm:space-y-2.5 md:space-y-3 mt-2.5 sm:mt-3 md:mt-4">
               {completedTodos.map((todo, index) => (
                 <div
                   key={todo.id}
-                  className={`p-3 sm:p-4 rounded-xl border-2 transition-all duration-200 opacity-60 hover:opacity-100 animate-fadeIn ${
+                  className={`p-2.5 sm:p-3 md:p-4 rounded-xl border-2 transition-all duration-200 opacity-60 hover:opacity-100 animate-fadeIn ${
                     isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'
                   }`}
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
-                  <div className="flex items-start gap-3 sm:gap-4">
+                  <div className="flex items-start gap-2 sm:gap-3 md:gap-4">
                     <button
                       onClick={() => toggleComplete(todo)}
-                      className="mt-1 w-6 h-6 rounded-full border-2 border-green-500 bg-green-500 flex items-center justify-center transition-all duration-200 flex-shrink-0"
+                      className="mt-0.5 sm:mt-1 w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 border-green-500 bg-green-500 flex items-center justify-center transition-all duration-200 flex-shrink-0"
                     >
-                      <FiCheck className="w-4 h-4 text-white" />
+                      <FiCheck className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                     </button>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-3 sm:gap-4 mb-2">
-                        <h3 className={`text-base sm:text-lg font-medium line-through break-words ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                      <div className="flex items-start justify-between gap-2 sm:gap-3 md:gap-4 mb-1.5 sm:mb-2">
+                        <h3 className={`text-sm sm:text-base md:text-lg font-medium line-through break-words flex-1 min-w-0 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
                           {todo.title}
                         </h3>
                         <button
                           onClick={() => deleteTodo(todo.id)}
-                          className={`p-2 rounded-lg transition-all duration-200 ${
+                          className={`p-1.5 sm:p-2 rounded-lg transition-all duration-200 flex-shrink-0 ${
                             isDarkMode
                               ? 'hover:bg-red-900/30 text-red-400'
                               : 'hover:bg-red-50 text-red-600'
                           }`}
                         >
-                          <FiTrash2 className="w-4 h-4" />
+                          <FiTrash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         </button>
                       </div>
                       {todo.description && (
-                        <p className={`text-sm line-through ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}>
+                        <p className={`text-xs sm:text-sm line-through mb-1.5 sm:mb-2 ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}>
                           {todo.description}
                         </p>
                       )}
                       {todo.due_date && (
-                        <div className={`flex items-center gap-1 text-xs ${isDarkMode ? 'text-gray-600' : 'text-gray-500'}`}>
+                        <div className={`flex items-center gap-1 text-[10px] sm:text-xs ${isDarkMode ? 'text-gray-600' : 'text-gray-500'}`}>
                           <FiClock className="w-3 h-3" />
                           Due: {formatDate(todo.due_date)}
                           {todo.due_time && ` at ${formatTime(todo.due_time)}`}

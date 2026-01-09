@@ -1857,13 +1857,6 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Language Icons */}
-                <div className="absolute bottom-2 right-2 flex gap-2 opacity-30">
-                  <span className="text-white text-xs font-mono">C++</span>
-                  <span className="text-white text-xs font-mono">Python</span>
-                  <span className="text-white text-xs font-mono">Java</span>
-                  <span className="text-white text-xs font-mono">JS</span>
-            </div>
           </a>
         </div>
           </div>

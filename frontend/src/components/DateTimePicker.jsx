@@ -148,7 +148,7 @@ const DateTimePicker = ({ value, onChange, isDarkMode, includeTime = true }) => 
           type="button"
           onClick={() => !isPast && handleDateSelect(day)}
           disabled={isPast}
-          className={`h-8 rounded-lg text-xs font-medium transition-all ${
+          className={`h-7 sm:h-8 rounded-lg text-[10px] sm:text-xs font-medium transition-all ${
             isPast
               ? isDarkMode
                 ? 'text-gray-600 cursor-not-allowed opacity-40'
@@ -177,15 +177,15 @@ const DateTimePicker = ({ value, onChange, isDarkMode, includeTime = true }) => 
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full px-4 py-3 rounded-lg border-2 text-left flex items-center justify-between gap-2 transition-all ${
+        className={`w-full px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 md:py-3 rounded-lg border-2 text-left flex items-center justify-between gap-1.5 sm:gap-2 transition-all text-xs sm:text-sm md:text-base ${
           isDarkMode
             ? 'bg-gray-900 border-gray-700 text-white hover:border-blue-500'
             : 'bg-white border-gray-300 text-gray-900 hover:border-blue-500'
         }`}
       >
-        <span className={`flex items-center gap-2 ${!selectedDate && 'text-gray-500'}`}>
-          <FiCalendar className="w-4 h-4" />
-          {formatDisplay()}
+        <span className={`flex items-center gap-1.5 sm:gap-2 flex-1 min-w-0 ${!selectedDate && 'text-gray-500'}`}>
+          <FiCalendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+          <span className="truncate">{formatDisplay()}</span>
         </span>
         {selectedDate && (
           <button
@@ -194,27 +194,30 @@ const DateTimePicker = ({ value, onChange, isDarkMode, includeTime = true }) => 
               e.stopPropagation();
               handleClear();
             }}
-            className={`p-1 rounded hover:bg-gray-700 transition-colors`}
+            className={`p-0.5 sm:p-1 rounded hover:bg-gray-700 transition-colors flex-shrink-0`}
           >
-            <FiX className="w-4 h-4" />
+            <FiX className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
         )}
       </button>
 
       {isOpen && (
         <div
-          className={`absolute bottom-full right-0 mb-2 z-[100] p-4 rounded-lg shadow-2xl border-2 ${
+          className={`absolute bottom-full right-0 mb-2 z-[100] p-2 sm:p-3 md:p-4 rounded-lg shadow-2xl border-2 ${
             isDarkMode
               ? 'bg-gray-800 border-gray-700'
               : 'bg-white border-gray-200'
           }`}
-          style={{ width: includeTime ? '600px' : '240px' }}
+          style={{ 
+            width: includeTime ? 'min(95vw, 600px)' : 'min(95vw, 240px)',
+            maxWidth: includeTime ? '600px' : '240px'
+          }}
         >
-          <div className="flex gap-4">
+          <div className={`flex ${includeTime ? 'flex-col sm:flex-row' : ''} gap-2 sm:gap-3 md:gap-4`}>
             {/* Calendar Section */}
-            <div className="flex-shrink-0" style={{ width: '240px' }}>
-              <div className="mb-3">
-                <label className={`block text-xs font-semibold mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+            <div className={`flex-shrink-0 ${includeTime ? 'w-full sm:w-[240px]' : 'w-full'}`}>
+              <div className="mb-2 sm:mb-3">
+                <label className={`block text-[10px] sm:text-xs font-semibold mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                   Date (DD/MM/YYYY)
                 </label>
                 <input
@@ -223,7 +226,7 @@ const DateTimePicker = ({ value, onChange, isDarkMode, includeTime = true }) => 
                   onChange={handleManualDateChange}
                   onBlur={handleManualDateBlur}
                   placeholder="dd/mm/yyyy"
-                  className={`w-full px-3 py-2 rounded-lg border-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  className={`w-full px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border-2 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                     isDarkMode
                       ? 'bg-gray-900 border-gray-700 text-white placeholder-gray-600'
                       : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
@@ -231,25 +234,25 @@ const DateTimePicker = ({ value, onChange, isDarkMode, includeTime = true }) => 
                 />
               </div>
               {/* Month Navigation */}
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center justify-between mb-1.5 sm:mb-2">
                 <button
                   type="button"
                   onClick={() => changeMonth(-1)}
-                  className={`p-1 rounded transition-colors ${
+                  className={`p-0.5 sm:p-1 rounded transition-colors flex-shrink-0 ${
                     isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'
                   }`}
                 >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                   </svg>
                 </button>
-                <span className={`text-sm font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                <span className={`text-xs sm:text-sm font-semibold px-1 sm:px-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                   {monthNames[viewDate.getMonth()]} {viewDate.getFullYear()}
                 </span>
                 <button
                   type="button"
                   onClick={() => changeMonth(1)}
-                  className={`p-1 rounded transition-colors ${
+                  className={`p-0.5 sm:p-1 rounded transition-colors flex-shrink-0 ${
                     isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'
                   }`}
                 >
@@ -260,11 +263,11 @@ const DateTimePicker = ({ value, onChange, isDarkMode, includeTime = true }) => 
               </div>
 
               {/* Day Names */}
-              <div className="grid grid-cols-7 gap-0.5 mb-1">
+              <div className="grid grid-cols-7 gap-0.5 sm:gap-1 mb-1">
                 {dayNames.map((day) => (
                   <div
                     key={day}
-                    className={`text-center text-xs font-semibold py-1 ${
+                    className={`text-center text-[10px] sm:text-xs font-semibold py-0.5 sm:py-1 ${
                       isDarkMode ? 'text-gray-500' : 'text-gray-600'
                     }`}
                   >
@@ -274,15 +277,15 @@ const DateTimePicker = ({ value, onChange, isDarkMode, includeTime = true }) => 
               </div>
 
               {/* Calendar Grid */}
-              <div className="grid grid-cols-7 gap-0.5">
+              <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
                 {renderCalendar()}
               </div>
             </div>
 
             {/* Time Picker Section */}
             {includeTime && (
-              <div className="border-l pl-4 flex-shrink-0" style={{ borderColor: isDarkMode ? '#374151' : '#e5e7eb', width: '300px' }}>
-                <div className={`text-sm font-medium mb-2 ${
+              <div className={`flex-shrink-0 w-full sm:w-[300px] ${includeTime ? 'border-t sm:border-t-0 sm:border-l pt-3 sm:pt-0 sm:pl-3 md:pl-4' : ''}`} style={{ borderColor: isDarkMode ? '#374151' : '#e5e7eb' }}>
+                <div className={`text-xs sm:text-sm font-medium mb-2 ${
                   isDarkMode ? 'text-gray-300' : 'text-gray-700'
                 }`}>
                   Time (optional)
@@ -301,7 +304,7 @@ const DateTimePicker = ({ value, onChange, isDarkMode, includeTime = true }) => 
           <button
             type="button"
             onClick={() => setIsOpen(false)}
-            className="w-full mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-all"
+            className="w-full mt-3 sm:mt-4 px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-all text-sm sm:text-base"
           >
             Done
           </button>
