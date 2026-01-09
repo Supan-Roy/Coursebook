@@ -70,7 +70,7 @@ export default function DeleteAccountPage() {
           activeKey="settings"
           isDarkMode={isDarkMode}
         />
-        <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
+        <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-16 ml-0' : 'lg:ml-64 ml-0'}`}>
           <div className="p-4 sm:p-6 lg:p-8">
             <div className={`max-w-2xl mx-auto rounded-2xl p-6 sm:p-8 border ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200 shadow-sm'}`}>
               <div className="text-center space-y-4">

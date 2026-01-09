@@ -62,6 +62,14 @@ export default function DashboardPage() {
   const [pendingDeletion, setPendingDeletion] = useState(null);
   const deletionTimeoutRef = useRef(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    // On mobile, always start with sidebar hidden (collapsed=true)
+    // On desktop, use localStorage value
+    if (typeof window !== 'undefined') {
+      const isMobile = window.innerWidth < 1024; // lg breakpoint
+      if (isMobile) {
+        return true; // Hidden on mobile by default
+      }
+    }
     return localStorage.getItem('sidebarCollapsed') === 'true';
   });
   const { logout, user, isAuthenticated } = useAuth();
@@ -92,9 +100,14 @@ export default function DashboardPage() {
     localStorage.setItem('dashboardActiveTab', activeTab);
   }, [activeTab]);
 
-  // Persist sidebar state to localStorage
+  // Persist sidebar state to localStorage (only on desktop)
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const isMobile = window.innerWidth < 1024; // lg breakpoint
+      if (!isMobile) {
     localStorage.setItem('sidebarCollapsed', sidebarCollapsed);
+      }
+    }
   }, [sidebarCollapsed]);
 
   // Close profile menu on outside click
@@ -385,11 +398,11 @@ export default function DashboardPage() {
           // Delete after 5 seconds if not undone
           deletionTimeoutRef.current = setTimeout(async () => {
             try {
-              await semesterService.delete(semesterName);
+          await semesterService.delete(semesterName);
               setPendingDeletion(null);
-              loadData();
-            } catch (error) {
-              console.error('Failed to delete semester:', error);
+          loadData();
+        } catch (error) {
+          console.error('Failed to delete semester:', error);
               setPendingDeletion(null);
               setAlertDialog({
                 isOpen: true,
@@ -733,19 +746,12 @@ export default function DashboardPage() {
           if (key === 'dashboard') setActiveTab('semesters');
           else setActiveTab(key);
         }}
-        onHelp={() =>
-              setAlertDialog({
-                isOpen: true,
-                title: 'Help & Support',
-                message: 'Need help? Contact us at support@coursebook.com or visit our documentation.',
-            type: 'info',
-          })
-        }
+        onHelp={() => navigate('/help-support')}
         isDarkMode={isDarkMode}
       />
 
       {/* Main Content */}
-      <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'lg:ml-64 ml-0'}`}>
+      <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-16 ml-0' : 'lg:ml-64 ml-0'}`}>
       {/* Header */}
       <header
         className={`border-b sticky top-0 z-20 backdrop-blur-sm shadow bg-gradient-to-r transition-colors ${
@@ -754,51 +760,29 @@ export default function DashboardPage() {
             : 'from-gray-100 via-gray-200 to-gray-100 border-gray-300'
         }`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-2 sm:gap-3">
+        <div className="max-w-7xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8">
+          <div className="flex justify-between items-center h-16 gap-1.5 sm:gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 flex-1 min-w-0 overflow-hidden">
               {/* Mobile menu button */}
               <button
                 onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                className={`lg:hidden p-2 rounded-lg transition-colors ${
+                className={`lg:hidden p-1.5 sm:p-2 rounded-lg transition-colors flex-shrink-0 ${
                   isDarkMode ? 'hover:bg-gray-800 text-gray-400' : 'hover:bg-gray-100 text-gray-600'
                 }`}
                 aria-label="Toggle menu"
               >
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
-              <img src="/coursebook.svg" alt="Coursebook" className="w-8 h-8 sm:w-10 sm:h-10" />
-              <CoursebookTextLogo className="w-32 h-10 sm:w-48 sm:h-12 hidden sm:block" isDarkMode={isDarkMode} showUnderline={false} />
+              <img src="/coursebook.svg" alt="Coursebook" className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 flex-shrink-0" />
+              <CoursebookTextLogo className="w-24 h-6 sm:w-28 sm:h-7 md:w-40 md:h-10 lg:w-48 lg:h-12 flex-shrink-0" isDarkMode={isDarkMode} showUnderline={false} />
             </div>
-            <div className="flex items-center gap-2 sm:gap-4">
+            <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 lg:gap-3 flex-shrink-0">
               {isAuthenticated ? (
                 <>
                   <div className="hidden lg:flex flex-col items-end">
-                    <span className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
-                      {(() => {
-                        const greeting = getGreeting();
-                        const name = user?.first_name && user?.last_name
-                          ? `${user.first_name} ${user.last_name}`
-                          : user?.first_name || 'Student';
-                        if (greeting.includes(', ')) {
-                          const parts = greeting.split(', ');
-                          const message = parts.slice(0, -1).join(', ');
-                          return (
-                            <>
-                              {message}, <span className={`font-semibold ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>{name}</span>{greeting.endsWith('!') ? '!' : ''}
-                            </>
-                          );
-                        }
-                        return greeting;
-                      })()}
-                    </span>
-                    <span className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-                      {getFormattedDate()}
-                    </span>
-                  </div>
-                  <span className={`text-xs sm:text-sm lg:hidden ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
+                    <span className={`text-sm ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
                 {(() => {
                   const greeting = getGreeting();
                   const name = user?.first_name && user?.last_name
@@ -814,21 +798,42 @@ export default function DashboardPage() {
                     );
                   }
                   return greeting;
+                      })()}
+                    </span>
+                    <span className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+                      {getFormattedDate()}
+                    </span>
+                  </div>
+                  {/* Mobile greeting - Welcome, First Name */}
+                  <span className={`text-[10px] sm:text-xs md:text-sm lg:hidden truncate max-w-[80px] sm:max-w-[100px] ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
+                {(() => {
+                  const greeting = getGreeting();
+                  const firstName = user?.first_name || 'User';
+                  if (greeting.includes(', ')) {
+                    const parts = greeting.split(', ');
+                    const message = parts.slice(0, -1).join(', ');
+                    return (
+                      <>
+                        {message}, <span className={`font-semibold ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>{firstName}</span>
+                      </>
+                    );
+                  }
+                  return <><span className={`font-semibold ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>Welcome, {firstName}</span></>;
                 })()}
               </span>
               
               {/* Theme Toggle */}
               <button
                 onClick={toggleTheme}
-                    className={`p-2 rounded-lg transition-all border ${isDarkMode ? 'text-gray-400 hover:text-white hover:bg-gray-900 border-gray-700 hover:border-sky-500/50' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 border-gray-300 hover:border-sky-500/50'}`}
+                    className={`p-1.5 sm:p-2 md:p-2.5 rounded-lg transition-all border flex-shrink-0 ${isDarkMode ? 'text-gray-400 hover:text-white hover:bg-gray-900 border-gray-700 hover:border-sky-500/50' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 border-gray-300 hover:border-sky-500/50'}`}
                 title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
               >
                 {isDarkMode ? (
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
                   </svg>
                 ) : (
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
                   </svg>
                 )}
@@ -838,20 +843,20 @@ export default function DashboardPage() {
                   <div className="relative" ref={profileMenuRef}>
                 <button
                   onClick={() => setShowProfileMenu(!showProfileMenu)}
-                  className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-all border ${isDarkMode ? 'text-gray-300 hover:text-white hover:bg-gray-900 border-gray-700 hover:border-sky-500/50' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100 border-gray-300 hover:border-sky-500/50'}`}
+                  className={`flex items-center gap-1 sm:gap-1.5 md:gap-2 px-1.5 sm:px-2 md:px-2.5 lg:px-3 py-1.5 sm:py-2 rounded-lg transition-all border flex-shrink-0 ${isDarkMode ? 'text-gray-300 hover:text-white hover:bg-gray-900 border-gray-700 hover:border-sky-500/50' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100 border-gray-300 hover:border-sky-500/50'}`}
                 >
                   {user?.profile_photo ? (
                     <img
                       src={user.profile_photo}
                       alt="Profile"
-                      className="w-8 h-8 rounded-full object-cover border border-sky-500/50"
+                      className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 rounded-full object-cover border-2 border-sky-500/50"
                     />
                   ) : (
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sky-400 to-cyan-500 flex items-center justify-center text-white font-bold text-sm">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 rounded-full bg-gradient-to-br from-sky-400 to-cyan-500 flex items-center justify-center text-white font-bold text-xs sm:text-sm md:text-base lg:text-lg">
                     {user?.first_name?.[0] || 'S'}
                   </div>
                   )}
-                  <svg className={`w-4 h-4 transition-transform ${showProfileMenu ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className={`w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 transition-transform hidden sm:block ${showProfileMenu ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
@@ -950,11 +955,11 @@ export default function DashboardPage() {
 
       {/* Secondary Navigation */}
       <div className={`border-b sticky top-16 z-10 backdrop-blur-sm transition-colors ${isDarkMode ? 'border-gray-800 bg-black/80' : 'border-gray-200 bg-white/80'}`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex gap-1 items-center overflow-x-auto scrollbar-hide">
+        <div className="max-w-7xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8">
+          <div className="flex gap-0.5 sm:gap-1 items-center overflow-x-auto scrollbar-hide -mx-2 sm:-mx-3 md:mx-0 px-2 sm:px-3 md:px-0">
             <button
               onClick={() => setActiveTab('semesters')}
-              className={`px-3 sm:px-6 py-2 sm:py-3 font-medium text-xs sm:text-sm transition-all duration-200 border-b-2 whitespace-nowrap ${
+              className={`px-2 sm:px-3 md:px-6 py-2 sm:py-2.5 md:py-3 font-medium text-xs sm:text-sm md:text-base transition-all duration-200 border-b-2 whitespace-nowrap flex-shrink-0 ${
                 activeTab === 'semesters'
                   ? isDarkMode
                     ? 'text-blue-400 border-blue-400'
@@ -965,15 +970,16 @@ export default function DashboardPage() {
               }`}
             >
               <div className="flex items-center gap-1.5 sm:gap-2">
-                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                 </svg>
-                Semesters
+                <span className="hidden md:inline">Semesters</span>
+                <span className="md:hidden">{activeTab === 'semesters' && 'Semesters'}</span>
               </div>
             </button>
             <button
               onClick={() => setActiveTab('workspace')}
-              className={`px-3 sm:px-6 py-2 sm:py-3 font-medium text-xs sm:text-sm transition-all duration-200 border-b-2 whitespace-nowrap ${
+              className={`px-2 sm:px-3 md:px-6 py-2 sm:py-2.5 md:py-3 font-medium text-xs sm:text-sm md:text-base transition-all duration-200 border-b-2 whitespace-nowrap flex-shrink-0 ${
                 activeTab === 'workspace'
                   ? isDarkMode
                     ? 'text-blue-400 border-blue-400'
@@ -984,15 +990,16 @@ export default function DashboardPage() {
               }`}
             >
               <div className="flex items-center gap-1.5 sm:gap-2">
-                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
-                Workspace
+                <span className="hidden md:inline">Workspace</span>
+                <span className="md:hidden">{activeTab === 'workspace' && 'Workspace'}</span>
               </div>
             </button>
             <button
               onClick={() => setActiveTab('todos')}
-              className={`px-3 sm:px-6 py-2 sm:py-3 font-medium text-xs sm:text-sm transition-all duration-200 border-b-2 whitespace-nowrap ${
+              className={`px-2 sm:px-3 md:px-6 py-2 sm:py-2.5 md:py-3 font-medium text-xs sm:text-sm md:text-base transition-all duration-200 border-b-2 whitespace-nowrap flex-shrink-0 ${
                 activeTab === 'todos'
                   ? isDarkMode
                     ? 'text-blue-400 border-blue-400'
@@ -1003,15 +1010,16 @@ export default function DashboardPage() {
               }`}
             >
               <div className="flex items-center gap-1.5 sm:gap-2">
-                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                 </svg>
-                My Plans
+                <span className="hidden md:inline">My Plans</span>
+                <span className="md:hidden">{activeTab === 'todos' && 'My Plans'}</span>
               </div>
             </button>
             <button
               onClick={() => setActiveTab('progress')}
-              className={`px-3 sm:px-6 py-2 sm:py-3 font-medium text-xs sm:text-sm transition-all duration-200 border-b-2 whitespace-nowrap ${
+              className={`px-2 sm:px-3 md:px-6 py-2 sm:py-2.5 md:py-3 font-medium text-xs sm:text-sm md:text-base transition-all duration-200 border-b-2 whitespace-nowrap flex-shrink-0 ${
                 activeTab === 'progress'
                   ? isDarkMode
                     ? 'text-blue-400 border-blue-400'
@@ -1022,15 +1030,16 @@ export default function DashboardPage() {
               }`}
             >
               <div className="flex items-center gap-1.5 sm:gap-2">
-                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
-                Progress
+                <span className="hidden md:inline">Progress</span>
+                <span className="md:hidden">{activeTab === 'progress' && 'Progress'}</span>
               </div>
             </button>
             <button
               onClick={() => setActiveTab('toolkit')}
-              className={`px-3 sm:px-6 py-2 sm:py-3 font-medium text-xs sm:text-sm transition-all duration-200 border-b-2 whitespace-nowrap ${
+              className={`px-2 sm:px-3 md:px-6 py-2 sm:py-2.5 md:py-3 font-medium text-xs sm:text-sm md:text-base transition-all duration-200 border-b-2 whitespace-nowrap flex-shrink-0 ${
                 activeTab === 'toolkit'
                   ? isDarkMode
                     ? 'text-blue-400 border-blue-400'
@@ -1041,10 +1050,11 @@ export default function DashboardPage() {
               }`}
             >
               <div className="flex items-center gap-1.5 sm:gap-2">
-                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
                 </svg>
-                PDF Toolkit
+                <span className="hidden md:inline">PDF Toolkit</span>
+                <span className="md:hidden">{activeTab === 'toolkit' && 'PDF Toolkit'}</span>
               </div>
             </button>
             {/* Search Button - Only visible when Semesters tab is active */}
@@ -1054,7 +1064,7 @@ export default function DashboardPage() {
                   setShowSearchModal(true);
                   setTimeout(() => searchInputRef.current?.focus(), 100);
                 }}
-                className={`ml-auto mr-2 sm:mr-4 px-3 sm:px-4 py-1 sm:py-1.5 font-medium text-xs sm:text-sm transition-all duration-200 rounded-lg whitespace-nowrap flex items-center gap-1.5 sm:gap-2 ${
+                className={`ml-auto mr-1 sm:mr-2 md:mr-3 lg:mr-4 px-2 sm:px-2.5 md:px-3 lg:px-4 py-1 sm:py-1.5 font-medium text-[10px] sm:text-xs md:text-sm transition-all duration-200 rounded-lg whitespace-nowrap flex items-center gap-1 sm:gap-1.5 md:gap-2 flex-shrink-0 ${
                   isDarkMode
                     ? 'text-gray-300 hover:text-white hover:bg-gray-800 border-[0.5px] border-gray-700 hover:border-sky-500/50'
                     : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100 border-[0.5px] border-gray-300 hover:border-sky-500/50'
@@ -1072,7 +1082,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-2.5 sm:py-3 md:py-4 lg:py-6 xl:py-8">
         {activeTab === 'todos' ? (
           <MyPlans isDarkMode={isDarkMode} />
         ) : activeTab === 'workspace' ? (
@@ -1082,8 +1092,8 @@ export default function DashboardPage() {
         ) : activeTab === 'semesters' ? (
           <>
         {/* Create New Semester Section */}
-            <div className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8 border-2 border-dashed transition-colors ${isDarkMode ? 'border-gray-700/50 hover:border-sky-500/50 bg-gray-900/30' : 'border-gray-300 hover:border-sky-400 bg-gray-50'}`}>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <div className={`rounded-xl sm:rounded-2xl p-2.5 sm:p-3 md:p-4 lg:p-6 mb-3 sm:mb-4 md:mb-6 lg:mb-8 border-2 border-dashed transition-colors ${isDarkMode ? 'border-gray-700/50 hover:border-sky-500/50 bg-gray-900/30' : 'border-gray-300 hover:border-sky-400 bg-gray-50'}`}>
+              <div className="grid grid-cols-2 gap-2 sm:gap-2.5 md:gap-3 lg:gap-4">
             {/* Create Semester Button */}
                   <button
                     onClick={() => {
@@ -1093,15 +1103,15 @@ export default function DashboardPage() {
                     }
                     handleCreateNewSemester();
                   }}
-                  className={`border-2 rounded-lg sm:rounded-xl p-4 sm:p-6 transition-all flex flex-col items-center justify-center hover:shadow-xl hover:scale-[1.02] active:scale-95 ${isDarkMode ? 'bg-gradient-to-br from-orange-600 to-orange-700 border-orange-500' : 'bg-gradient-to-br from-orange-400 to-orange-500 border-orange-400'}`}
+                  className={`border-2 rounded-xl p-3 sm:p-4 md:p-5 transition-all flex flex-col items-center justify-center hover:shadow-xl hover:scale-[1.02] active:scale-95 min-h-[95px] sm:min-h-[110px] md:min-h-[130px] ${isDarkMode ? 'bg-gradient-to-br from-orange-600 to-orange-700 border-orange-500' : 'bg-gradient-to-br from-orange-400 to-orange-500 border-orange-400'}`}
                 >
-                  <svg className="w-6 h-6 sm:w-8 sm:h-8 mb-1.5 sm:mb-2 text-white drop-shadow-lg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 mb-1.5 sm:mb-2 text-white drop-shadow-lg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
-                  <p className="text-xs sm:text-sm font-semibold text-white drop-shadow-md">
+                  <p className="text-xs sm:text-sm md:text-base font-bold text-white drop-shadow-md text-center">
                   Create New Semester
                 </p>
-                  <p className="text-[10px] sm:text-xs mt-0.5 sm:mt-1 text-white/90 text-center">
+                  <p className="text-[10px] sm:text-xs md:text-sm mt-0.5 sm:mt-1 text-white/90 text-center">
                     Create your semester manually
                 </p>
               </button>
@@ -1115,15 +1125,15 @@ export default function DashboardPage() {
                     }
                     setShowUploadModal(true);
                   }}
-                  className={`border-2 rounded-lg sm:rounded-xl p-4 sm:p-6 transition-all flex flex-col items-center justify-center hover:shadow-xl hover:scale-[1.02] active:scale-95 ${isDarkMode ? 'bg-gradient-to-br from-purple-600 to-purple-700 border-purple-500' : 'bg-gradient-to-br from-purple-400 to-purple-500 border-purple-400'}`}
+                  className={`border-2 rounded-xl p-3 sm:p-4 md:p-5 transition-all flex flex-col items-center justify-center hover:shadow-xl hover:scale-[1.02] active:scale-95 min-h-[95px] sm:min-h-[110px] md:min-h-[130px] ${isDarkMode ? 'bg-gradient-to-br from-purple-600 to-purple-700 border-purple-500' : 'bg-gradient-to-br from-purple-400 to-purple-500 border-purple-400'}`}
                 >
-                  <svg className="w-6 h-6 sm:w-8 sm:h-8 mb-1.5 sm:mb-2 text-white drop-shadow-lg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 mb-1.5 sm:mb-2 text-white drop-shadow-lg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
               </svg>
-                  <p className="text-xs sm:text-sm font-semibold text-white drop-shadow-md">
+                  <p className="text-xs sm:text-sm md:text-base font-bold text-white drop-shadow-md text-center">
                 Upload Routine
               </p>
-                  <p className="text-[10px] sm:text-xs mt-0.5 sm:mt-1 text-white/90 text-center">
+                  <p className="text-[10px] sm:text-xs md:text-sm mt-0.5 sm:mt-1 text-white/90 text-center">
                 Extract courses from PDF or Image
               </p>
             </button>
@@ -1157,7 +1167,7 @@ export default function DashboardPage() {
             .map((semesterName) => (
             <div 
               key={semesterName}
-                  className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8 border transition-all hover:shadow-lg ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200'}`}
+                  className={`rounded-lg sm:rounded-xl md:rounded-2xl p-2 sm:p-2.5 md:p-3 lg:p-4 xl:p-6 mb-2.5 sm:mb-3 md:mb-4 lg:mb-6 border transition-all hover:shadow-lg ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200'}`}
                 >
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-0 mb-4 sm:mb-6">
                     <div className="flex-1">
@@ -1173,23 +1183,23 @@ export default function DashboardPage() {
                             >
                               {editingSemesterName || semesterName || ' '}
                             </span>
-                            <input
+                        <input
                               ref={semesterInputRef}
-                              type="text"
-                              value={editingSemesterName}
-                              onChange={(e) => setEditingSemesterName(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  handleUpdateSemesterName(semesterName);
-                                } else if (e.key === 'Escape') {
-                                  setEditingSemester(null);
+                          type="text"
+                          value={editingSemesterName}
+                          onChange={(e) => setEditingSemesterName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                            handleUpdateSemesterName(semesterName);
+                          } else if (e.key === 'Escape') {
+                            setEditingSemester(null);
                                   setEditingSemesterName('');
-                                }
-                              }}
-                              autoFocus
+                          }
+                        }}
+                        autoFocus
                               className={`text-lg sm:text-xl lg:text-2xl font-bold px-2 py-1 rounded border-2 border-sky-500 relative ${
-                                isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
-                              }`}
+                          isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+                        }`}
                               style={{
                                 width: `${Math.max((editingSemesterName || semesterName || '').length * 0.65, 15)}ch`,
                                 minWidth: '15ch'
@@ -1233,7 +1243,7 @@ export default function DashboardPage() {
                     ) : (
                           <>
                             <h2 
-                              className={`text-lg sm:text-xl lg:text-2xl font-bold break-words ${isDarkMode ? 'text-white' : 'text-gray-900'}`}
+                              className={`text-base sm:text-lg md:text-xl lg:text-2xl font-bold break-words ${isDarkMode ? 'text-white' : 'text-gray-900'}`}
                       >
                         {semesterName}
                       </h2>
@@ -1259,7 +1269,7 @@ export default function DashboardPage() {
                           </>
                         )}
                       </div>
-                      <p className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      <p className={`text-xs sm:text-sm md:text-base ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                         {(groupedBySemester[semesterName] || []).length} {(groupedBySemester[semesterName] || []).length === 1 ? 'course' : 'courses'}
                       </p>
                     </div>
@@ -1274,7 +1284,7 @@ export default function DashboardPage() {
                             }
                             handleMoveSemesterUp(semesterName);
                           }}
-                          disabled={semesterOrder.indexOf(semesterName) === 0}
+                      disabled={semesterOrder.indexOf(semesterName) === 0}
                           className={`p-1.5 sm:p-2 rounded-lg transition-all ${
                             semesterOrder.indexOf(semesterName) === 0
                               ? 'opacity-30 cursor-not-allowed'
@@ -1282,8 +1292,8 @@ export default function DashboardPage() {
                               ? 'hover:bg-gray-800 text-gray-400 hover:text-gray-300'
                               : 'hover:bg-gray-100 text-gray-500 hover:text-gray-700'
                           }`}
-                          title="Move semester up"
-                        >
+                      title="Move semester up"
+                    >
                           <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
                       </svg>
@@ -1297,7 +1307,7 @@ export default function DashboardPage() {
                             }
                             handleMoveSemesterDown(semesterName);
                           }}
-                          disabled={semesterOrder.indexOf(semesterName) === semesterOrder.length - 1}
+                      disabled={semesterOrder.indexOf(semesterName) === semesterOrder.length - 1}
                           className={`p-1.5 sm:p-2 rounded-lg transition-all ${
                             semesterOrder.indexOf(semesterName) === semesterOrder.length - 1
                               ? 'opacity-30 cursor-not-allowed'
@@ -1305,8 +1315,8 @@ export default function DashboardPage() {
                               ? 'hover:bg-gray-800 text-gray-400 hover:text-gray-300'
                               : 'hover:bg-gray-100 text-gray-500 hover:text-gray-700'
                           }`}
-                          title="Move semester down"
-                        >
+                      title="Move semester down"
+                    >
                           <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                       </svg>
@@ -1334,7 +1344,7 @@ export default function DashboardPage() {
                   </div>
                     )}
                 </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 sm:gap-2 md:gap-2.5 lg:gap-3 xl:gap-4">
                     {(groupedBySemester[semesterName] || []).map((course) => (
                   <div
                     key={course.id}
@@ -1347,7 +1357,7 @@ export default function DashboardPage() {
                             navigate(`/course/${course.id}`);
                           }
                         }}
-                        className={`group border-2 rounded-lg sm:rounded-xl p-4 sm:p-6 transition-all duration-200 relative shadow-lg ${isAuthenticated ? 'hover:shadow-xl hover:scale-[1.02] active:scale-95 cursor-pointer' : 'cursor-not-allowed opacity-60'} min-h-[160px] sm:min-h-[180px] flex flex-col ${isDarkMode ? 'bg-gradient-to-br from-blue-600 to-blue-700 border-blue-500' : 'bg-gradient-to-br from-blue-600 to-blue-700 border-blue-500'}`}
+                        className={`group border-2 rounded-xl p-2.5 sm:p-3 md:p-4 lg:p-5 transition-all duration-200 relative shadow-lg ${isAuthenticated ? 'hover:shadow-xl hover:scale-[1.02] active:scale-95 cursor-pointer' : 'cursor-not-allowed opacity-60'} min-h-[105px] sm:min-h-[115px] md:min-h-[130px] lg:min-h-[150px] flex flex-col ${isDarkMode ? 'bg-gradient-to-br from-blue-600 to-blue-700 border-blue-500' : 'bg-gradient-to-br from-blue-600 to-blue-700 border-blue-500'}`}
                       >
                         {/* Edit/Delete buttons - top right */}
                         {isAuthenticated && (
@@ -1428,12 +1438,12 @@ export default function DashboardPage() {
                     </div>
                   ) : (
                     <>
-                            <h3 className="font-bold text-lg sm:text-xl lg:text-2xl mb-1.5 sm:mb-2 text-white drop-shadow-md break-words">{course.code}</h3>
+                            <h3 className="font-bold text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl mb-1 sm:mb-1.5 md:mb-2 text-white drop-shadow-md break-words">{course.code}</h3>
                           {course.title && (
-                              <p className="text-sm sm:text-base line-clamp-2 leading-relaxed text-white/90 break-words">{course.title}</p>
+                              <p className="text-[10px] sm:text-xs md:text-sm lg:text-base line-clamp-2 leading-relaxed text-white/90 break-words">{course.title}</p>
                             )}
-                            <div className="flex items-center justify-between pt-3 sm:pt-4 border-t border-white/20 mt-auto">
-                              <span className="text-xs sm:text-sm font-medium text-white/80">
+                             <div className="flex items-center justify-between pt-2 sm:pt-2.5 md:pt-3 lg:pt-4 border-t border-white/20 mt-auto">
+                               <span className="text-[10px] sm:text-xs md:text-sm lg:text-base font-medium text-white/80">
                           {materials.filter((m) => m.course === course.id).length} {materials.filter((m) => m.course === course.id).length === 1 ? 'file' : 'files'}
                         </span>
                       </div>
@@ -1794,59 +1804,59 @@ export default function DashboardPage() {
         {activeTab === 'semesters' && (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
             <div className={`rounded-xl sm:rounded-2xl overflow-hidden border-2 transition-all hover:shadow-2xl hover:scale-[1.02] active:scale-95 ${isDarkMode ? 'bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-600 border-emerald-500' : 'bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 border-emerald-400'}`}>
-              <a 
-                href="https://compiler.supanroy.com" 
-                target="_blank" 
-                rel="noopener noreferrer"
+          <a 
+            href="https://compiler.supanroy.com" 
+            target="_blank" 
+            rel="noopener noreferrer"
                 className="block p-4 sm:p-6 lg:p-8 relative group"
-              >
-                {/* Background Pattern */}
-                <div className="absolute inset-0 opacity-10">
+          >
+            {/* Background Pattern */}
+            <div className="absolute inset-0 opacity-10">
                   <div className="absolute top-2 right-2 sm:top-4 sm:right-4 text-white/20 text-3xl sm:text-4xl lg:text-6xl font-mono">&lt;/&gt;</div>
                   <div className="absolute bottom-2 left-2 sm:bottom-4 sm:left-4 text-white/20 text-2xl sm:text-3xl lg:text-4xl font-mono">{ }</div>
-                </div>
+            </div>
 
                 <div className="relative flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6">
-                  {/* Left Content */}
-                  <div className="flex-1 text-center md:text-left">
+              {/* Left Content */}
+              <div className="flex-1 text-center md:text-left">
                     <div className="flex items-center justify-center md:justify-start gap-2 sm:gap-3 mb-2 sm:mb-3">
                       <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
                         <svg className="w-5 h-5 sm:w-6 sm:h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                        </svg>
-                      </div>
-                      <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-white drop-shadow-lg">Try Our Online Compiler</h2>
-                    </div>
-                    <p className="text-white/90 text-sm sm:text-base mb-2 drop-shadow">
-                      Write, compile, and execute code in multiple languages - C++, Python, Java, JavaScript & more!
-                    </p>
-                    <div className="flex flex-wrap gap-2 justify-center md:justify-start">
-                      <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-white text-xs font-semibold">Interactive Terminal</span>
-                      <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-white text-xs font-semibold">Real-time Output</span>
-                      <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-white text-xs font-semibold">Multi-Language</span>
-                    </div>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                    </svg>
                   </div>
+                      <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-white drop-shadow-lg">Try Our Online Compiler</h2>
+                </div>
+                    <p className="text-white/90 text-sm sm:text-base mb-2 drop-shadow">
+                  Write, compile, and execute code in multiple languages - C++, Python, Java, JavaScript & more!
+                </p>
+                <div className="flex flex-wrap gap-2 justify-center md:justify-start">
+                  <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-white text-xs font-semibold">Interactive Terminal</span>
+                  <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-white text-xs font-semibold">Real-time Output</span>
+                  <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-white text-xs font-semibold">Multi-Language</span>
+                </div>
+              </div>
 
-                  {/* Right CTA Button */}
+              {/* Right CTA Button */}
                   <div className="flex-shrink-0 w-full md:w-auto">
                     <div className="px-4 sm:px-6 lg:px-8 py-3 sm:py-4 rounded-lg sm:rounded-xl bg-white text-emerald-600 font-bold text-sm sm:text-base lg:text-lg shadow-xl group-hover:shadow-2xl group-hover:scale-110 transition-all flex items-center justify-center gap-2 sm:gap-3">
-                      <span>Launch Compiler</span>
+                  <span>Launch Compiler</span>
                       <svg className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                      </svg>
-                    </div>
-                  </div>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
                 </div>
+              </div>
+            </div>
 
-                {/* Language Icons */}
+            {/* Language Icons */}
                 <div className="absolute bottom-2 right-2 flex gap-2 opacity-30">
                   <span className="text-white text-xs font-mono">C++</span>
                   <span className="text-white text-xs font-mono">Python</span>
                   <span className="text-white text-xs font-mono">Java</span>
                   <span className="text-white text-xs font-mono">JS</span>
-                </div>
-              </a>
             </div>
+          </a>
+        </div>
           </div>
         )}
       </main>
@@ -2122,8 +2132,8 @@ export default function DashboardPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
-              </div>
-            </div>
+      </div>
+    </div>
 
             {/* Search Results */}
             <div className="max-h-[50vh] overflow-y-auto">

@@ -83,7 +83,7 @@ export default function UpgradePage() {
         activeKey="dashboard"
         isDarkMode={isDarkMode}
       />
-      <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
+      <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-16 ml-0' : 'lg:ml-64 ml-0'}`}>
       {/* Header */}
       <header
         className={`border-b sticky top-0 z-20 backdrop-blur-sm shadow bg-gradient-to-r transition-colors ${
@@ -95,8 +95,8 @@ export default function UpgradePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/dashboard')}>
-              <img src="/coursebook.svg" alt="Coursebook" className="w-10 h-10" />
-              <CoursebookTextLogo className="w-48 h-12" isDarkMode={isDarkMode} showUnderline={false} />
+              <img src="/coursebook.svg" alt="Coursebook" className="w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0" />
+              <CoursebookTextLogo className="w-32 h-8 sm:w-40 sm:h-10 md:w-48 md:h-12 flex-shrink-0" isDarkMode={isDarkMode} showUnderline={false} />
             </div>
             <button
               onClick={() => navigate('/dashboard')}

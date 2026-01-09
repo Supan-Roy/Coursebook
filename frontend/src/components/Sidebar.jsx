@@ -39,7 +39,7 @@ export default function Sidebar({
 
   const handleHelp = () => {
     if (onHelp) return onHelp();
-    alert('Need help? Contact support@coursebook.com');
+    navigate('/help-support');
   };
 
   return (
@@ -53,9 +53,13 @@ export default function Sidebar({
       )}
       <aside
         className={`fixed left-0 top-0 h-screen z-30 transition-all duration-300 ${
-          collapsed ? 'w-16' : 'w-64'
+          collapsed ? 'w-16 lg:w-16' : 'w-64'
         } ${isDarkMode ? 'bg-gray-900 border-r border-gray-800' : 'bg-white border-r border-gray-200'} ${
-          collapsed ? 'translate-x-0' : 'lg:translate-x-0 -translate-x-full lg:translate-x-0'
+          // On mobile: hide sidebar when collapsed=true, show when collapsed=false
+          // On desktop: always show, just change width (collapsed=narrow, expanded=wide)
+          collapsed 
+            ? '-translate-x-full lg:translate-x-0' 
+            : 'translate-x-0'
         }`}
       >
       {/* Sidebar Header */}

@@ -434,12 +434,12 @@ const MyPlans = ({ isDarkMode }) => {
 
   if (categories.length === 0) {
     return (
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <h1 className={`text-3xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
+        <h1 className={`text-xl sm:text-2xl md:text-3xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
           My Plans
         </h1>
-        <div className={`text-center py-12 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-          <p className="text-lg mb-4">No categories yet. Create one to get started!</p>
+        <div className={`text-center py-8 sm:py-12 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+          <p className="text-base sm:text-lg mb-4">No categories yet. Create one to get started!</p>
         </div>
       </div>
     );
@@ -450,20 +450,20 @@ const MyPlans = ({ isDarkMode }) => {
   const completedTodos = categoryTodos.filter((t) => t.is_completed);
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
+    <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
       {/* Header */}
-      <div className="mb-8 flex items-start justify-between">
+      <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
         <div>
-          <h1 className={`text-3xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+          <h1 className={`text-xl sm:text-2xl md:text-3xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
             My Plans
           </h1>
-          <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+          <p className={`text-sm sm:text-base ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
             {activeTodos.length} active, {completedTodos.length} completed in {categories.find(c => c.id === activeCategory)?.name}
           </p>
         </div>
         <button
           onClick={toggleNotifications}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+          className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
             notificationsEnabled
               ? isDarkMode
                 ? 'bg-green-900/40 border border-green-500 text-green-300'
@@ -474,16 +474,17 @@ const MyPlans = ({ isDarkMode }) => {
           }`}
           title="Enable notifications for due tasks"
         >
-          🔔 {notificationsEnabled ? 'Notifications On' : 'Enable Notifications'}
+          🔔 <span className="hidden sm:inline">{notificationsEnabled ? 'Notifications On' : 'Enable Notifications'}</span>
+          <span className="sm:hidden">{notificationsEnabled ? 'On' : 'Off'}</span>
         </button>
       </div>
 
       {/* Category Slider */}
-      <div className="mb-8">
+      <div className="mb-6 sm:mb-8">
         <div className="flex items-center gap-2">
           <button
             onClick={() => scrollSlider('left')}
-            className={`p-2 rounded-lg transition-all ${
+            className={`p-2 rounded-lg transition-all flex-shrink-0 ${
               isDarkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-gray-200 hover:bg-gray-300'
             }`}
           >
@@ -495,7 +496,7 @@ const MyPlans = ({ isDarkMode }) => {
             className="flex-1 overflow-x-auto scrollbar-hide scroll-smooth"
             style={{ scrollBehavior: 'smooth' }}
           >
-            <div className="flex gap-3 pb-2">
+            <div className="flex gap-2 sm:gap-3 pb-2">
               {categories.map(category => {
                 const isActive = activeCategory === category.id;
                 const isDefault = isDefaultCategory(category);
@@ -517,7 +518,7 @@ const MyPlans = ({ isDarkMode }) => {
                 return (
                   <div
                     key={category.id}
-                    className={`flex-shrink-0 relative group overflow-visible ${baseClasses} px-6 py-3 rounded-lg transition-all duration-200 min-w-max ${deleteMode && !isDefault ? 'border-2 border-red-400/70' : ''}`}
+                    className={`flex-shrink-0 relative group overflow-visible ${baseClasses} px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg transition-all duration-200 min-w-max ${deleteMode && !isDefault ? 'border-2 border-red-400/70' : ''}`}
                     onClick={handleCategoryClick}
                     style={{ cursor: deleteMode && !isDefault ? 'pointer' : 'default' }}
                   >
@@ -560,7 +561,7 @@ const MyPlans = ({ isDarkMode }) => {
                             e.stopPropagation();
                             setActiveCategory(category.id);
                           }}
-                          className={`text-lg font-medium transition-all ${
+                          className={`text-base sm:text-lg font-medium transition-all ${
                             isActive
                               ? 'text-white'
                               : (isDarkMode ? 'text-gray-300' : 'text-gray-700')
@@ -608,17 +609,18 @@ const MyPlans = ({ isDarkMode }) => {
                     }
                     setShowAddCategory(true);
                   }}
-                  className={`flex-shrink-0 px-6 py-3 rounded-lg border-2 border-dashed transition-all ${
+                  className={`flex-shrink-0 px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg border-2 border-dashed transition-all text-sm sm:text-base ${
                     isDarkMode
                       ? 'border-gray-700 hover:border-gray-600 text-gray-400 hover:text-gray-300 hover:bg-gray-800'
                       : 'border-gray-400 hover:border-gray-500 text-gray-600 hover:text-gray-700 hover:bg-gray-100'
                   } min-w-max font-medium flex items-center gap-2`}
                 >
                   <FiPlus className="w-4 h-4" />
-                  Add Category
+                  <span className="hidden sm:inline">Add Category</span>
+                  <span className="sm:hidden">Add</span>
                 </button>
               ) : (
-                <div className={`flex-shrink-0 flex items-center gap-2 px-4 py-3 rounded-lg min-w-max ${
+                <div className={`flex-shrink-0 flex items-center gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg min-w-max ${
                   isDarkMode ? 'bg-gray-800' : 'bg-gray-200'
                 }`}>
                   <input
@@ -627,7 +629,7 @@ const MyPlans = ({ isDarkMode }) => {
                     onChange={(e) => setNewCategoryName(e.target.value)}
                     placeholder="Category name..."
                     autoFocus
-                    className={`px-3 py-1 rounded border-2 focus:outline-none text-sm ${
+                    className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded border-2 focus:outline-none text-sm sm:text-base ${
                       isDarkMode
                         ? 'bg-gray-900 border-gray-700 text-white placeholder-gray-500'
                         : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
@@ -698,7 +700,7 @@ const MyPlans = ({ isDarkMode }) => {
             }
             setIsAddingTodo(true);
           }}
-          className={`w-full mb-6 p-4 rounded-xl border-2 border-dashed transition-all duration-200 flex items-center justify-center gap-2 ${
+          className={`w-full mb-4 sm:mb-6 p-3 sm:p-4 rounded-xl border-2 border-dashed transition-all duration-200 flex items-center justify-center gap-2 ${
             isDarkMode
               ? 'border-gray-700 hover:border-blue-500 text-gray-400 hover:text-blue-400'
               : 'border-gray-300 hover:border-blue-500 text-gray-600 hover:text-blue-600'
@@ -713,11 +715,11 @@ const MyPlans = ({ isDarkMode }) => {
       {isAddingTodo && (
         <form
           onSubmit={handleAddTodo}
-          className={`mb-6 p-6 rounded-xl border-2 animate-slideDown ${
+          className={`mb-4 sm:mb-6 p-4 sm:p-6 rounded-xl border-2 animate-slideDown ${
             isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
           }`}
         >
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             <div>
               <input
                 type="text"
@@ -725,7 +727,7 @@ const MyPlans = ({ isDarkMode }) => {
                 onChange={(e) => setNewTodo({ ...newTodo, title: e.target.value })}
                 placeholder="What needs to be done?"
                 autoFocus
-                className={`w-full px-4 py-3 rounded-lg border-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm sm:text-base ${
                   isDarkMode
                     ? 'bg-gray-900 border-gray-700 text-white placeholder-gray-500'
                     : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
@@ -738,18 +740,18 @@ const MyPlans = ({ isDarkMode }) => {
                 onChange={(e) => setNewTodo({ ...newTodo, description: e.target.value })}
                 placeholder="Add description (optional)"
                 rows={3}
-                className={`w-full px-4 py-3 rounded-lg border-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm sm:text-base ${
                   isDarkMode
                     ? 'bg-gray-900 border-gray-700 text-white placeholder-gray-500'
                     : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
                 }`}
               />
             </div>
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <select
                 value={newTodo.priority}
                 onChange={(e) => setNewTodo({ ...newTodo, priority: e.target.value })}
-                className={`w-full px-4 py-3 rounded-lg border-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm sm:text-base ${
                   isDarkMode
                     ? 'bg-gray-900 border-gray-700 text-white'
                     : 'bg-white border-gray-300 text-gray-900'
@@ -767,10 +769,10 @@ const MyPlans = ({ isDarkMode }) => {
               />
             </div>
           </div>
-          <div className="flex gap-3 mt-4">
+          <div className="flex gap-2 sm:gap-3 mt-3 sm:mt-4">
             <button
               type="submit"
-              className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl"
+              className="flex-1 px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl text-sm sm:text-base"
             >
               Add Todo
             </button>
@@ -780,7 +782,7 @@ const MyPlans = ({ isDarkMode }) => {
                 setIsAddingTodo(false);
                 setNewTodo({ title: '', description: '', priority: 'medium', due_date: '', due_time: '' });
               }}
-              className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
+              className={`px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-medium transition-all duration-200 text-sm sm:text-base ${
                 isDarkMode
                   ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -795,14 +797,14 @@ const MyPlans = ({ isDarkMode }) => {
       {/* Active Todos */}
       {activeTodos.length > 0 && (
         <div className="mb-8">
-          <h2 className={`text-xl font-semibold mb-4 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+          <h2 className={`text-lg sm:text-xl font-semibold mb-3 sm:mb-4 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
             Active Tasks
           </h2>
-          <div className="space-y-3">
+          <div className="space-y-2.5 sm:space-y-3">
             {activeTodos.map((todo, index) => (
               <div
                 key={todo.id}
-                className={`p-4 rounded-xl border-2 transition-all duration-200 hover:shadow-lg animate-fadeIn ${
+                className={`p-3 sm:p-4 rounded-xl border-2 transition-all duration-200 hover:shadow-lg animate-fadeIn ${
                   isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
                 }`}
                 style={{ animationDelay: `${index * 50}ms` }}
@@ -816,7 +818,7 @@ const MyPlans = ({ isDarkMode }) => {
                       onChange={(e) => setEditFormData({ ...editFormData, title: e.target.value })}
                       placeholder="Task title"
                       autoFocus
-                      className={`w-full px-3 py-2 rounded-lg border-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                      className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg border-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm sm:text-base ${
                         isDarkMode
                           ? 'bg-gray-900 border-gray-700 text-white placeholder-gray-500'
                           : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
@@ -827,7 +829,7 @@ const MyPlans = ({ isDarkMode }) => {
                       onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
                       placeholder="Description (optional)"
                       rows={2}
-                      className={`w-full px-3 py-2 rounded-lg border-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                      className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg border-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm sm:text-base ${
                         isDarkMode
                           ? 'bg-gray-900 border-gray-700 text-white placeholder-gray-500'
                           : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
@@ -857,14 +859,14 @@ const MyPlans = ({ isDarkMode }) => {
                     <div className="flex gap-2">
                       <button
                         type="submit"
-                        className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-all"
+                        className="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-all text-sm sm:text-base"
                       >
                         Save
                       </button>
                       <button
                         type="button"
                         onClick={cancelEdit}
-                        className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                        className={`px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg font-medium transition-all text-sm sm:text-base ${
                           isDarkMode
                             ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                             : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -889,7 +891,7 @@ const MyPlans = ({ isDarkMode }) => {
                   </button>
                   <div className="flex-1">
                     <div className="flex items-start justify-between gap-4 mb-2">
-                      <h3 className={`text-lg font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                      <h3 className={`text-base sm:text-lg font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                         {todo.title}
                       </h3>
                       <div className="flex items-center gap-2">
@@ -959,41 +961,41 @@ const MyPlans = ({ isDarkMode }) => {
 
       {/* Completed Todos */}
       {completedTodos.length > 0 && (
-        <div className="mt-6">
+        <div className="mt-4 sm:mt-6">
           <button
             onClick={() => setShowCompleted(!showCompleted)}
-            className={`w-full flex items-center justify-between px-4 py-3 rounded-lg border-2 transition-all font-semibold ${
+            className={`w-full flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border-2 transition-all font-semibold text-sm sm:text-base ${
               isDarkMode
                 ? 'border-gray-700 bg-gray-800 text-gray-200 hover:bg-gray-750'
                 : 'border-gray-200 bg-gray-50 text-gray-800 hover:bg-gray-100'
             }`}
           >
             <span>Completed Tasks ({completedTodos.length})</span>
-            <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            <span className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
               {showCompleted ? 'Hide' : 'Show'}
             </span>
           </button>
 
           {showCompleted && (
-            <div className="space-y-3 mt-4">
+            <div className="space-y-2.5 sm:space-y-3 mt-3 sm:mt-4">
               {completedTodos.map((todo, index) => (
                 <div
                   key={todo.id}
-                  className={`p-4 rounded-xl border-2 transition-all duration-200 opacity-60 hover:opacity-100 animate-fadeIn ${
+                  className={`p-3 sm:p-4 rounded-xl border-2 transition-all duration-200 opacity-60 hover:opacity-100 animate-fadeIn ${
                     isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'
                   }`}
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
-                  <div className="flex items-start gap-4">
+                  <div className="flex items-start gap-3 sm:gap-4">
                     <button
                       onClick={() => toggleComplete(todo)}
-                      className="mt-1 w-6 h-6 rounded-full border-2 border-green-500 bg-green-500 flex items-center justify-center transition-all duration-200"
+                      className="mt-1 w-6 h-6 rounded-full border-2 border-green-500 bg-green-500 flex items-center justify-center transition-all duration-200 flex-shrink-0"
                     >
                       <FiCheck className="w-4 h-4 text-white" />
                     </button>
-                    <div className="flex-1">
-                      <div className="flex items-start justify-between gap-4 mb-2">
-                        <h3 className={`text-lg font-medium line-through ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-3 sm:gap-4 mb-2">
+                        <h3 className={`text-base sm:text-lg font-medium line-through break-words ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
                           {todo.title}
                         </h3>
                         <button
@@ -1030,9 +1032,9 @@ const MyPlans = ({ isDarkMode }) => {
 
       {/* Empty State */}
       {todos.length === 0 && (
-        <div className={`text-center py-16 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-          <FiCheck className="w-16 h-16 mx-auto mb-4 opacity-20" />
-          <p className="text-lg">No todos yet. Create one to get started!</p>
+        <div className={`text-center py-12 sm:py-16 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+          <FiCheck className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 opacity-20" />
+          <p className="text-base sm:text-lg">No todos yet. Create one to get started!</p>
         </div>
       )}
     </div>

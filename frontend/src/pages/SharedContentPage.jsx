@@ -132,7 +132,7 @@ export default function SharedContentPage() {
           <div className="flex justify-between items-center h-16 gap-2 sm:gap-4">
             <div className="flex items-center gap-2 sm:gap-3 cursor-pointer min-w-0" onClick={() => navigate('/dashboard')}>
               <img src="/coursebook.svg" alt="Coursebook" className="w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0" />
-              <CoursebookTextLogo className="w-32 h-8 sm:w-48 sm:h-12 hidden sm:block" isDarkMode={isDarkMode} showUnderline={false} />
+              <CoursebookTextLogo className="w-32 h-8 sm:w-40 sm:h-10 md:w-48 md:h-12 hidden sm:block" isDarkMode={isDarkMode} showUnderline={false} />
             </div>
             <button
               onClick={() => navigate('/dashboard')}

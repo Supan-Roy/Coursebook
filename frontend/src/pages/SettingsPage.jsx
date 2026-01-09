@@ -10,7 +10,7 @@ export default function SettingsPage() {
   const { isDarkMode, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-    return localStorage.getItem('sidebarCollapsed') === 'true';
+    return window.innerWidth < 1024 ? true : localStorage.getItem('sidebarCollapsed') === 'true';
   });
   const [notifyEmail, setNotifyEmail] = useState(true);
   const [notifyPush, setNotifyPush] = useState(false);
@@ -42,64 +42,83 @@ export default function SettingsPage() {
         activeKey="settings"
         isDarkMode={isDarkMode}
       />
-      <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
+      <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-16 ml-0' : 'lg:ml-64 ml-0'}`}>
         <header
-          className={`border-b backdrop-blur-sm sticky top-0 z-30 shadow bg-gradient-to-r transition-colors ${
+          className={`border-b sticky top-0 z-20 backdrop-blur-sm shadow bg-gradient-to-r transition-colors ${
             isDarkMode
               ? 'from-gray-900 via-gray-800 to-gray-900 border-gray-700'
               : 'from-gray-100 via-gray-200 to-gray-100 border-gray-300'
           }`}
         >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-              <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/dashboard')}>
+          <div className="max-w-7xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8">
+            <div className="flex justify-between items-center h-16 gap-1.5 sm:gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 flex-1 min-w-0 overflow-hidden">
+                {/* Mobile menu button */}
                 <button
-                  onClick={() => navigate('/dashboard')}
-                  className={`p-2 rounded-lg transition-all border ${isDarkMode ? 'text-gray-400 hover:text-white hover:bg-gray-900 border-gray-700 hover:border-sky-500/50' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 border-gray-300 hover:border-sky-500/50'}`}
-                  title="Back to Dashboard"
+                  onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                  className={`lg:hidden p-1.5 sm:p-2 rounded-lg transition-colors flex-shrink-0 ${
+                    isDarkMode ? 'hover:bg-gray-800 text-gray-400' : 'hover:bg-gray-100 text-gray-600'
+                  }`}
+                  aria-label="Toggle menu"
                 >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                   </svg>
                 </button>
-                <img src="/coursebook.svg" alt="Coursebook" className="w-10 h-10 hover:opacity-80 transition-opacity" />
-                <CoursebookTextLogo className="w-48 h-12 hover:opacity-80 transition-opacity" isDarkMode={isDarkMode} showUnderline={false} />
+                <img src="/coursebook.svg" alt="Coursebook" className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 flex-shrink-0" />
+                <CoursebookTextLogo className="w-24 h-6 sm:w-28 sm:h-7 md:w-40 md:h-10 lg:w-48 lg:h-12 flex-shrink-0" isDarkMode={isDarkMode} showUnderline={false} />
               </div>
-
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 lg:gap-3 flex-shrink-0">
+                {/* Mobile greeting - Welcome, First Name */}
+                <span className={`text-[10px] sm:text-xs md:text-sm lg:hidden truncate max-w-[80px] sm:max-w-[100px] ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
+                  {(() => {
+                    const firstName = user?.first_name || 'User';
+                    return <><span className={`font-semibold ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>Welcome, {firstName}</span></>;
+                  })()}
+                </span>
+                <div className="hidden lg:flex flex-col items-end">
+                  <span className={`text-sm ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
+                    {user?.first_name && user?.last_name
+                      ? `${user.first_name} ${user.last_name}`
+                      : user?.first_name || 'Student'}
+                  </span>
+                </div>
+                
+                {/* Theme Toggle */}
                 <button
                   onClick={toggleTheme}
-                  className={`p-2 rounded-lg transition-all border ${isDarkMode ? 'text-gray-400 hover:text-white hover:bg-gray-900 border-gray-700 hover:border-sky-500/50' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 border-gray-300 hover:border-sky-500/50'}`}
+                  className={`p-1.5 sm:p-2 md:p-2.5 rounded-lg transition-all border flex-shrink-0 ${isDarkMode ? 'text-gray-400 hover:text-white hover:bg-gray-900 border-gray-700 hover:border-sky-500/50' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 border-gray-300 hover:border-sky-500/50'}`}
                   title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
                 >
                   {isDarkMode ? (
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
                     </svg>
                   ) : (
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
                     </svg>
                   )}
                 </button>
-
+                
+                {/* Profile Dropdown */}
                 <div className="relative" ref={profileMenuRef}>
                   <button
                     onClick={() => setShowProfileMenu(!showProfileMenu)}
-                    className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-all border ${isDarkMode ? 'text-gray-300 hover:text-white hover:bg-gray-900 border-gray-700 hover:border-sky-500/50' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100 border-gray-300 hover:border-sky-500/50'}`}
+                    className={`flex items-center gap-1 sm:gap-1.5 md:gap-2 px-1.5 sm:px-2 md:px-2.5 lg:px-3 py-1.5 sm:py-2 rounded-lg transition-all border flex-shrink-0 ${isDarkMode ? 'text-gray-300 hover:text-white hover:bg-gray-900 border-gray-700 hover:border-sky-500/50' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100 border-gray-300 hover:border-sky-500/50'}`}
                   >
                     {user?.profile_photo ? (
                       <img
                         src={user.profile_photo}
                         alt="Profile"
-                        className="w-8 h-8 rounded-full object-cover border border-sky-500/50"
+                        className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 rounded-full object-cover border-2 border-sky-500/50"
                       />
                     ) : (
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sky-400 to-cyan-500 flex items-center justify-center text-white font-bold text-sm">
+                      <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 rounded-full bg-gradient-to-br from-sky-400 to-cyan-500 flex items-center justify-center text-white font-bold text-xs sm:text-sm md:text-base lg:text-lg">
                         {user?.first_name?.[0] || 'S'}
                       </div>
                     )}
-                    <svg className={`w-4 h-4 transition-transform ${showProfileMenu ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className={`w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 transition-transform hidden sm:block ${showProfileMenu ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                   </button>

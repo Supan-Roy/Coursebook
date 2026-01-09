@@ -24,6 +24,7 @@ import DeleteAccountPage from './pages/DeleteAccountPage';
 import DeleteAccountConfirmPage from './pages/DeleteAccountConfirmPage';
 import SharedContentPage from './pages/SharedContentPage';
 import SharedCourseDetailPage from './pages/SharedCourseDetailPage';
+import HelpSupportPage from './pages/HelpSupportPage';
 
 function App() {
   return (
@@ -90,6 +91,7 @@ function App() {
             }
           />
           <Route path="/about" element={<AboutPage />} />
+          <Route path="/help-support" element={<HelpSupportPage />} />
           <Route path="/admin" element={<AP_Page />} />
           <Route path="/shared/:token" element={<SharedContentPage />} />
           <Route path="/shared/:token/course/:courseId" element={<SharedCourseDetailPage />} />

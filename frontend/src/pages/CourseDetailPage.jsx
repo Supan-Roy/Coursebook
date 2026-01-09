@@ -516,7 +516,7 @@ export default function CourseDetailPage() {
         activeKey="dashboard"
         isDarkMode={isDarkMode}
       />
-      <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
+      <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-16 ml-0' : 'lg:ml-64 ml-0'}`}>
       {/* Header */}
       <header
         className={`border-b backdrop-blur-sm sticky top-0 z-50 shadow bg-gradient-to-r transition-colors ${
@@ -538,7 +538,7 @@ export default function CourseDetailPage() {
                 </svg>
               </button>
               <img src="/coursebook.svg" alt="Coursebook" className="w-8 h-8 sm:w-10 sm:h-10 hover:opacity-80 transition-opacity flex-shrink-0" />
-              <CoursebookTextLogo className="w-32 h-8 sm:w-48 sm:h-12 hidden sm:block hover:opacity-80 transition-opacity" isDarkMode={isDarkMode} showUnderline={false} />
+              <CoursebookTextLogo className="w-32 h-8 sm:w-40 sm:h-10 md:w-48 md:h-12 hidden sm:block hover:opacity-80 transition-opacity" isDarkMode={isDarkMode} showUnderline={false} />
             </div>
 
             <div className="flex items-center gap-2 sm:gap-4">
