@@ -75,6 +75,7 @@ export default function ShareDialog({ isOpen, onClose, type, data, onSuccess, is
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder={`Custom title for this share`}
+                maxLength={30}
                 className={`w-full px-4 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 ${
                   isDarkMode
                     ? 'bg-gray-900/50 border-gray-700 text-white placeholder-gray-500'

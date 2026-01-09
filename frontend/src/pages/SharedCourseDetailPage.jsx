@@ -67,6 +67,12 @@ export default function SharedCourseDetailPage() {
     return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`;
   };
 
+  const truncateText = (text, maxLength) => {
+    if (!text) return '';
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+  };
+
   const truncateFileName = (filename, maxLength = 25) => {
     if (filename.length <= maxLength) {
       return filename;
@@ -212,14 +218,21 @@ export default function SharedCourseDetailPage() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Course Header */}
         <div className={`rounded-2xl p-6 sm:p-8 border mb-6 ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200'}`}>
-          <h1 className={`text-2xl sm:text-3xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-            {course.code || course.title}
+          <h1 className={`text-2xl sm:text-3xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`} title={course.code || course.title}>
+            <span className="hidden md:inline">{course.code || course.title}</span>
+            <span className="md:hidden">{truncateText(course.code || course.title, course.code ? 10 : 50)}</span>
           </h1>
           {course.title && course.code && (
-            <p className={`text-lg ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>{course.title}</p>
+            <p className={`text-lg ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`} title={course.title}>
+              <span className="hidden md:inline">{course.title}</span>
+              <span className="md:hidden">{truncateText(course.title, 50)}</span>
+            </p>
           )}
           {course.semester && (
-            <p className={`text-sm mt-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{course.semester}</p>
+            <p className={`text-sm mt-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`} title={course.semester}>
+              <span className="hidden md:inline">{course.semester}</span>
+              <span className="md:hidden">{truncateText(course.semester, 20)}</span>
+            </p>
           )}
         </div>
 

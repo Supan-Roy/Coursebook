@@ -477,6 +477,12 @@ export default function CourseDetailPage() {
     return icons[ext] || '📄';
   };
 
+  const truncateText = (text, maxLength) => {
+    if (!text) return '';
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+  };
+
   const truncateFileName = (filename, maxLength = 25) => {
     if (filename.length <= maxLength) {
       return filename;
@@ -722,12 +728,14 @@ export default function CourseDetailPage() {
         <div className={`rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 lg:p-8 mb-4 sm:mb-6 md:mb-8 border bg-gradient-to-br from-blue-600 to-blue-700 border-blue-500`}>
           <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4">
             <div className="flex-1 min-w-0">
-              <h1 className={`text-2xl sm:text-3xl md:text-4xl font-bold mb-1.5 sm:mb-2 text-white drop-shadow-md break-words`}>
-                {course.code}
+              <h1 className={`text-2xl sm:text-3xl md:text-4xl font-bold mb-1.5 sm:mb-2 text-white drop-shadow-md break-words`} title={course.code}>
+                <span className="hidden md:inline">{course.code}</span>
+                <span className="md:hidden">{truncateText(course.code, 10)}</span>
               </h1>
               {course.title && (
-                <p className={`text-sm sm:text-base md:text-lg text-white/90 break-words`}>
-                  {course.title}
+                <p className={`text-sm sm:text-base md:text-lg text-white/90 break-words`} title={course.title}>
+                  <span className="hidden md:inline">{course.title}</span>
+                  <span className="md:hidden">{truncateText(course.title, 50)}</span>
                 </p>
               )}
             </div>

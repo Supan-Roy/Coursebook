@@ -218,6 +218,12 @@ export default function WorkspacePage({ isDarkMode: propIsDarkMode }) {
     return nameWithoutExt.substring(0, availableSpace) + '...' + extension;
   };
 
+  const truncateText = (text, maxLength) => {
+    if (!text) return '';
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+  };
+
   // Analyze big files (minimum 5 MB)
   const bigFiles = useMemo(() => {
     const MIN_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
@@ -270,6 +276,7 @@ export default function WorkspacePage({ isDarkMode: propIsDarkMode }) {
           course: course,
           timestamp: new Date(material.uploaded_at),
           description: `Uploaded ${material.filename}`,
+          fullDescription: `Uploaded ${material.filename}`,
           courseName: course ? (course.code || course.title) : 'Unknown Course'
         });
       }
@@ -285,6 +292,7 @@ export default function WorkspacePage({ isDarkMode: propIsDarkMode }) {
           course: course,
           timestamp: new Date(material.deleted_at),
           description: `Deleted ${material.filename}`,
+          fullDescription: `Deleted ${material.filename}`,
           courseName: course ? (course.code || course.title) : 'Unknown Course'
         });
       }
@@ -301,6 +309,7 @@ export default function WorkspacePage({ isDarkMode: propIsDarkMode }) {
           course: course,
           timestamp: activity.timestamp,
           description: `Viewed ${material.filename} ${activity.count > 1 ? `(${activity.count} times)` : ''}`,
+          fullDescription: `Viewed ${material.filename} ${activity.count > 1 ? `(${activity.count} times)` : ''}`,
           courseName: course ? (course.code || course.title) : 'Unknown Course'
         });
       }
@@ -548,8 +557,9 @@ export default function WorkspacePage({ isDarkMode: propIsDarkMode }) {
               >
                 <div className="flex items-start justify-between mb-2 sm:mb-3 gap-2">
                   <div className="flex-1 min-w-0">
-                    <h3 className={`text-xs sm:text-sm font-semibold mb-1 truncate ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                      {link.title}
+                    <h3 className={`text-xs sm:text-sm font-semibold mb-1 truncate ${isDarkMode ? 'text-white' : 'text-gray-900'}`} title={link.title}>
+                      <span className="hidden md:inline">{link.title}</span>
+                      <span className="md:hidden">{truncateText(link.title, 30)}</span>
                     </h3>
                     <p className={`text-[10px] sm:text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                       <span className="hidden sm:inline">
@@ -726,8 +736,9 @@ export default function WorkspacePage({ isDarkMode: propIsDarkMode }) {
                                 className={`flex items-center justify-between p-3 rounded-lg border ${isDarkMode ? 'border-gray-700 bg-gray-800/50' : 'border-gray-200 bg-white'}`}
                               >
                                 <div className="flex-1 min-w-0">
-                                  <p className={`text-sm font-medium truncate ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                                    {material.filename}
+                                  <p className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`} title={material.filename}>
+                                    <span className="hidden sm:inline truncate">{material.filename}</span>
+                                    <span className="sm:hidden">{truncateFileName(material.filename, 25)}</span>
                                   </p>
                                   <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                                     {getCourseName(material.course)} • {formatBytes(material.size_bytes)}
@@ -773,7 +784,10 @@ export default function WorkspacePage({ isDarkMode: propIsDarkMode }) {
                                 <div key={idx} className={`rounded-lg p-4 border ${isDarkMode ? 'border-gray-700 bg-gray-800/50' : 'border-gray-200 bg-white'}`}>
                                   <div className="flex items-center justify-between mb-3">
                                     <p className={`text-sm font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                                      {group.length} duplicate{group.length > 1 ? 's' : ''} found: <span className="font-normal text-xs">{group[0]?.filename || 'Unknown'}</span>
+                                      {group.length} duplicate{group.length > 1 ? 's' : ''} found: <span className="font-normal text-xs" title={group[0]?.filename || 'Unknown'}>
+                                        <span className="hidden sm:inline">{group[0]?.filename || 'Unknown'}</span>
+                                        <span className="sm:hidden">{truncateFileName(group[0]?.filename || 'Unknown', 25)}</span>
+                                      </span>
                                     </p>
                                     {!isSameCourse && (
                                       <span className={`text-xs px-2 py-1 rounded ${isDarkMode ? 'bg-yellow-500/20 text-yellow-400' : 'bg-yellow-100 text-yellow-700'}`}>
@@ -881,8 +895,21 @@ export default function WorkspacePage({ isDarkMode: propIsDarkMode }) {
                                     )}
                                   </div>
                                   <div className="flex-1 min-w-0">
-                                    <p className={`text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                                      {activity.description}
+                                    <p className={`text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'} break-words`} title={activity.fullDescription || activity.description}>
+                                      <span className="hidden sm:inline">{activity.description}</span>
+                                      <span className="sm:hidden">
+                                        {(() => {
+                                          // Extract filename from description if it contains one
+                                          const desc = activity.description;
+                                          if (activity.material?.filename) {
+                                            const filename = activity.material.filename;
+                                            const truncatedFilename = truncateFileName(filename, 20);
+                                            return desc.replace(filename, truncatedFilename);
+                                          }
+                                          // Fallback: truncate entire description if too long
+                                          return desc.length > 45 ? desc.substring(0, 42) + '...' : desc;
+                                        })()}
+                                      </span>
                                     </p>
                                     <div className="flex items-center gap-2 mt-1">
                                       {activity.courseName && (

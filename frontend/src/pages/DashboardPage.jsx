@@ -782,6 +782,12 @@ export default function DashboardPage() {
     return nameWithoutExt.substring(0, availableSpace) + '...' + extension;
   };
 
+  const truncateText = (text, maxLength) => {
+    if (!text) return '';
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+  };
+
   // Search functionality
   const getSearchResults = () => {
     if (!searchQuery.trim()) return { courses: [], materials: [] };
@@ -1372,7 +1378,10 @@ export default function DashboardPage() {
                             <h2 
                               className={`text-base sm:text-lg md:text-xl lg:text-2xl font-bold break-words ${isDarkMode ? 'text-white' : 'text-gray-900'}`}
                       >
-                        {semesterName}
+                        <span className="hidden md:inline">{semesterName}</span>
+                        <span className="md:hidden" title={semesterName}>
+                          {truncateText(semesterName, 20)}
+                        </span>
                       </h2>
                             {isAuthenticated && (
                     <button
@@ -1565,9 +1574,15 @@ export default function DashboardPage() {
                     </div>
                   ) : (
                     <>
-                            <h3 className="font-bold text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl mb-1 sm:mb-1.5 md:mb-2 text-white drop-shadow-md break-words">{course.code}</h3>
+                            <h3 className="font-bold text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl mb-1 sm:mb-1.5 md:mb-2 text-white drop-shadow-md break-words" title={course.code}>
+                              <span className="hidden md:inline">{course.code}</span>
+                              <span className="md:hidden">{truncateText(course.code, 10)}</span>
+                            </h3>
                           {course.title && (
-                              <p className="text-[10px] sm:text-xs md:text-sm lg:text-base line-clamp-2 leading-relaxed text-white/90 break-words">{course.title}</p>
+                              <p className="text-[10px] sm:text-xs md:text-sm lg:text-base line-clamp-2 leading-relaxed text-white/90 break-words" title={course.title}>
+                                <span className="hidden md:inline">{course.title}</span>
+                                <span className="md:hidden">{truncateText(course.title, 50)}</span>
+                              </p>
                             )}
                              <div className="flex items-center justify-between pt-2 sm:pt-2.5 md:pt-3 lg:pt-4 border-t border-white/20 mt-auto">
                                <span className="text-[10px] sm:text-xs md:text-sm lg:text-base font-medium text-white/80">
@@ -2305,12 +2320,14 @@ export default function DashboardPage() {
                               <div className="flex items-start justify-between">
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2 mb-1">
-                                    <span className={`font-semibold text-sm ${isDarkMode ? 'text-sky-400' : 'text-sky-600'}`}>
-                                      {course.code}
+                                    <span className={`font-semibold text-sm ${isDarkMode ? 'text-sky-400' : 'text-sky-600'}`} title={course.code}>
+                                      <span className="hidden md:inline">{course.code}</span>
+                                      <span className="md:hidden">{truncateText(course.code, 10)}</span>
                                     </span>
                                     {course.title && (
-                                      <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                        {course.title}
+                                      <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`} title={course.title}>
+                                        <span className="hidden md:inline">{course.title}</span>
+                                        <span className="md:hidden">{truncateText(course.title, 50)}</span>
                                       </span>
                                     )}
                                   </div>

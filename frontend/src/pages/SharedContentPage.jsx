@@ -8,6 +8,12 @@ import CoursebookTextLogo from '../components/CoursebookTextLogo';
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
 const BACKEND_BASE_URL = API_BASE_URL.replace(/\/api$/, '');
 
+const truncateText = (text, maxLength) => {
+  if (!text) return '';
+  if (text.length <= maxLength) return text;
+  return text.substring(0, maxLength) + '...';
+};
+
 export default function SharedContentPage() {
   const { token } = useParams();
   const navigate = useNavigate();
@@ -152,8 +158,9 @@ export default function SharedContentPage() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className={`rounded-2xl p-6 sm:p-8 border mb-6 ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200'}`}>
-          <h1 className={`text-2xl sm:text-3xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-            {share_link.title || (share_link.share_type === 'semester' ? share_link.semester_name : 'Shared Course')}
+          <h1 className={`text-2xl sm:text-3xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`} title={share_link.title || (share_link.share_type === 'semester' ? share_link.semester_name : 'Shared Course')}>
+            <span className="hidden md:inline">{share_link.title || (share_link.share_type === 'semester' ? share_link.semester_name : 'Shared Course')}</span>
+            <span className="md:hidden">{truncateText(share_link.title || (share_link.share_type === 'semester' ? share_link.semester_name : 'Shared Course'), 30)}</span>
           </h1>
           <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
             {share_link.share_type === 'semester' ? 'Semester' : 'Course'} shared by {
@@ -192,14 +199,21 @@ export default function SharedContentPage() {
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <h3 className={`font-semibold mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                          {course.code || course.title}
+                        <h3 className={`font-semibold mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`} title={course.code || course.title}>
+                          <span className="hidden md:inline">{course.code || course.title}</span>
+                          <span className="md:hidden">{truncateText(course.code || course.title, course.code ? 10 : 50)}</span>
                         </h3>
                         {course.title && course.code && (
-                          <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{course.title}</p>
+                          <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`} title={course.title}>
+                            <span className="hidden md:inline">{course.title}</span>
+                            <span className="md:hidden">{truncateText(course.title, 50)}</span>
+                          </p>
                         )}
                         {course.semester && (
-                          <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>{course.semester}</p>
+                          <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`} title={course.semester}>
+                            <span className="hidden md:inline">{course.semester}</span>
+                            <span className="md:hidden">{truncateText(course.semester, 20)}</span>
+                          </p>
                         )}
                         <p className={`text-xs mt-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                           {courseMaterials.length} file{courseMaterials.length !== 1 ? 's' : ''}
