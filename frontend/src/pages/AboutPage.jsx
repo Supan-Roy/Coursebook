@@ -21,25 +21,33 @@ export default function AboutPage() {
             : 'from-gray-100 via-gray-200 to-gray-100 border-gray-300'
         }`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/dashboard')}>
-              <img src="/coursebook.svg" alt="Coursebook" className="w-10 h-10" />
-              <CoursebookTextLogo className="w-48 h-12" isDarkMode={isDarkMode} showUnderline={false} />
+        <div className="max-w-7xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8">
+          <div className="flex justify-between items-center h-16 gap-1.5 sm:gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 flex-1 min-w-0 overflow-hidden">
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="flex items-center gap-1.5 sm:gap-2 md:gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+                title="Go to Dashboard"
+              >
+                <img src="/coursebook.svg" alt="Coursebook" className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 flex-shrink-0" />
+                <CoursebookTextLogo className="w-36 h-9 sm:w-28 sm:h-7 md:w-40 md:h-10 lg:w-48 lg:h-12 flex-shrink-0" isDarkMode={isDarkMode} showUnderline={false} />
+              </button>
             </div>
-            <button
-              onClick={() => navigate('/dashboard')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                isDarkMode 
-                  ? 'text-gray-300 hover:text-white hover:bg-gray-900 border border-gray-700' 
-                  : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100 border border-gray-300'
-              }`}
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-              Back to Dashboard
-            </button>
+            <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 lg:gap-3 flex-shrink-0">
+              <button
+                onClick={() => navigate('/dashboard')}
+                className={`flex items-center gap-1 sm:gap-1.5 md:gap-2 px-1.5 sm:px-2 md:px-2.5 lg:px-3 py-1.5 sm:py-2 rounded-lg transition-colors text-xs sm:text-sm md:text-base ${
+                  isDarkMode 
+                    ? 'text-gray-300 hover:text-white hover:bg-gray-900 border border-gray-700' 
+                    : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100 border border-gray-300'
+                }`}
+              >
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                <span className="hidden sm:inline">Back</span>
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -62,22 +70,46 @@ export default function AboutPage() {
               <h2 className={`text-2xl font-bold mb-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>What We Offer</h2>
               <ul className="space-y-3 list-disc list-inside">
                 <li>
-                  <strong className={isDarkMode ? 'text-white' : 'text-gray-900'}>Semester Management:</strong> Organize your courses by semester, create custom semester structures, and keep track of all your academic terms in one place.
+                  <strong className={isDarkMode ? 'text-white' : 'text-gray-900'}>Semester Management:</strong> Organize your courses by semester, create custom semester structures, and keep track of all your academic terms in one place. Semesters are automatically sorted with the latest additions appearing first.
                 </li>
                 <li>
-                  <strong className={isDarkMode ? 'text-white' : 'text-gray-900'}>Course Organization:</strong> Manage individual courses with detailed information, track course materials, and maintain a structured view of your academic curriculum.
+                  <strong className={isDarkMode ? 'text-white' : 'text-gray-900'}>Course Organization:</strong> Manage individual courses with detailed information, track course materials, and maintain a structured view of your academic curriculum. Each course folder keeps all your materials organized and easily accessible.
                 </li>
                 <li>
-                  <strong className={isDarkMode ? 'text-white' : 'text-gray-900'}>Study Materials:</strong> Upload, organize, and access your study materials seamlessly. Keep all your PDFs, documents, and files in one centralized location.
+                  <strong className={isDarkMode ? 'text-white' : 'text-gray-900'}>Study Materials:</strong> Upload, organize, and access your study materials seamlessly. Keep all your PDFs, documents, and files in one centralized location with support for multiple file formats. Share materials with others through secure shareable links.
                 </li>
                 <li>
-                  <strong className={isDarkMode ? 'text-white' : 'text-gray-900'}>PDF Toolkit:</strong> Powerful tools to convert documents, merge PDFs, compress files, add watermarks, and secure your documents—all without leaving the platform.
+                  <strong className={isDarkMode ? 'text-white' : 'text-gray-900'}>PDF Toolkit:</strong> Comprehensive suite of PDF tools including document-to-PDF conversion, merge multiple PDFs, split PDFs into separate files, compress PDFs to reduce file size, add page numbers, watermark PDFs with text or images, secure PDFs with passwords, unlock protected PDFs, convert images to PDF, and edit PDF content—all without leaving the platform.
                 </li>
                 <li>
-                  <strong className={isDarkMode ? 'text-white' : 'text-gray-900'}>My Plans:</strong> Create and manage your academic and personal plans with our integrated todo system, helping you stay on track with your goals.
+                  <strong className={isDarkMode ? 'text-white' : 'text-gray-900'}>My Plans:</strong> Create and manage your academic and personal plans with our integrated todo system. Organize tasks by categories, set priorities, track progress, and receive notifications for due tasks. Perfect for managing assignments, projects, and personal goals.
                 </li>
                 <li>
-                  <strong className={isDarkMode ? 'text-white' : 'text-gray-900'}>Routine Upload:</strong> Automatically extract course information from your academic routine PDFs or images, making semester setup effortless.
+                  <strong className={isDarkMode ? 'text-white' : 'text-gray-900'}>Workspace:</strong> A dedicated workspace for organizing your academic work, managing projects, and keeping track of your study sessions. Access all your materials and tools in one convenient location.
+                </li>
+                <li>
+                  <strong className={isDarkMode ? 'text-white' : 'text-gray-900'}>Progress Tracking:</strong> Monitor your academic progress with detailed analytics and insights. Track your course completion, material usage, and study patterns to stay on top of your academic journey.
+                </li>
+                <li>
+                  <strong className={isDarkMode ? 'text-white' : 'text-gray-900'}>Preparation Mode:</strong> Generate detailed study notes and summaries from your course materials using AI-powered analysis. Create comprehensive study guides, extract key information, and prepare for exams more effectively.
+                </li>
+                <li>
+                  <strong className={isDarkMode ? 'text-white' : 'text-gray-900'}>Routine Upload:</strong> Automatically extract course information from your academic routine PDFs or images. Our intelligent system recognizes course codes, titles, and semester information, making semester setup effortless and error-free.
+                </li>
+                <li>
+                  <strong className={isDarkMode ? 'text-white' : 'text-gray-900'}>Recent Activity:</strong> Stay informed with a comprehensive activity feed that tracks all your interactions—file uploads, summary generation, quiz activities, and material management. Never lose track of what you've been working on.
+                </li>
+                <li>
+                  <strong className={isDarkMode ? 'text-white' : 'text-gray-900'}>File Sharing:</strong> Share your course materials with classmates and colleagues through secure, shareable links. Control access permissions and track shared content easily.
+                </li>
+                <li>
+                  <strong className={isDarkMode ? 'text-white' : 'text-gray-900'}>Search Functionality:</strong> Quickly find courses, materials, and content across your entire academic library with our powerful search feature. Search by course code, title, or file name.
+                </li>
+                <li>
+                  <strong className={isDarkMode ? 'text-white' : 'text-gray-900'}>Dark Mode:</strong> Comfortable viewing experience with a beautiful dark mode option that reduces eye strain during late-night study sessions.
+                </li>
+                <li>
+                  <strong className={isDarkMode ? 'text-white' : 'text-gray-900'}>Mobile Responsive:</strong> Access Coursebook from any device with our fully responsive design. Whether you're on your phone, tablet, or desktop, the experience is optimized for your screen size.
                 </li>
               </ul>
             </section>

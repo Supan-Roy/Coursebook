@@ -369,88 +369,66 @@ export default function ProfilePage() {
             : 'from-gray-100 via-gray-200 to-gray-100 border-gray-300'
         }`}
       >
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+        <div className="max-w-7xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8">
+          <div className="flex justify-between items-center h-16 gap-1.5 sm:gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 flex-1 min-w-0 overflow-hidden">
               {/* Mobile menu button */}
               <button
                 onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                className={`lg:hidden p-2 rounded-lg transition-colors flex-shrink-0 ${
+                className={`lg:hidden p-1.5 sm:p-2 rounded-lg transition-colors flex-shrink-0 ${
                   isDarkMode ? 'hover:bg-gray-800 text-gray-400' : 'hover:bg-gray-100 text-gray-600'
                 }`}
                 aria-label="Toggle menu"
               >
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
-              <img src="/coursebook.svg" alt="Coursebook" className="w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0" />
-              <CoursebookTextLogo className="w-32 h-8 sm:w-40 sm:h-10 md:w-48 md:h-12 flex-shrink-0" isDarkMode={isDarkMode} showUnderline={false} />
+              <img src="/coursebook.svg" alt="Coursebook" className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 flex-shrink-0" />
+              <CoursebookTextLogo className="w-36 h-9 sm:w-28 sm:h-7 md:w-40 md:h-10 lg:w-48 lg:h-12 flex-shrink-0" isDarkMode={isDarkMode} showUnderline={false} />
             </div>
-            <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+            <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 lg:gap-3 flex-shrink-0">
               <button
                 onClick={() => navigate('/dashboard')}
-                className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-2 rounded-lg transition-colors text-sm sm:text-base ${
+                className={`flex items-center gap-1 sm:gap-1.5 md:gap-2 px-1.5 sm:px-2 md:px-2.5 lg:px-3 py-1.5 sm:py-2 rounded-lg transition-colors text-xs sm:text-sm md:text-base ${
                   isDarkMode 
                     ? 'text-gray-300 hover:text-white hover:bg-gray-900 border border-gray-700' 
                     : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100 border border-gray-300'
                 }`}
               >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
                 <span className="hidden sm:inline">Back</span>
               </button>
               
-              <span className={`text-sm sm:text-base lg:hidden ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
+              {/* Mobile greeting */}
+              <span className={`text-[10px] sm:text-xs md:text-sm lg:hidden truncate max-w-[80px] sm:max-w-[100px] ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
                 {(() => {
-                  const greeting = getGreeting();
                   const firstName = user?.first_name || 'User';
-                  if (greeting.includes(', ')) {
-                    const parts = greeting.split(', ');
-                    const message = parts.slice(0, -1).join(', ');
-                    return (
-                      <>
-                        {message}, <span className={`font-semibold ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>{firstName}</span>
-                      </>
-                    );
-                  }
                   return <><span className={`font-semibold ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>Welcome, {firstName}</span></>;
                 })()}
               </span>
               <div className="hidden lg:flex flex-col items-end">
                 <span className={`text-sm ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
-                  {(() => {
-                    const greeting = getGreeting();
-                    const name = user?.first_name && user?.last_name
-                      ? `${user.first_name} ${user.last_name}`
-                      : user?.first_name || 'Student';
-                    if (greeting.includes(', ')) {
-                      const parts = greeting.split(', ');
-                      const message = parts.slice(0, -1).join(', ');
-                      return (
-                        <>
-                          {message}, <span className={`font-semibold ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>{name}</span>{greeting.endsWith('!') ? '!' : ''}
-                        </>
-                      );
-                    }
-                    return greeting;
-                  })()}
+                  {user?.first_name && user?.last_name
+                    ? `${user.first_name} ${user.last_name}`
+                    : user?.first_name || 'Student'}
                 </span>
               </div>
               
               {/* Theme Toggle */}
               <button
                 onClick={toggleTheme}
-                className={`p-2.5 rounded-lg transition-all border flex-shrink-0 ${isDarkMode ? 'text-gray-400 hover:text-white hover:bg-gray-900 border-gray-700 hover:border-sky-500/50' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 border-gray-300 hover:border-sky-500/50'}`}
+                className={`p-1.5 sm:p-2 md:p-2.5 rounded-lg transition-all border flex-shrink-0 ${isDarkMode ? 'text-gray-400 hover:text-white hover:bg-gray-900 border-gray-700 hover:border-sky-500/50' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 border-gray-300 hover:border-sky-500/50'}`}
                 title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
               >
                 {isDarkMode ? (
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
                   </svg>
                 ) : (
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
                   </svg>
                 )}
@@ -460,21 +438,21 @@ export default function ProfilePage() {
               <div className="relative" ref={profileMenuRef}>
                 <button
                   onClick={() => setShowProfileMenu(!showProfileMenu)}
-                  className={`flex items-center gap-2 px-2.5 sm:px-3 py-2 rounded-lg transition-all border flex-shrink-0 ${isDarkMode ? 'text-gray-300 hover:text-white hover:bg-gray-900 border-gray-700 hover:border-sky-500/50' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100 border-gray-300 hover:border-sky-500/50'}`}
+                  className={`flex items-center gap-1 sm:gap-1.5 md:gap-2 px-1.5 sm:px-2 md:px-2.5 lg:px-3 py-1.5 sm:py-2 rounded-lg transition-all border flex-shrink-0 ${isDarkMode ? 'text-gray-300 hover:text-white hover:bg-gray-900 border-gray-700 hover:border-sky-500/50' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100 border-gray-300 hover:border-sky-500/50'}`}
                 >
                   {user?.profile_photo ? (
                     <img
                       src={user.profile_photo}
                       alt="Profile"
-                      className="w-9 h-9 sm:w-10 sm:h-10 rounded-full object-cover border-2 border-sky-500/50 aspect-square"
+                      className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 rounded-full object-cover border-2 border-sky-500/50 aspect-square"
                       style={{ objectFit: 'cover', objectPosition: 'center' }}
                     />
                   ) : (
-                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-sky-400 to-cyan-500 flex items-center justify-center text-white font-bold text-base sm:text-lg aspect-square">
-                      {user?.first_name?.[0] || 'S'}
-                    </div>
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 rounded-full bg-gradient-to-br from-sky-400 to-cyan-500 flex items-center justify-center text-white font-bold text-xs sm:text-sm md:text-base lg:text-lg aspect-square">
+                    {user?.first_name?.[0] || 'S'}
+                  </div>
                   )}
-                  <svg className={`w-5 h-5 transition-transform hidden sm:block ${showProfileMenu ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className={`w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 transition-transform hidden sm:block ${showProfileMenu ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
@@ -535,20 +513,20 @@ export default function ProfilePage() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className={`rounded-2xl p-8 border transition-colors ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200'}`}>
+      <main className="max-w-4xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-2.5 sm:py-3 md:py-4 lg:py-6 xl:py-8">
+        <div className={`rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 lg:p-8 border transition-colors ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200'}`}>
           {/* Profile Header */}
-          <div className={`flex items-center gap-6 mb-8 pb-8 border-b ${isDarkMode ? 'border-gray-700/30' : 'border-gray-200'}`}>
-            <div className="relative group">
+          <div className={`flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 mb-6 sm:mb-8 pb-6 sm:pb-8 border-b ${isDarkMode ? 'border-gray-700/30' : 'border-gray-200'}`}>
+            <div className="relative group flex-shrink-0">
               {user?.profile_photo ? (
                 <img
                   src={user.profile_photo}
                   alt="Profile"
-                  className="w-24 h-24 rounded-full object-cover border-2 border-sky-500 aspect-square"
+                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-2 border-sky-500 aspect-square"
                   style={{ objectFit: 'cover', objectPosition: 'center' }}
                 />
               ) : (
-                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-sky-400 to-cyan-500 flex items-center justify-center text-white font-bold text-4xl border-2 border-sky-500 aspect-square">
+                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-sky-400 to-cyan-500 flex items-center justify-center text-white font-bold text-3xl sm:text-4xl border-2 border-sky-500 aspect-square">
                   {user?.first_name?.[0] || 'S'}
                 </div>
               )}
@@ -579,29 +557,29 @@ export default function ProfilePage() {
                 className="hidden"
               />
             </div>
-            <div>
-              <h1 className={`text-3xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+            <div className="flex-1 min-w-0 text-center sm:text-left">
+              <h1 className={`text-xl sm:text-2xl md:text-3xl font-bold mb-1.5 sm:mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                 {user?.first_name && user?.last_name
                   ? `${user.first_name} ${user.last_name}`
                   : user?.first_name || 'User'}
                 {user?.university && (
-                  <span className={`text-xl font-normal ml-2 ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                  <span className={`text-base sm:text-lg md:text-xl font-normal ml-1 sm:ml-2 block sm:inline ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
                     • {user.university}
                   </span>
                 )}
               </h1>
-              <p className={`text-base ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>Manage your personal information</p>
+              <p className={`text-sm sm:text-base ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>Manage your personal information</p>
             </div>
           </div>
 
           {/* Delete Photo Button (only when editing and photo exists) */}
           {isEditing && user?.profile_photo && (
-            <div className="mb-6">
+            <div className="mb-4 sm:mb-6">
               <button
                 type="button"
                 onClick={() => setShowDeletePhotoConfirm(true)}
                 disabled={loading}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all border ${isDarkMode ? 'text-red-400 hover:text-red-300 hover:bg-red-500/10 border-red-500/50 hover:border-red-500' : 'text-red-600 hover:text-red-700 hover:bg-red-50 border-red-300 hover:border-red-400'} disabled:opacity-50 disabled:cursor-not-allowed`}
+                className={`px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-lg transition-all border ${isDarkMode ? 'text-red-400 hover:text-red-300 hover:bg-red-500/10 border-red-500/50 hover:border-red-500' : 'text-red-600 hover:text-red-700 hover:bg-red-50 border-red-300 hover:border-red-400'} disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 <span className="flex items-center gap-2">
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -628,7 +606,7 @@ export default function ProfilePage() {
 
           {/* Profile Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 md:gap-6">
               {/* First Name */}
               <div>
                 <label htmlFor="first_name" className={`block text-sm font-semibold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -642,7 +620,7 @@ export default function ProfilePage() {
                   disabled={!isEditing}
                   value={formData.first_name}
                   onChange={handleChange}
-                  className={`block w-full px-4 py-3 text-sm border rounded-lg transition-all disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent ${isDarkMode ? 'bg-gray-900/50 border-gray-700 disabled:bg-gray-900/30 text-white disabled:text-white placeholder-gray-500' : 'bg-white border-gray-300 disabled:bg-gray-100 text-gray-900 disabled:text-gray-900 placeholder-gray-400'}`}
+                  className={`block w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border rounded-lg transition-all disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent ${isDarkMode ? 'bg-gray-900/50 border-gray-700 disabled:bg-gray-900/30 text-white disabled:text-white placeholder-gray-500' : 'bg-white border-gray-300 disabled:bg-gray-100 text-gray-900 disabled:text-gray-900 placeholder-gray-400'}`}
                 />
               </div>
 
@@ -659,7 +637,7 @@ export default function ProfilePage() {
                   disabled={!isEditing}
                   value={formData.last_name}
                   onChange={handleChange}
-                  className={`block w-full px-4 py-3 text-sm border rounded-lg transition-all disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent ${isDarkMode ? 'bg-gray-900/50 border-gray-700 disabled:bg-gray-900/30 text-white disabled:text-white placeholder-gray-500' : 'bg-white border-gray-300 disabled:bg-gray-100 text-gray-900 disabled:text-gray-900 placeholder-gray-400'}`}
+                  className={`block w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border rounded-lg transition-all disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent ${isDarkMode ? 'bg-gray-900/50 border-gray-700 disabled:bg-gray-900/30 text-white disabled:text-white placeholder-gray-500' : 'bg-white border-gray-300 disabled:bg-gray-100 text-gray-900 disabled:text-gray-900 placeholder-gray-400'}`}
                 />
               </div>
             </div>
@@ -676,7 +654,7 @@ export default function ProfilePage() {
                 required
                 disabled
                 value={formData.email}
-                className={`block w-full px-4 py-3 text-sm border rounded-lg cursor-not-allowed ${isDarkMode ? 'bg-gray-900/30 border-gray-700 text-white' : 'bg-gray-100 border-gray-300 text-gray-900'}`}
+                className={`block w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border rounded-lg cursor-not-allowed ${isDarkMode ? 'bg-gray-900/30 border-gray-700 text-white' : 'bg-gray-100 border-gray-300 text-gray-900'}`}
               />
               <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Email cannot be changed</p>
             </div>
@@ -788,7 +766,7 @@ export default function ProfilePage() {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-3 pt-6">
+            <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 pt-4 sm:pt-6">
               {!isEditing ? (
                 <button
                   type="button"
@@ -799,7 +777,7 @@ export default function ProfilePage() {
                     setUniversitySearch('');
                     setUniversityDropdownOpen(false);
                   }}
-                  className="px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-sky-500 to-cyan-400 hover:from-sky-600 hover:to-cyan-500 rounded-lg transition-all shadow-lg hover:shadow-cyan-500/20"
+                  className="px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 text-sm sm:text-base font-semibold text-white bg-gradient-to-r from-sky-500 to-cyan-400 hover:from-sky-600 hover:to-cyan-500 rounded-lg transition-all shadow-lg hover:shadow-cyan-500/20"
                 >
                   Edit Profile
                 </button>
@@ -808,7 +786,7 @@ export default function ProfilePage() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-sky-500 to-cyan-400 hover:from-sky-600 hover:to-cyan-500 rounded-lg transition-all shadow-lg hover:shadow-cyan-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 text-sm sm:text-base font-semibold text-white bg-gradient-to-r from-sky-500 to-cyan-400 hover:from-sky-600 hover:to-cyan-500 rounded-lg transition-all shadow-lg hover:shadow-cyan-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? 'Saving...' : 'Save Changes'}
                   </button>
@@ -826,7 +804,7 @@ export default function ProfilePage() {
                       setUniversitySearch('');
                       setUniversityDropdownOpen(false);
                     }}
-                    className={`px-6 py-3 text-sm font-semibold rounded-lg transition-all border ${isDarkMode ? 'text-gray-300 hover:text-white hover:bg-gray-900 border-gray-700 hover:border-gray-600' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100 border-gray-300 hover:border-gray-400'}`}
+                    className={`px-4 sm:px-5 md:px-6 py-2.5 sm:py-3 text-sm sm:text-base font-semibold rounded-lg transition-all border ${isDarkMode ? 'text-gray-300 hover:text-white hover:bg-gray-900 border-gray-700 hover:border-gray-600' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100 border-gray-300 hover:border-gray-400'}`}
                   >
                     Cancel
                   </button>

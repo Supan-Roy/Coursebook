@@ -775,8 +775,17 @@ export default function DashboardPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
-              <img src="/coursebook.svg" alt="Coursebook" className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 flex-shrink-0" />
-              <CoursebookTextLogo className="w-24 h-6 sm:w-28 sm:h-7 md:w-40 md:h-10 lg:w-48 lg:h-12 flex-shrink-0" isDarkMode={isDarkMode} showUnderline={false} />
+              <button
+                onClick={() => {
+                  window.scrollTo(0, 0);
+                  loadData();
+                }}
+                className="flex items-center gap-1.5 sm:gap-2 md:gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+                title="Reload Dashboard"
+              >
+                <img src="/coursebook.svg" alt="Coursebook" className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 flex-shrink-0" />
+                <CoursebookTextLogo className="w-36 h-9 sm:w-28 sm:h-7 md:w-40 md:h-10 lg:w-48 lg:h-12 flex-shrink-0" isDarkMode={isDarkMode} showUnderline={false} />
+              </button>
             </div>
             <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 lg:gap-3 flex-shrink-0">
               {isAuthenticated ? (
@@ -959,7 +968,7 @@ export default function DashboardPage() {
           <div className="flex gap-0.5 sm:gap-1 items-center overflow-x-auto scrollbar-hide -mx-2 sm:-mx-3 md:mx-0 px-2 sm:px-3 md:px-0">
             <button
               onClick={() => setActiveTab('semesters')}
-              className={`px-2 sm:px-3 md:px-6 py-2 sm:py-2.5 md:py-3 font-medium text-xs sm:text-sm md:text-base transition-all duration-200 border-b-2 whitespace-nowrap flex-shrink-0 ${
+              className={`px-2 sm:px-3 md:px-6 py-2 sm:py-2.5 md:py-3 font-medium text-sm sm:text-sm md:text-base transition-all duration-200 border-b-2 whitespace-nowrap flex-shrink-0 ${
                 activeTab === 'semesters'
                   ? isDarkMode
                     ? 'text-blue-400 border-blue-400'
@@ -979,7 +988,7 @@ export default function DashboardPage() {
             </button>
             <button
               onClick={() => setActiveTab('workspace')}
-              className={`px-2 sm:px-3 md:px-6 py-2 sm:py-2.5 md:py-3 font-medium text-xs sm:text-sm md:text-base transition-all duration-200 border-b-2 whitespace-nowrap flex-shrink-0 ${
+              className={`px-2 sm:px-3 md:px-6 py-2 sm:py-2.5 md:py-3 font-medium text-sm sm:text-sm md:text-base transition-all duration-200 border-b-2 whitespace-nowrap flex-shrink-0 ${
                 activeTab === 'workspace'
                   ? isDarkMode
                     ? 'text-blue-400 border-blue-400'
@@ -999,7 +1008,7 @@ export default function DashboardPage() {
             </button>
             <button
               onClick={() => setActiveTab('todos')}
-              className={`px-2 sm:px-3 md:px-6 py-2 sm:py-2.5 md:py-3 font-medium text-xs sm:text-sm md:text-base transition-all duration-200 border-b-2 whitespace-nowrap flex-shrink-0 ${
+              className={`px-2 sm:px-3 md:px-6 py-2 sm:py-2.5 md:py-3 font-medium text-sm sm:text-sm md:text-base transition-all duration-200 border-b-2 whitespace-nowrap flex-shrink-0 ${
                 activeTab === 'todos'
                   ? isDarkMode
                     ? 'text-blue-400 border-blue-400'
@@ -1019,7 +1028,7 @@ export default function DashboardPage() {
             </button>
             <button
               onClick={() => setActiveTab('progress')}
-              className={`px-2 sm:px-3 md:px-6 py-2 sm:py-2.5 md:py-3 font-medium text-xs sm:text-sm md:text-base transition-all duration-200 border-b-2 whitespace-nowrap flex-shrink-0 ${
+              className={`px-2 sm:px-3 md:px-6 py-2 sm:py-2.5 md:py-3 font-medium text-sm sm:text-sm md:text-base transition-all duration-200 border-b-2 whitespace-nowrap flex-shrink-0 ${
                 activeTab === 'progress'
                   ? isDarkMode
                     ? 'text-blue-400 border-blue-400'
@@ -1039,7 +1048,7 @@ export default function DashboardPage() {
             </button>
             <button
               onClick={() => setActiveTab('toolkit')}
-              className={`px-2 sm:px-3 md:px-6 py-2 sm:py-2.5 md:py-3 font-medium text-xs sm:text-sm md:text-base transition-all duration-200 border-b-2 whitespace-nowrap flex-shrink-0 ${
+              className={`px-2 sm:px-3 md:px-6 py-2 sm:py-2.5 md:py-3 font-medium text-sm sm:text-sm md:text-base transition-all duration-200 border-b-2 whitespace-nowrap flex-shrink-0 ${
                 activeTab === 'toolkit'
                   ? isDarkMode
                     ? 'text-blue-400 border-blue-400'
@@ -1879,9 +1888,11 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Quick Links */}
-            <div>
-              <h3 className={`font-semibold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Quick Links</h3>
+            {/* Quick Links and Connect - Side by side on mobile */}
+            <div className="grid grid-cols-2 md:grid-cols-1 md:contents gap-8 md:gap-0">
+              {/* Quick Links */}
+              <div>
+                <h3 className={`font-semibold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Quick Links</h3>
               <ul className="space-y-2">
                 <li>
                   <button 
@@ -1924,11 +1935,11 @@ export default function DashboardPage() {
                   </button>
                 </li>
               </ul>
-            </div>
+              </div>
 
-            {/* Contact & Developer Info */}
-            <div>
-              <h3 className={`font-semibold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Connect</h3>
+              {/* Contact & Developer Info */}
+              <div>
+                <h3 className={`font-semibold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Connect</h3>
               <ul className="space-y-3">
                 <li>
                   <a 
@@ -1982,6 +1993,7 @@ export default function DashboardPage() {
                     supanroy.com
                   </a>
                 </p>
+              </div>
               </div>
             </div>
           </div>

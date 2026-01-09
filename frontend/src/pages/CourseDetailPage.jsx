@@ -525,48 +525,71 @@ export default function CourseDetailPage() {
             : 'from-gray-100 via-gray-200 to-gray-100 border-gray-300'
         }`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16 gap-2 sm:gap-4">
-            <div className="flex items-center gap-2 sm:gap-3 cursor-pointer min-w-0" onClick={() => navigate('/dashboard')}>
+        <div className="max-w-7xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8">
+          <div className="flex justify-between items-center h-16 gap-1.5 sm:gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 flex-1 min-w-0 overflow-hidden">
+              {/* Mobile menu button */}
+              <button
+                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                className={`lg:hidden p-1.5 sm:p-2 rounded-lg transition-colors flex-shrink-0 ${
+                  isDarkMode ? 'hover:bg-gray-800 text-gray-400' : 'hover:bg-gray-100 text-gray-600'
+                }`}
+                aria-label="Toggle menu"
+              >
+                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
               <button
                 onClick={() => navigate('/dashboard')}
-                className={`p-2 rounded-lg transition-all border flex-shrink-0 ${isDarkMode ? 'text-gray-400 hover:text-white hover:bg-gray-900 border-gray-700 hover:border-sky-500/50' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 border-gray-300 hover:border-sky-500/50'}`}
+                className={`p-1.5 sm:p-2 rounded-lg transition-all border flex-shrink-0 ${isDarkMode ? 'text-gray-400 hover:text-white hover:bg-gray-900 border-gray-700 hover:border-sky-500/50' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 border-gray-300 hover:border-sky-500/50'}`}
                 title="Back to Dashboard"
               >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
-              <img src="/coursebook.svg" alt="Coursebook" className="w-8 h-8 sm:w-10 sm:h-10 hover:opacity-80 transition-opacity flex-shrink-0" />
-              <CoursebookTextLogo className="w-32 h-8 sm:w-40 sm:h-10 md:w-48 md:h-12 hidden sm:block hover:opacity-80 transition-opacity" isDarkMode={isDarkMode} showUnderline={false} />
+              <img src="/coursebook.svg" alt="Coursebook" className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 flex-shrink-0" />
+              <CoursebookTextLogo className="w-36 h-9 sm:w-28 sm:h-7 md:w-40 md:h-10 lg:w-48 lg:h-12 flex-shrink-0" isDarkMode={isDarkMode} showUnderline={false} />
             </div>
 
-            <div className="flex items-center gap-2 sm:gap-4">
+            <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 lg:gap-3 flex-shrink-0">
+              {/* Mobile greeting */}
+              <span className={`text-[10px] sm:text-xs md:text-sm lg:hidden truncate max-w-[80px] sm:max-w-[100px] ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
+                {(() => {
+                  const firstName = user?.first_name || 'User';
+                  return <><span className={`font-semibold ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>Welcome, {firstName}</span></>;
+                })()}
+              </span>
+              <div className="hidden lg:flex flex-col items-end">
+                <span className={`text-sm ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
+                  Welcome, <span className={`font-semibold ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>{user?.first_name && user?.last_name ? `${user.first_name} ${user.last_name}` : user?.first_name || 'Student'}</span>
+                </span>
+              </div>
+              
               <button
                 onClick={() => setShowPreparationMode(true)}
-                className="hidden sm:flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-all bg-sky-500 text-white hover:bg-sky-600"
+                className="hidden sm:flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-bold rounded-lg transition-all bg-sky-500 text-white hover:bg-sky-600 flex-shrink-0"
                 title="Open Preparation Mode"
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C6.5 6.253 2 10.998 2 17s4.5 10.747 10 10.747c5.5 0 10-4.998 10-10.747 0-6.002-4.5-10.747-10-10.747z" />
                 </svg>
-                Preparation Mode
+                <span className="hidden md:inline">Preparation Mode</span>
               </button>
-              
-              <span className="text-xs sm:text-sm text-gray-400 hidden sm:inline">Welcome, <span className="text-sky-300 font-semibold">{user?.first_name && user?.last_name ? `${user.first_name} ${user.last_name}` : user?.first_name || 'Student'}</span></span>
               
               {/* Theme Toggle */}
               <button
                 onClick={toggleTheme}
-                className={`p-2 rounded-lg transition-all border ${isDarkMode ? 'text-gray-400 hover:text-white hover:bg-gray-900 border-gray-700 hover:border-sky-500/50' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 border-gray-300 hover:border-sky-500/50'}`}
+                className={`p-1.5 sm:p-2 md:p-2.5 rounded-lg transition-all border flex-shrink-0 ${isDarkMode ? 'text-gray-400 hover:text-white hover:bg-gray-900 border-gray-700 hover:border-sky-500/50' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 border-gray-300 hover:border-sky-500/50'}`}
                 title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
               >
                 {isDarkMode ? (
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
                   </svg>
                 ) : (
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
                   </svg>
                 )}
@@ -574,35 +597,35 @@ export default function CourseDetailPage() {
 
               <button
                 onClick={() => navigate('/trash')}
-                className={`hidden sm:flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-all ${
+                className={`hidden sm:flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-bold rounded-lg transition-all flex-shrink-0 ${
                   isDarkMode ? 'bg-purple-500/20 text-purple-300 hover:bg-purple-500/30' : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
                 }`}
                 title="Open Trash Bin"
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
-                Trash
+                <span className="hidden md:inline">Trash</span>
               </button>
 
               {/* Profile Dropdown */}
               <div className="relative" ref={profileMenuRef}>
                 <button
                   onClick={() => setShowProfileMenu(!showProfileMenu)}
-                  className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-all border ${isDarkMode ? 'text-gray-300 hover:text-white hover:bg-gray-900 border-gray-700 hover:border-sky-500/50' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100 border-gray-300 hover:border-sky-500/50'}`}
+                  className={`flex items-center gap-1 sm:gap-1.5 md:gap-2 px-1.5 sm:px-2 md:px-2.5 lg:px-3 py-1.5 sm:py-2 rounded-lg transition-all border flex-shrink-0 ${isDarkMode ? 'text-gray-300 hover:text-white hover:bg-gray-900 border-gray-700 hover:border-sky-500/50' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100 border-gray-300 hover:border-sky-500/50'}`}
                 >
                   {user?.profile_photo ? (
                     <img
                       src={user.profile_photo}
                       alt="Profile"
-                      className="w-8 h-8 rounded-full object-cover border border-sky-500/50"
+                      className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 rounded-full object-cover border-2 border-sky-500/50"
                     />
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sky-400 to-cyan-500 flex items-center justify-center text-white font-bold text-sm">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 rounded-full bg-gradient-to-br from-sky-400 to-cyan-500 flex items-center justify-center text-white font-bold text-xs sm:text-sm md:text-base lg:text-lg">
                       {user?.first_name?.[0] || 'S'}
                     </div>
                   )}
-                  <svg className={`w-4 h-4 transition-transform ${showProfileMenu ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className={`w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 transition-transform hidden sm:block ${showProfileMenu ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
@@ -668,16 +691,16 @@ export default function CourseDetailPage() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-2.5 sm:py-3 md:py-4 lg:py-6 xl:py-8">
         {/* Course Header */}
-        <div className={`rounded-2xl p-8 mb-8 border bg-gradient-to-br from-blue-600 to-blue-700 border-blue-500`}>
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className={`text-4xl font-bold mb-2 text-white drop-shadow-md`}>
+        <div className={`rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 lg:p-8 mb-4 sm:mb-6 md:mb-8 border bg-gradient-to-br from-blue-600 to-blue-700 border-blue-500`}>
+          <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4">
+            <div className="flex-1 min-w-0">
+              <h1 className={`text-2xl sm:text-3xl md:text-4xl font-bold mb-1.5 sm:mb-2 text-white drop-shadow-md break-words`}>
                 {course.code}
               </h1>
               {course.title && (
-                <p className={`text-lg text-white/90`}>
+                <p className={`text-sm sm:text-base md:text-lg text-white/90 break-words`}>
                   {course.title}
                 </p>
               )}
@@ -693,8 +716,8 @@ export default function CourseDetailPage() {
         </div>
 
         {/* Upload Button */}
-        <div className="mb-8 flex gap-2">
-          <label className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all cursor-pointer ${
+        <div className="mb-4 sm:mb-6 md:mb-8 flex gap-2">
+          <label className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg font-medium transition-all cursor-pointer text-sm sm:text-base ${
             uploading 
               ? 'opacity-50 cursor-not-allowed' 
               : isDarkMode 
@@ -709,7 +732,7 @@ export default function CourseDetailPage() {
               className="hidden"
               accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.zip,.rar,.png,.jpg,.jpeg,.gif,.bmp,.svg,.webp"
             />
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
             </svg>
             {uploading ? 'Uploading...' : 'Upload Material'}
@@ -717,15 +740,15 @@ export default function CourseDetailPage() {
         </div>
 
         {/* Materials List */}
-        <div className={`rounded-2xl p-8 border ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200 shadow-sm'}`}>
-          <div className="flex items-center justify-between mb-6">
-            <h2 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+        <div className={`rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 lg:p-8 border ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200 shadow-sm'}`}>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mb-4 sm:mb-5 md:mb-6">
+            <h2 className={`text-lg sm:text-xl md:text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
               Course Materials ({materials.length})
             </h2>
             {!isSelectionMode ? (
               <button
                 onClick={() => setIsSelectionMode(true)}
-                className={`px-4 py-2 rounded-lg transition-colors font-medium ${
+                className={`px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg transition-colors font-medium text-sm sm:text-base ${
                   isDarkMode
                     ? 'bg-gray-700 hover:bg-gray-600 text-white'
                     : 'bg-gray-200 hover:bg-gray-300 text-gray-900'
@@ -734,10 +757,10 @@ export default function CourseDetailPage() {
                 Select
               </button>
             ) : (
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <button
                   onClick={handleSelectAll}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
                     isDarkMode
                       ? 'bg-gray-800 hover:bg-gray-700 text-gray-200'
                       : 'bg-gray-100 hover:bg-gray-200 text-gray-800'
@@ -750,7 +773,7 @@ export default function CourseDetailPage() {
                 <button
                   onClick={handleBulkDelete}
                   disabled={selectedMaterials.size === 0}
-                  className={`px-4 py-2 rounded-lg transition-colors font-medium ${
+                  className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-colors font-medium text-xs sm:text-sm ${
                     selectedMaterials.size === 0
                       ? isDarkMode
                         ? 'bg-gray-800 text-gray-500 cursor-not-allowed'
@@ -767,7 +790,7 @@ export default function CourseDetailPage() {
                     setIsSelectionMode(false);
                     setSelectedMaterials(new Set());
                   }}
-                  className={`px-4 py-2 rounded-lg transition-colors font-medium ${
+                  className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-colors font-medium text-xs sm:text-sm ${
                     isDarkMode
                       ? 'bg-gray-700 hover:bg-gray-600 text-white'
                       : 'bg-gray-200 hover:bg-gray-300 text-gray-900'
@@ -780,9 +803,9 @@ export default function CourseDetailPage() {
           </div>
 
           {materials.length === 0 ? (
-            <div className={`text-center py-16 border-2 border-dashed rounded-xl ${isDarkMode ? 'border-gray-700' : 'border-gray-300'}`}>
+            <div className={`text-center py-12 sm:py-16 border-2 border-dashed rounded-xl ${isDarkMode ? 'border-gray-700' : 'border-gray-300'}`}>
               <svg
-                className={`mx-auto h-12 w-12 ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}
+                className={`mx-auto h-10 w-10 sm:h-12 sm:w-12 ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -794,11 +817,11 @@ export default function CourseDetailPage() {
                   d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                 />
               </svg>
-              <h3 className={`mt-4 text-lg font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>No materials yet</h3>
-              <p className={`mt-2 text-sm ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>Upload your first file to get started</p>
+              <h3 className={`mt-3 sm:mt-4 text-base sm:text-lg font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>No materials yet</h3>
+              <p className={`mt-2 text-xs sm:text-sm ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>Upload your first file to get started</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               {materials.map((material) => (
                 <div
                   key={material.id}
@@ -809,7 +832,7 @@ export default function CourseDetailPage() {
                       window.open(`${BACKEND_BASE_URL}/materials/files/${material.id}/`, '_blank');
                     }
                   }}
-                  className={`group flex items-center justify-between p-4 rounded-lg border transition-all ${
+                  className={`group flex items-center justify-between p-3 sm:p-4 rounded-lg border transition-all ${
                     isSelectionMode ? 'cursor-pointer' : 'cursor-pointer'
                   } ${
                     isDarkMode 
@@ -821,47 +844,47 @@ export default function CourseDetailPage() {
                       : 'border-gray-200 hover:border-sky-400 bg-gray-50 hover:bg-gray-100'
                   }`}
                 >
-                  <div className="flex items-center gap-4 flex-1 min-w-0">
+                  <div className="flex items-center gap-2 sm:gap-3 md:gap-4 flex-1 min-w-0">
                     {isSelectionMode && (
                       <input
                         type="checkbox"
                         checked={selectedMaterials.has(material.id)}
                         onChange={() => toggleMaterialSelection(material.id)}
                         onClick={(e) => e.stopPropagation()}
-                        className={`w-5 h-5 rounded cursor-pointer ${
+                        className={`w-4 h-4 sm:w-5 sm:h-5 rounded cursor-pointer flex-shrink-0 ${
                           isDarkMode
                             ? 'accent-sky-500 bg-gray-800 border-gray-600'
                             : 'accent-sky-500 bg-white border-gray-300'
                         }`}
                       />
                     )}
-                    <span className="text-3xl flex-shrink-0">
+                    <span className="text-2xl sm:text-3xl flex-shrink-0">
                       {getFileIcon(material.filename)}
                     </span>
                     <div className="flex-1 min-w-0">
-                      <p className={`font-medium truncate ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>
+                      <p className={`font-medium truncate text-sm sm:text-base ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>
                         {material.filename}
                       </p>
-                      <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                      <p className={`text-[10px] sm:text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
                         {formatBytes(material.size_bytes)} • {new Date(material.uploaded_at).toLocaleDateString()}
                       </p>
                     </div>
                   </div>
                   {!isSelectionMode && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           handleDownload(material);
                         }}
-                        className={`p-2 rounded-lg transition-all ${
+                        className={`p-1.5 sm:p-2 rounded-lg transition-all ${
                           isDarkMode
                             ? 'hover:bg-sky-500/20 text-gray-400 hover:text-sky-400'
                             : 'hover:bg-sky-100 text-gray-500 hover:text-sky-600'
                         }`}
                         title="Download file"
                       >
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                         </svg>
                       </button>
@@ -882,14 +905,14 @@ export default function CourseDetailPage() {
                           }
                           // No clipboard fallback - only use system share dialog
                         }}
-                        className={`p-2 rounded-lg transition-all ${
+                        className={`p-1.5 sm:p-2 rounded-lg transition-all ${
                           isDarkMode
                             ? 'hover:bg-green-500/20 text-gray-400 hover:text-green-400'
                             : 'hover:bg-green-100 text-gray-500 hover:text-green-600'
                         }`}
                         title="Share file"
                       >
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                         </svg>
                       </button>
@@ -898,14 +921,14 @@ export default function CourseDetailPage() {
                           e.stopPropagation();
                           handleDeleteMaterial(material.id);
                         }}
-                        className={`p-2 rounded-lg transition-all ${
+                        className={`p-1.5 sm:p-2 rounded-lg transition-all ${
                           isDarkMode
                             ? 'hover:bg-red-500/20 text-gray-400 hover:text-red-400'
                             : 'hover:bg-red-100 text-gray-500 hover:text-red-600'
                         }`}
                         title="Delete file"
                       >
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
                       </button>
@@ -918,15 +941,15 @@ export default function CourseDetailPage() {
         </div>
 
         {/* Saved Notes */}
-        <div className={`rounded-2xl p-8 border ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200 shadow-sm'}`}>
-          <h2 className={`text-xl font-bold mb-6 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+        <div className={`rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 lg:p-8 border ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200 shadow-sm'}`}>
+          <h2 className={`text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-5 md:mb-6 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
             📝 Saved Notes ({summaries.length})
           </h2>
 
           {summaries.length === 0 ? (
-            <div className={`text-center py-16 border-2 border-dashed rounded-xl ${isDarkMode ? 'border-gray-700' : 'border-gray-300'}`}>
+            <div className={`text-center py-12 sm:py-16 border-2 border-dashed rounded-xl ${isDarkMode ? 'border-gray-700' : 'border-gray-300'}`}>
               <svg
-                className={`mx-auto h-12 w-12 ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}
+                className={`mx-auto h-10 w-10 sm:h-12 sm:w-12 ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -938,8 +961,8 @@ export default function CourseDetailPage() {
                   d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                 />
               </svg>
-              <h3 className={`mt-4 text-lg font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>No notes yet</h3>
-              <p className={`mt-2 text-sm ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>Create detailed study notes from your materials in Preparation Mode</p>
+              <h3 className={`mt-3 sm:mt-4 text-base sm:text-lg font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>No notes yet</h3>
+              <p className={`mt-2 text-xs sm:text-sm ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>Create detailed study notes from your materials in Preparation Mode</p>
             </div>
           ) : (
             <div className="space-y-3">

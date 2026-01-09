@@ -434,7 +434,7 @@ const MyPlans = ({ isDarkMode }) => {
 
   if (categories.length === 0) {
     return (
-      <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
+      <div className="max-w-6xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-2.5 sm:py-3 md:py-4 lg:py-6 xl:py-8">
         <h1 className={`text-xl sm:text-2xl md:text-3xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
           My Plans
         </h1>
