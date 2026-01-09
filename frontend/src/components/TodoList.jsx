@@ -66,7 +66,7 @@ const MyPlans = ({ isDarkMode }) => {
   const [newCategoryName, setNewCategoryName] = useState('');
   const [deleteMode, setDeleteMode] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
-  const [categoriesExpanded, setCategoriesExpanded] = useState(false);
+  const [mobileCategoryIndex, setMobileCategoryIndex] = useState(0);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const notificationIntervalRef = useRef(null);
   const sliderRef = useRef(null);
@@ -109,6 +109,24 @@ const MyPlans = ({ isDarkMode }) => {
       notificationService.clearPeriodicCheck(notificationIntervalRef.current);
     }
   }, [notificationsEnabled, todos]);
+
+  // Reset mobile category index when categories change or window resizes
+  useEffect(() => {
+    const handleResize = () => {
+      if (typeof window !== 'undefined' && window.innerWidth >= 768) {
+        // Reset to 0 when switching to desktop
+        setMobileCategoryIndex(0);
+      } else {
+        // Ensure index doesn't exceed available categories
+        const maxIndex = Math.max(0, categories.length - 2);
+        setMobileCategoryIndex(prev => Math.min(prev, maxIndex));
+      }
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [categories.length]);
 
   const toggleNotifications = async () => {
     if (!isAuthenticated) {
@@ -229,9 +247,9 @@ const MyPlans = ({ isDarkMode }) => {
       setCategories([...categories, newCategory]);
       setNewCategoryName('');
       setShowAddCategory(false);
-      // On mobile, expand categories if the new one is beyond the first 2
-      if (categories.length >= 2) {
-        setCategoriesExpanded(true);
+      // On mobile, scroll to show the newly added category
+      if (categories.length >= 2 && typeof window !== 'undefined' && window.innerWidth < 768) {
+        setMobileCategoryIndex(Math.max(0, categories.length - 1));
       }
       // Scroll to the end to show the newly added category and Add button
       setTimeout(() => {
@@ -313,6 +331,17 @@ const MyPlans = ({ isDarkMode }) => {
           behavior: 'smooth',
         });
       }
+    }
+  };
+
+  const scrollMobileCategories = (direction) => {
+    if (direction === 'right') {
+      // Move to next set of 2 categories, but don't go beyond the end
+      const maxIndex = Math.max(0, categories.length - 2);
+      setMobileCategoryIndex(prev => Math.min(prev + 1, maxIndex));
+    } else {
+      // Move to previous set of 2 categories
+      setMobileCategoryIndex(prev => Math.max(prev - 1, 0));
     }
   };
 
@@ -528,10 +557,22 @@ const MyPlans = ({ isDarkMode }) => {
       {/* Category Slider */}
       <div className="mb-4 sm:mb-5 md:mb-6">
         <div className="flex items-center gap-1.5 sm:gap-2">
-          {/* Left scroll button - hidden on mobile when collapsed */}
+          {/* Left scroll button */}
           <button
-            onClick={() => scrollSlider('left')}
-            className={`hidden md:block p-1.5 sm:p-2 rounded-lg transition-all flex-shrink-0 ${
+            onClick={() => {
+              // On mobile, use custom scroll logic
+              if (typeof window !== 'undefined' && window.innerWidth < 768) {
+                scrollMobileCategories('left');
+              } else {
+                scrollSlider('left');
+              }
+            }}
+            disabled={typeof window !== 'undefined' && window.innerWidth < 768 && mobileCategoryIndex === 0}
+            className={`p-1.5 sm:p-2 rounded-lg transition-all flex-shrink-0 ${
+              typeof window !== 'undefined' && window.innerWidth < 768 && mobileCategoryIndex === 0
+                ? 'opacity-50 cursor-not-allowed'
+                : ''
+            } ${
               isDarkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-gray-200 hover:bg-gray-300'
             }`}
           >
@@ -548,8 +589,12 @@ const MyPlans = ({ isDarkMode }) => {
           >
             <div className="flex gap-1.5 sm:gap-2 md:gap-3 pb-2 pr-2 sm:pr-0">
               {categories.map((category, index) => {
-                // On mobile, show only first 2 categories when collapsed
-                const shouldShow = categoriesExpanded || index < 2;
+                // On mobile, show only 2 categories starting from mobileCategoryIndex
+                const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+                const shouldShow = !isMobile || (index >= mobileCategoryIndex && index < mobileCategoryIndex + 2);
+                
+                if (!shouldShow) return null;
+                
                 const isActive = activeCategory === category.id;
                 const isDefault = isDefaultCategory(category);
                 const baseClasses = isActive
@@ -570,7 +615,7 @@ const MyPlans = ({ isDarkMode }) => {
                 return (
                   <div
                     key={category.id}
-                    className={`${shouldShow ? 'flex' : 'hidden'} md:flex flex-shrink-0 relative group overflow-visible ${baseClasses} px-2.5 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 rounded-lg transition-all duration-200 min-w-max ${deleteMode && !isDefault ? 'border-2 border-red-400/70' : ''}`}
+                    className={`flex flex-shrink-0 relative group overflow-visible ${baseClasses} px-2.5 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 rounded-lg transition-all duration-200 min-w-max ${deleteMode && !isDefault ? 'border-2 border-red-400/70' : ''}`}
                     onClick={handleCategoryClick}
                     style={{ cursor: deleteMode && !isDefault ? 'pointer' : 'default' }}
                   >
@@ -651,35 +696,6 @@ const MyPlans = ({ isDarkMode }) => {
                 );
               })}
 
-              {/* Expand/Collapse button for mobile - show when there are more than 2 categories */}
-              {categories.length > 2 && (
-                <button
-                  onClick={() => setCategoriesExpanded(!categoriesExpanded)}
-                  className={`md:hidden flex-shrink-0 px-2.5 py-2 rounded-lg border-2 transition-all text-xs font-medium ${
-                    categoriesExpanded
-                      ? isDarkMode
-                        ? 'border-blue-500 bg-blue-500/20 text-blue-400'
-                        : 'border-blue-500 bg-blue-50 text-blue-600'
-                      : isDarkMode
-                        ? 'border-gray-700 bg-gray-800 text-gray-400 hover:bg-gray-700'
-                        : 'border-gray-400 bg-gray-200 text-gray-600 hover:bg-gray-300'
-                  }`}
-                  title={categoriesExpanded ? 'Show less' : `Show ${categories.length - 2} more`}
-                >
-                  {categoriesExpanded ? (
-                    <>
-                      <FiChevronLeft className="w-3.5 h-3.5 inline" />
-                      <span className="ml-1">Less</span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="mr-1">+{categories.length - 2}</span>
-                      <FiChevronRight className="w-3.5 h-3.5 inline" />
-                    </>
-                  )}
-                </button>
-              )}
-
               {/* Add More Category Button - Always visible at the end */}
               {!showAddCategory ? (
                 <button
@@ -741,10 +757,22 @@ const MyPlans = ({ isDarkMode }) => {
           </div>
 
           <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
-            {/* Right scroll button - hidden on mobile */}
+            {/* Right scroll button */}
             <button
-              onClick={() => scrollSlider('right')}
-              className={`hidden md:block p-1.5 sm:p-2 rounded-lg transition-all flex-shrink-0 ${
+              onClick={() => {
+                // On mobile, use custom scroll logic
+                if (typeof window !== 'undefined' && window.innerWidth < 768) {
+                  scrollMobileCategories('right');
+                } else {
+                  scrollSlider('right');
+                }
+              }}
+              disabled={typeof window !== 'undefined' && window.innerWidth < 768 && mobileCategoryIndex >= Math.max(0, categories.length - 2)}
+              className={`p-1.5 sm:p-2 rounded-lg transition-all flex-shrink-0 ${
+                typeof window !== 'undefined' && window.innerWidth < 768 && mobileCategoryIndex >= Math.max(0, categories.length - 2)
+                  ? 'opacity-50 cursor-not-allowed'
+                  : ''
+              } ${
                 isDarkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-gray-200 hover:bg-gray-300'
               }`}
             >
