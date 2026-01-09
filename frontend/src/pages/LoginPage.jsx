@@ -66,9 +66,9 @@ export default function LoginPage() {
           <div className={`rounded-xl sm:rounded-2xl p-6 sm:p-8 shadow-lg transition-colors ${isDarkMode ? 'bg-gray-900 border border-gray-800' : 'bg-white'}`}>
             <div className="text-center mb-8">
               <Link to="/dashboard" className="block">
-                <div className="flex justify-center items-center gap-2 sm:gap-3 mb-4 cursor-pointer hover:opacity-80 transition-opacity">
-                  <img src="/coursebook.svg" alt="Coursebook" className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 flex-shrink-0" />
-                  <CoursebookTextLogo className="w-40 h-10 sm:w-48 sm:h-12 md:w-64 md:h-16 flex-shrink-0" isDarkMode={isDarkMode} />
+                <div className="flex justify-center items-center mb-4 relative cursor-pointer hover:opacity-80 transition-opacity">
+                  <img src="/coursebook.svg" alt="Coursebook" className="absolute w-12 h-12" style={{ left: '20px' }} />
+                  <CoursebookTextLogo className="w-64 h-16" isDarkMode={isDarkMode} />
                 </div>
               </Link>
               <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`}>Sign in to your account</p>
