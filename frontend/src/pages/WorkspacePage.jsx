@@ -540,26 +540,31 @@ export default function WorkspacePage({ isDarkMode: propIsDarkMode }) {
             </p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {shareLinks.map(link => (
               <div
                 key={link.id}
-                className={`p-4 rounded-lg border ${isDarkMode ? 'border-gray-700 bg-gray-900/30' : 'border-gray-200 bg-gray-50'}`}
+                className={`p-2.5 sm:p-4 rounded-lg border ${isDarkMode ? 'border-gray-700 bg-gray-900/30' : 'border-gray-200 bg-gray-50'}`}
               >
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1">
-                    <h3 className={`text-sm font-semibold mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                <div className="flex items-start justify-between mb-2 sm:mb-3 gap-2">
+                  <div className="flex-1 min-w-0">
+                    <h3 className={`text-xs sm:text-sm font-semibold mb-1 truncate ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                       {link.title}
                     </h3>
-                    <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                      {link.share_type === 'semester' ? 'Semester' : 'Course'} • 
-                      {link.shared_courses_count} course(s) • {link.shared_materials_count} file(s) • 
-                      <span className={`inline-flex items-center px-2 py-0.5 ml-1 rounded text-xs font-medium ${
+                    <p className={`text-[10px] sm:text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      <span className="hidden sm:inline">
+                        {link.share_type === 'semester' ? 'Semester' : 'Course'} • 
+                        {link.shared_courses_count} course(s) • {link.shared_materials_count} file(s) • 
+                      </span>
+                      <span className="sm:hidden">
+                        {link.share_type === 'semester' ? 'Semester' : 'Course'} • {link.shared_courses_count} • {link.shared_materials_count}
+                      </span>
+                      <span className={`inline-flex items-center px-1.5 sm:px-2 py-0.5 ml-1 rounded text-[10px] sm:text-xs font-medium ${
                         isDarkMode 
                           ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' 
                           : 'bg-blue-100 text-blue-700 border border-blue-200'
                       }`}>
-                        Opened {link.access_count || 0} time{link.access_count !== 1 ? 's' : ''}
+                        {link.access_count || 0}x
                       </span>
                     </p>
                   </div>
@@ -568,63 +573,64 @@ export default function WorkspacePage({ isDarkMode: propIsDarkMode }) {
                       setLinkToDelete(link.id);
                       setShowDeleteConfirm(true);
                     }}
-                    className={`p-2 rounded-lg transition-colors ${isDarkMode ? 'text-red-400 hover:bg-red-500/10' : 'text-red-600 hover:bg-red-50'}`}
+                    className={`p-1.5 sm:p-2 rounded-lg transition-colors flex-shrink-0 ${isDarkMode ? 'text-red-400 hover:bg-red-500/10' : 'text-red-600 hover:bg-red-50'}`}
                     title="Delete share link"
                   >
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
                   </button>
                 </div>
 
                 {/* Share Link */}
-                <div className="mb-3">
-                  <div className="flex items-center gap-2">
-                    <span className={`text-xs font-medium w-20 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                <div className="mb-2 sm:mb-3">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1.5 sm:gap-2">
+                    <span className={`text-[10px] sm:text-xs font-medium sm:w-20 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                       Share Link:
                     </span>
-                    <input
-                      type="text"
-                      value={getShareUrl(link)}
-                      readOnly
-                      className={`flex-1 px-3 py-1.5 text-xs border rounded-lg ${isDarkMode ? 'bg-gray-900/50 border-gray-700 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
-                    />
-                    <button
-                      onClick={() => copyToClipboard(getShareUrl(link), link.id)}
-                      className={`p-1.5 rounded-lg transition-all duration-200 relative ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'} ${
-                        copiedLinkId === link.id 
-                          ? (isDarkMode ? 'bg-green-500/20 text-green-400' : 'bg-green-100 text-green-600')
-                          : (isDarkMode ? 'text-gray-400' : 'text-gray-600')
-                      }`}
-                      title={copiedLinkId === link.id ? "Copied!" : "Copy link"}
-                    >
-                      {copiedLinkId === link.id ? (
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                      ) : (
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                        </svg>
-                      )}
-                    </button>
+                    <div className="flex items-center gap-1.5 sm:gap-2 w-full sm:flex-1 min-w-0">
+                      <input
+                        type="text"
+                        value={getShareUrl(link)}
+                        readOnly
+                        className={`flex-1 px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs border rounded-lg truncate min-w-0 ${isDarkMode ? 'bg-gray-900/50 border-gray-700 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
+                      />
+                      <button
+                        onClick={() => copyToClipboard(getShareUrl(link), link.id)}
+                        className={`p-1 sm:p-1.5 rounded-lg transition-all duration-200 relative flex-shrink-0 ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'} ${
+                          copiedLinkId === link.id 
+                            ? (isDarkMode ? 'bg-green-500/20 text-green-400' : 'bg-green-100 text-green-600')
+                            : (isDarkMode ? 'text-gray-400' : 'text-gray-600')
+                        }`}
+                        title={copiedLinkId === link.id ? "Copied!" : "Copy link"}
+                      >
+                        {copiedLinkId === link.id ? (
+                          <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        ) : (
+                          <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
                 {/* Privacy Control */}
-                <div className="flex items-center gap-2">
-                  <span className={`text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1.5 sm:gap-2">
+                  <span className={`text-[10px] sm:text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                     Privacy:
                   </span>
                   <select
                     value={link.privacy}
                     onChange={(e) => handlePrivacyChange(link.id, e.target.value)}
-                    className={`px-2.5 py-1 text-xs border rounded transition-all focus:outline-none focus:ring-1 focus:ring-sky-500 ${
+                    className={`px-2 sm:px-2.5 py-1 text-[10px] sm:text-xs border rounded transition-all focus:outline-none focus:ring-1 focus:ring-sky-500 w-full sm:w-auto sm:max-w-[200px] ${
                       isDarkMode 
                         ? 'bg-gray-900/70 border-gray-600 text-white hover:border-gray-500 focus:border-sky-500' 
                         : 'bg-white border-gray-400 text-gray-900 hover:border-gray-500 focus:border-sky-500'
                     }`}
-                    style={{ maxWidth: '200px' }}
                   >
                     <option value="public" className={isDarkMode ? 'bg-gray-900' : 'bg-white'}>Public - Anyone with the link</option>
                     <option value="coursebook_users" className={isDarkMode ? 'bg-gray-900' : 'bg-white'}>Coursebook Users Only</option>
