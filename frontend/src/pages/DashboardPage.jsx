@@ -1376,7 +1376,7 @@ export default function DashboardPage() {
                     ) : (
                           <>
                             <h2 
-                              className={`text-base sm:text-lg md:text-xl lg:text-2xl font-bold break-words ${isDarkMode ? 'text-white' : 'text-gray-900'}`}
+                              className={`text-lg sm:text-lg md:text-xl lg:text-2xl font-bold break-words ${isDarkMode ? 'text-white' : 'text-gray-900'}`}
                       >
                         <span className="hidden md:inline">{semesterName}</span>
                         <span className="md:hidden" title={semesterName}>
@@ -1574,12 +1574,12 @@ export default function DashboardPage() {
                     </div>
                   ) : (
                     <>
-                            <h3 className="font-bold text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl mb-1 sm:mb-1.5 md:mb-2 text-white drop-shadow-md break-words" title={course.code}>
+                            <h3 className="font-bold text-base sm:text-base md:text-lg lg:text-xl xl:text-2xl mb-1 sm:mb-1.5 md:mb-2 text-white drop-shadow-md break-words" title={course.code}>
                               <span className="hidden md:inline">{course.code}</span>
                               <span className="md:hidden">{truncateText(course.code, 10)}</span>
                             </h3>
                           {course.title && (
-                              <p className="text-[10px] sm:text-xs md:text-sm lg:text-base line-clamp-2 leading-relaxed text-white/90 break-words" title={course.title}>
+                              <p className="text-xs sm:text-xs md:text-sm lg:text-base line-clamp-2 leading-relaxed text-white/90 break-words" title={course.title}>
                                 <span className="hidden md:inline">{course.title}</span>
                                 <span className="md:hidden">{truncateText(course.title, 50)}</span>
                               </p>
