@@ -1,3 +1,4 @@
+from django.db.models import Max
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -104,7 +105,13 @@ class SemesterCreateView(APIView):
             )
         
         try:
-            semester = Semester.objects.create(user=request.user, name=name)
+            # Get the maximum order value for this user and add 1
+            max_order = Semester.objects.filter(user=request.user).aggregate(
+                max_order=Max('order')
+            )['max_order'] or -1
+            new_order = max_order + 1
+            
+            semester = Semester.objects.create(user=request.user, name=name, order=new_order)
             serializer = SemesterSerializer(semester)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         except Exception as e:
@@ -119,9 +126,52 @@ class SemesterListView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        semesters = Semester.objects.filter(user=request.user).order_by('-created_at')
+        semesters = Semester.objects.filter(user=request.user).order_by('order', '-created_at')
         serializer = SemesterSerializer(semesters, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class SemesterOrderUpdateView(APIView):
+    """Update the order of semesters"""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        semester_orders = request.data.get('semester_orders', [])
+        # Expected format: [{"name": "Semester 1", "order": 0}, {"name": "Semester 2", "order": 1}, ...]
+        
+        if not isinstance(semester_orders, list):
+            return Response(
+                {'detail': 'semester_orders must be a list'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        updated_count = 0
+        for item in semester_orders:
+            semester_name = item.get('name')
+            order = item.get('order')
+            
+            if semester_name is None or order is None:
+                continue
+            
+            try:
+                semester = Semester.objects.get(user=request.user, name=semester_name)
+                semester.order = order
+                semester.save()
+                updated_count += 1
+            except Semester.DoesNotExist:
+                # If semester doesn't exist in database, create it with the order
+                try:
+                    Semester.objects.create(user=request.user, name=semester_name, order=order)
+                    updated_count += 1
+                except Exception:
+                    pass  # Skip if creation fails
+            except Exception:
+                pass  # Skip individual errors
+        
+        return Response({
+            'message': f'Successfully updated order for {updated_count} semester(s)',
+            'updated_count': updated_count
+        }, status=status.HTTP_200_OK)
 
 
 class SemesterDeleteView(APIView):

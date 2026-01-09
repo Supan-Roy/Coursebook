@@ -6,7 +6,7 @@ from .models import Course, Semester
 class SemesterSerializer(serializers.ModelSerializer):
     class Meta:
         model = Semester
-        fields = ["id", "name", "created_at", "updated_at"]
+        fields = ["id", "name", "order", "created_at", "updated_at"]
         read_only_fields = ["id", "created_at", "updated_at"]
 class CourseSerializer(serializers.ModelSerializer):
     class Meta:

@@ -10,12 +10,13 @@ class Semester(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="semesters")
     name = models.CharField(max_length=100)
+    order = models.IntegerField(default=0, help_text="Custom order for sorting semesters")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         unique_together = ("user", "name")
-        ordering = ["-created_at"]
+        ordering = ["order", "-created_at"]
 
     def __str__(self) -> str:
         return f"{self.name} ({self.user.email})"

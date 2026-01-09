@@ -561,13 +561,13 @@ export default function CourseDetailPage() {
 
             <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 lg:gap-3 flex-shrink-0">
               {/* Mobile greeting */}
-              <div className={`lg:hidden flex flex-col items-end text-right max-w-[80px] sm:max-w-[100px] ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
+              <div className={`lg:hidden flex flex-col items-end text-right max-w-[80px] sm:max-w-[100px] leading-tight ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
                 {(() => {
                   const firstName = user?.first_name || 'User';
                   return (
                     <>
-                      <span className={`text-[10px] sm:text-xs md:text-sm ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>Welcome</span>
-                      <span className={`text-[10px] sm:text-xs md:text-sm font-semibold ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>{firstName}</span>
+                      <div className={`text-[10px] sm:text-xs md:text-sm ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>Welcome</div>
+                      <div className={`text-[10px] sm:text-xs md:text-sm font-semibold ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>{firstName}</div>
                     </>
                   );
                 })()}
@@ -835,7 +835,7 @@ export default function CourseDetailPage() {
               <p className={`mt-2 text-xs sm:text-sm ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>Upload your first file to get started</p>
             </div>
           ) : (
-            <div className="space-y-2 sm:space-y-3 max-h-[600px] sm:max-h-[700px] md:max-h-[800px] overflow-y-auto pr-1 sm:pr-2">
+            <div className="space-y-2 sm:space-y-3 max-h-[50vh] sm:max-h-[55vh] md:max-h-[60vh] lg:max-h-[65vh] overflow-y-auto pr-1 sm:pr-2" style={{ scrollbarWidth: 'thin', scrollbarColor: isDarkMode ? '#9ca3af transparent' : '#9ca3af transparent' }}>
               {materials.map((material) => (
                 <div
                   key={material.id}

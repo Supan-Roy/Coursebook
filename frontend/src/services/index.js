@@ -262,6 +262,11 @@ export const semesterService = {
     const response = await api.delete('/courses/semesters/delete/', { data: { name } });
     return response.data;
   },
+
+  async updateOrder(semesterOrders) {
+    const response = await api.post('/courses/semesters/update-order/', { semester_orders: semesterOrders });
+    return response.data;
+  },
 };
 
 export const todoService = {

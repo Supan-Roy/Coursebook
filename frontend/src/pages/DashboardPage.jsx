@@ -241,6 +241,39 @@ export default function DashboardPage() {
       if (semestersResult.status === 'fulfilled') {
         console.log('Semesters loaded:', semestersResult.value);
         setSemesters(semestersResult.value);
+        
+        // Load semester order from backend
+        if (semestersResult.value && semestersResult.value.length > 0) {
+          // Sort semesters by order field, then extract names
+          const sortedSemesters = [...semestersResult.value].sort((a, b) => {
+            if (a.order !== undefined && b.order !== undefined) {
+              return a.order - b.order;
+            }
+            if (a.order !== undefined) return -1;
+            if (b.order !== undefined) return 1;
+            return 0;
+          });
+          const backendOrder = sortedSemesters.map(s => s.name);
+          
+          // Merge with course-based semesters
+          const courseSemesters = new Set();
+          courses.forEach(course => {
+            if (course.semester) courseSemesters.add(course.semester);
+          });
+          
+          // Combine backend order with course semesters not in backend
+          const allSemesters = new Set([...backendOrder, ...courseSemesters]);
+          const finalOrder = [...backendOrder];
+          courseSemesters.forEach(sem => {
+            if (!backendOrder.includes(sem)) {
+              finalOrder.push(sem);
+            }
+          });
+          
+          if (finalOrder.length > 0) {
+            setSemesterOrder(finalOrder);
+          }
+        }
       } else {
         setSemesters([]);
       }
@@ -475,21 +508,42 @@ export default function DashboardPage() {
     }
   };
 
-  const handleMoveSemesterUp = (semesterName) => {
+  const syncSemesterOrderToBackend = async (orderArray) => {
+    if (!isAuthenticated || !orderArray || orderArray.length === 0) return;
+    
+    try {
+      // Convert order array to format expected by backend
+      const semesterOrders = orderArray.map((name, index) => ({
+        name: name,
+        order: index
+      }));
+      
+      await semesterService.updateOrder(semesterOrders);
+    } catch (error) {
+      console.error('Failed to sync semester order to backend:', error);
+      // Don't show error to user, just log it
+    }
+  };
+
+  const handleMoveSemesterUp = async (semesterName) => {
     const currentIndex = semesterOrder.indexOf(semesterName);
     if (currentIndex > 0) {
       const newOrder = [...semesterOrder];
       [newOrder[currentIndex], newOrder[currentIndex - 1]] = [newOrder[currentIndex - 1], newOrder[currentIndex]];
       setSemesterOrder(newOrder);
+      // Sync to backend
+      await syncSemesterOrderToBackend(newOrder);
     }
   };
 
-  const handleMoveSemesterDown = (semesterName) => {
+  const handleMoveSemesterDown = async (semesterName) => {
     const currentIndex = semesterOrder.indexOf(semesterName);
     if (currentIndex < semesterOrder.length - 1) {
       const newOrder = [...semesterOrder];
       [newOrder[currentIndex], newOrder[currentIndex + 1]] = [newOrder[currentIndex + 1], newOrder[currentIndex]];
       setSemesterOrder(newOrder);
+      // Sync to backend
+      await syncSemesterOrderToBackend(newOrder);
     }
   };
 

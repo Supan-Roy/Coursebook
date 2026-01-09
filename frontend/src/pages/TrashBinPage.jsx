@@ -363,7 +363,7 @@ export default function TrashBinPage() {
               )}
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 max-h-[50vh] sm:max-h-[55vh] md:max-h-[60vh] lg:max-h-[65vh] overflow-y-auto pr-1 sm:pr-2" style={{ scrollbarWidth: 'thin', scrollbarColor: isDarkMode ? '#9ca3af transparent' : '#9ca3af transparent' }}>
               {trashedMaterials.map((material) => {
                 const daysRemaining = getDaysRemaining(material.deleted_at);
                 const isExpiringSoon = daysRemaining <= 7;
