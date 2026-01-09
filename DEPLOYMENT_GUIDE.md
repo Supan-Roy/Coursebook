@@ -34,7 +34,9 @@ This guide will help you deploy the Coursebook application to production.
    - Click "New Project"
    - Select "Deploy from GitHub repo"
    - Choose your Coursebook repository
-   - Select the `backend` folder as the root directory
+   - **IMPORTANT**: After creating the project, go to Settings → Root Directory
+   - Set Root Directory to: `backend`
+   - This tells Railway where your Django project is located
 
 3. **Configure Environment Variables**
    - Go to your project → Variables tab
@@ -82,9 +84,17 @@ This guide will help you deploy the Coursebook application to production.
    - Railway will automatically set `DATABASE_URL` environment variable
 
 5. **Deploy**
-   - Railway will automatically detect your `Procfile` and deploy
+   - Railway will automatically detect your project (uses `nixpacks.toml` or `Dockerfile`)
+   - If you see "Error creating build plan", ensure Root Directory is set to `backend`
+   - Railway will use `Procfile` for the start command
    - Wait for deployment to complete
    - Note your Railway domain (e.g., `your-app.up.railway.app`)
+
+**Note**: Railway will automatically:
+   - Detect Python project
+   - Install system dependencies (Ghostscript, Tesseract) via `nixpacks.toml`
+   - Use `Procfile` for the start command
+   - Or use `Dockerfile` if preferred (set in Settings → Deploy → Dockerfile Path)
 
 ### Step 3: Generate Secret Key
 
