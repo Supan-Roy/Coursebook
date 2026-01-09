@@ -24,8 +24,6 @@ import { FaFileImport, FaHashtag, FaObjectGroup, FaCut, FaLock, FaCompress, FaIm
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
 const BACKEND_BASE_URL = API_BASE_URL.replace(/\/api$/, '');
-// Use frontend domain for material files (proxied through Vercel)
-const FRONTEND_BASE_URL = typeof window !== 'undefined' ? window.location.origin : '';
 
 export default function DashboardPage() {
   const [courses, setCourses] = useState([]);
@@ -1700,7 +1698,7 @@ export default function DashboardPage() {
                 .map((material) => (
                   <a
                   key={material.id}
-                    href={`${FRONTEND_BASE_URL}/materials/files/${material.id}/`}
+                    href={`${BACKEND_BASE_URL}/materials/files/${material.id}/`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className={`flex items-center justify-between p-4 border rounded-lg transition-all group cursor-pointer no-underline ${isDarkMode ? 'border-gray-700/30 hover:border-sky-500/30 bg-gray-900/30 hover:bg-gray-900/50' : 'border-gray-200 hover:border-sky-500/30 bg-gray-50 hover:bg-gray-100'}`}

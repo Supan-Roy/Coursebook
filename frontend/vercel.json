@@ -6,14 +6,6 @@
   "framework": "vite",
   "rewrites": [
     {
-      "source": "/materials/files/:path*",
-      "destination": "https://api.coursebook.supanroy.com/materials/files/:path*"
-    },
-    {
-      "source": "/admin/:path*",
-      "destination": "https://api.coursebook.supanroy.com/admin/:path*"
-    },
-    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
