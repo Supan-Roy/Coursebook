@@ -156,7 +156,15 @@ export default function SharedContentPage() {
             {share_link.title || (share_link.share_type === 'semester' ? share_link.semester_name : 'Shared Course')}
           </h1>
           <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-            {share_link.share_type === 'semester' ? 'Semester' : 'Course'} shared by {share_link.user?.email || 'a user'}
+            {share_link.share_type === 'semester' ? 'Semester' : 'Course'} shared by {
+              share_link.user?.first_name && share_link.user?.last_name
+                ? `${share_link.user.first_name} ${share_link.user.last_name}`
+                : share_link.user?.first_name
+                ? share_link.user.first_name
+                : share_link.user?.email
+                ? share_link.user.email.split('@')[0] // Fallback to email username if no name
+                : 'a user'
+            }
           </p>
         </div>
 
