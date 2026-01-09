@@ -665,37 +665,40 @@ const MyPlans = ({ isDarkMode }) => {
                   <span className="sm:hidden">Add</span>
                 </button>
               ) : (
-                <div className={`flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 md:py-3 rounded-lg whitespace-nowrap ${
-                  isDarkMode ? 'bg-gray-800' : 'bg-gray-200'
-                }`}>
-                  <input
-                    type="text"
-                    value={newCategoryName}
-                    onChange={(e) => setNewCategoryName(e.target.value)}
-                    placeholder="Category name..."
-                    autoFocus
-                    className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded border-2 focus:outline-none text-sm sm:text-base ${
-                      isDarkMode
-                        ? 'bg-gray-900 border-gray-700 text-white placeholder-gray-500'
-                        : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
-                    }`}
-                  />
-                  <button
-                    onClick={handleAddCategory}
-                    className="text-green-500 hover:text-green-400"
-                  >
-                    <FiCheck className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowAddCategory(false);
-                      setNewCategoryName('');
-                    }}
-                    className="text-red-500 hover:text-red-400"
-                  >
-                    <FiX className="w-4 h-4" />
-                  </button>
-                </div>
+                <>
+                  {/* Desktop: Inline input */}
+                  <div className={`hidden md:flex flex-shrink-0 items-center gap-1.5 sm:gap-2 px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 md:py-3 rounded-lg whitespace-nowrap ${
+                    isDarkMode ? 'bg-gray-800' : 'bg-gray-200'
+                  }`}>
+                    <input
+                      type="text"
+                      value={newCategoryName}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
+                      placeholder="Category name..."
+                      autoFocus
+                      className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded border-2 focus:outline-none text-sm sm:text-base ${
+                        isDarkMode
+                          ? 'bg-gray-900 border-gray-700 text-white placeholder-gray-500'
+                          : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
+                      }`}
+                    />
+                    <button
+                      onClick={handleAddCategory}
+                      className="text-green-500 hover:text-green-400"
+                    >
+                      <FiCheck className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowAddCategory(false);
+                        setNewCategoryName('');
+                      }}
+                      className="text-red-500 hover:text-red-400"
+                    >
+                      <FiX className="w-4 h-4" />
+                    </button>
+                  </div>
+                </>
               )}
             </div>
           </div>
@@ -735,6 +738,66 @@ const MyPlans = ({ isDarkMode }) => {
           </div>
         </div>
       </div>
+
+      {/* Mobile: Add Category Popup Modal */}
+      {showAddCategory && (
+        <div className="md:hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className={`w-full max-w-sm rounded-xl border-2 p-4 sm:p-6 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+            <div className="mb-4">
+              <h3 className={`text-lg font-semibold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                Add New Category
+              </h3>
+              <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                Enter a name for your new category
+              </p>
+            </div>
+            <div className="space-y-3">
+              <input
+                type="text"
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                placeholder="Category name..."
+                autoFocus
+                className={`w-full px-4 py-3 rounded-lg border-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base ${
+                  isDarkMode
+                    ? 'bg-gray-900 border-gray-700 text-white placeholder-gray-500'
+                    : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
+                }`}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddCategory();
+                  } else if (e.key === 'Escape') {
+                    setShowAddCategory(false);
+                    setNewCategoryName('');
+                  }
+                }}
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={handleAddCategory}
+                  className="flex-1 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 transition-all duration-200"
+                >
+                  Add
+                </button>
+                <button
+                  onClick={() => {
+                    setShowAddCategory(false);
+                    setNewCategoryName('');
+                  }}
+                  className={`px-4 py-2.5 rounded-lg font-medium transition-all duration-200 ${
+                    isDarkMode
+                      ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Add Todo Button */}
       {!isAddingTodo && (
