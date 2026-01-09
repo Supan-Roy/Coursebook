@@ -4,11 +4,13 @@ FROM python:3.11-slim
 # Install system dependencies
 # - Ghostscript: for PDF compression
 # - Tesseract OCR: for text extraction from images
+# - LibreOffice: for document conversion (Word, Excel, PowerPoint to PDF)
 # - Pillow dependencies: for image processing (JPEG, PNG, etc.)
 RUN apt-get update && apt-get install -y \
     ghostscript \
     tesseract-ocr \
     libtesseract-dev \
+    libreoffice \
     libjpeg-dev \
     zlib1g-dev \
     libpng-dev \

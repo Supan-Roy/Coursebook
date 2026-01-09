@@ -1,5 +1,5 @@
 [phases.setup]
-nixPkgs = ["python311", "ghostscript", "tesseract"]
+nixPkgs = ["python311", "ghostscript", "tesseract", "libreoffice"]
 
 [phases.install]
 cmds = [
