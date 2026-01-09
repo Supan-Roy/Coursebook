@@ -1887,7 +1887,10 @@ export default function DashboardPage() {
                       </svg>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-medium truncate ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{material.filename}</p>
+                      <p className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`} title={material.filename}>
+                        <span className="hidden sm:inline truncate">{material.filename}</span>
+                        <span className="sm:hidden">{truncateFileName(material.filename, 25)}</span>
+                      </p>
                       <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>{formatBytes(material.size_bytes)}</p>
                     </div>
                   </div>
