@@ -66,6 +66,7 @@ const MyPlans = ({ isDarkMode }) => {
   const [newCategoryName, setNewCategoryName] = useState('');
   const [deleteMode, setDeleteMode] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
+  const [categoriesExpanded, setCategoriesExpanded] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const notificationIntervalRef = useRef(null);
   const sliderRef = useRef(null);
@@ -228,6 +229,10 @@ const MyPlans = ({ isDarkMode }) => {
       setCategories([...categories, newCategory]);
       setNewCategoryName('');
       setShowAddCategory(false);
+      // On mobile, expand categories if the new one is beyond the first 2
+      if (categories.length >= 2) {
+        setCategoriesExpanded(true);
+      }
       // Scroll to the end to show the newly added category and Add button
       setTimeout(() => {
         if (sliderRef.current) {
@@ -523,9 +528,10 @@ const MyPlans = ({ isDarkMode }) => {
       {/* Category Slider */}
       <div className="mb-4 sm:mb-5 md:mb-6">
         <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* Left scroll button - hidden on mobile when collapsed */}
           <button
             onClick={() => scrollSlider('left')}
-            className={`p-1.5 sm:p-2 rounded-lg transition-all flex-shrink-0 ${
+            className={`hidden md:block p-1.5 sm:p-2 rounded-lg transition-all flex-shrink-0 ${
               isDarkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-gray-200 hover:bg-gray-300'
             }`}
           >
@@ -541,7 +547,9 @@ const MyPlans = ({ isDarkMode }) => {
             }}
           >
             <div className="flex gap-1.5 sm:gap-2 md:gap-3 pb-2 pr-2 sm:pr-0">
-              {categories.map(category => {
+              {categories.map((category, index) => {
+                // On mobile, show only first 2 categories when collapsed
+                const shouldShow = categoriesExpanded || index < 2;
                 const isActive = activeCategory === category.id;
                 const isDefault = isDefaultCategory(category);
                 const baseClasses = isActive
@@ -562,7 +570,7 @@ const MyPlans = ({ isDarkMode }) => {
                 return (
                   <div
                     key={category.id}
-                    className={`flex-shrink-0 relative group overflow-visible ${baseClasses} px-2.5 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 rounded-lg transition-all duration-200 min-w-max ${deleteMode && !isDefault ? 'border-2 border-red-400/70' : ''}`}
+                    className={`${shouldShow ? 'flex' : 'hidden'} md:flex flex-shrink-0 relative group overflow-visible ${baseClasses} px-2.5 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 rounded-lg transition-all duration-200 min-w-max ${deleteMode && !isDefault ? 'border-2 border-red-400/70' : ''}`}
                     onClick={handleCategoryClick}
                     style={{ cursor: deleteMode && !isDefault ? 'pointer' : 'default' }}
                   >
@@ -643,6 +651,35 @@ const MyPlans = ({ isDarkMode }) => {
                 );
               })}
 
+              {/* Expand/Collapse button for mobile - show when there are more than 2 categories */}
+              {categories.length > 2 && (
+                <button
+                  onClick={() => setCategoriesExpanded(!categoriesExpanded)}
+                  className={`md:hidden flex-shrink-0 px-2.5 py-2 rounded-lg border-2 transition-all text-xs font-medium ${
+                    categoriesExpanded
+                      ? isDarkMode
+                        ? 'border-blue-500 bg-blue-500/20 text-blue-400'
+                        : 'border-blue-500 bg-blue-50 text-blue-600'
+                      : isDarkMode
+                        ? 'border-gray-700 bg-gray-800 text-gray-400 hover:bg-gray-700'
+                        : 'border-gray-400 bg-gray-200 text-gray-600 hover:bg-gray-300'
+                  }`}
+                  title={categoriesExpanded ? 'Show less' : `Show ${categories.length - 2} more`}
+                >
+                  {categoriesExpanded ? (
+                    <>
+                      <FiChevronLeft className="w-3.5 h-3.5 inline" />
+                      <span className="ml-1">Less</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="mr-1">+{categories.length - 2}</span>
+                      <FiChevronRight className="w-3.5 h-3.5 inline" />
+                    </>
+                  )}
+                </button>
+              )}
+
               {/* Add More Category Button - Always visible at the end */}
               {!showAddCategory ? (
                 <button
@@ -704,15 +741,17 @@ const MyPlans = ({ isDarkMode }) => {
           </div>
 
           <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+            {/* Right scroll button - hidden on mobile */}
             <button
               onClick={() => scrollSlider('right')}
-              className={`p-1.5 sm:p-2 rounded-lg transition-all flex-shrink-0 ${
+              className={`hidden md:block p-1.5 sm:p-2 rounded-lg transition-all flex-shrink-0 ${
                 isDarkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-gray-200 hover:bg-gray-300'
               }`}
             >
               <FiChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
 
+            {/* Delete button - smaller on mobile */}
             <button
               onClick={() => {
                 if (!isAuthenticated) {
@@ -721,7 +760,7 @@ const MyPlans = ({ isDarkMode }) => {
                 }
                 setDeleteMode((prev) => !prev);
               }}
-              className={`px-2 sm:px-2.5 md:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all border whitespace-nowrap ${
+              className={`px-1.5 sm:px-2.5 md:px-3 py-1.5 sm:py-2 rounded-lg text-[10px] sm:text-xs md:text-sm font-medium transition-all border whitespace-nowrap ${
                 deleteMode
                   ? isDarkMode
                     ? 'bg-red-900/40 border-red-500 text-red-300'
@@ -733,7 +772,7 @@ const MyPlans = ({ isDarkMode }) => {
               title="Delete a category"
             >
               <span className="hidden sm:inline">{deleteMode ? 'Select category to delete' : 'Delete category'}</span>
-              <span className="sm:hidden">{deleteMode ? 'Select' : 'Delete'}</span>
+              <span className="sm:hidden">{deleteMode ? 'Select' : 'Del'}</span>
             </button>
           </div>
         </div>
