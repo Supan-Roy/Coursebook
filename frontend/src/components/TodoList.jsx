@@ -666,8 +666,14 @@ const MyPlans = ({ isDarkMode }) => {
                               ? 'text-white'
                               : (isDarkMode ? 'text-gray-300' : 'text-gray-700')
                           }`}
+                          title={category.name}
                         >
-                          {category.name}
+                          <span className="hidden md:inline">{category.name}</span>
+                          <span className="md:hidden">
+                            {category.name.length > 8 
+                              ? category.name.substring(0, 5) + '...' 
+                              : category.name}
+                          </span>
                         </button>
 
                         {/* Tiny rename control on hover (non-default only) */}
