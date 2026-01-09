@@ -19,7 +19,7 @@ class TodoSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Todo
-        fields = ["id", "title", "description", "is_completed", "priority", "due_date", "due_time", "category_id", "created_at", "updated_at"]
+        fields = ["id", "title", "description", "is_completed", "priority", "due_date", "due_time", "repeat", "category_id", "created_at", "updated_at"]
         read_only_fields = ["id", "created_at", "updated_at"]
 
     def to_representation(self, instance):

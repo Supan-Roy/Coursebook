@@ -21,7 +21,7 @@ export default function DeleteAccountPage() {
   const { isDarkMode } = useTheme();
   const navigate = useNavigate();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-    return localStorage.getItem('sidebarCollapsed') === 'true';
+    return window.innerWidth < 1024 ? true : localStorage.getItem('sidebarCollapsed') === 'true';
   });
   const [selectedReasons, setSelectedReasons] = useState({});
   const [otherReason, setOtherReason] = useState('');
@@ -71,26 +71,26 @@ export default function DeleteAccountPage() {
           isDarkMode={isDarkMode}
         />
         <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-16 ml-0' : 'lg:ml-64 ml-0'}`}>
-          <div className="p-4 sm:p-6 lg:p-8">
-            <div className={`max-w-2xl mx-auto rounded-2xl p-6 sm:p-8 border ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200 shadow-sm'}`}>
-              <div className="text-center space-y-4">
-                <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto">
-                  <svg className="w-8 h-8 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="p-2 sm:p-3 md:p-4 lg:p-6 xl:p-8">
+            <div className={`max-w-2xl mx-auto rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 lg:p-8 border ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200 shadow-sm'}`}>
+              <div className="text-center space-y-3 sm:space-y-4">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto">
+                  <svg className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
                 </div>
-                <h2 className="text-2xl font-bold">Check Your Email</h2>
-                <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                <h2 className="text-xl sm:text-2xl font-bold">Check Your Email</h2>
+                <p className={`text-sm sm:text-base ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                   We've sent a confirmation email to <strong>{user?.email}</strong>. 
                   Please click the link in the email to confirm account deletion.
                 </p>
-                <p className={`text-sm ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                <p className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
                   The confirmation link will expire in 24 hours.
                 </p>
-                <div className="pt-4">
+                <div className="pt-3 sm:pt-4">
                   <button
                     onClick={() => navigate('/settings')}
-                    className={`px-6 py-2 rounded-lg font-semibold ${
+                    className={`px-4 sm:px-6 py-2 rounded-lg text-sm sm:text-base font-semibold ${
                       isDarkMode 
                         ? 'bg-gray-800 text-gray-200 hover:bg-gray-700' 
                         : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
@@ -115,26 +115,26 @@ export default function DeleteAccountPage() {
         activeKey="settings"
         isDarkMode={isDarkMode}
       />
-      <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
-        <div className="p-4 sm:p-6 lg:p-8">
-          <div className={`max-w-2xl mx-auto rounded-2xl p-6 sm:p-8 border ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200 shadow-sm'}`}>
-            <div className="mb-6">
-              <h1 className="text-xl sm:text-2xl font-bold mb-2">Delete Account</h1>
-              <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+      <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-16 ml-0' : 'lg:ml-64 ml-0'}`}>
+        <div className="p-2 sm:p-3 md:p-4 lg:p-6 xl:p-8">
+          <div className={`max-w-2xl mx-auto rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 lg:p-8 border ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200 shadow-sm'}`}>
+            <div className="mb-4 sm:mb-5 md:mb-6">
+              <h1 className="text-lg sm:text-xl md:text-2xl font-bold mb-1.5 sm:mb-2">Delete Account</h1>
+              <p className={`text-sm sm:text-base ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                 We're sorry to see you go. Your feedback helps us improve.
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5 md:space-y-6">
               <div>
-                <label className={`block text-sm font-semibold mb-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                <label className={`block text-xs sm:text-sm font-semibold mb-2 sm:mb-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                   Why are you deleting your account? (Optional)
                 </label>
-                <div className="space-y-2">
+                <div className="space-y-1.5 sm:space-y-2">
                   {DELETION_REASONS.map((reason) => (
                     <label
                       key={reason}
-                      className={`flex items-center p-3 rounded-lg cursor-pointer transition-colors ${
+                      className={`flex items-center p-2.5 sm:p-3 rounded-lg cursor-pointer transition-colors ${
                         isDarkMode
                           ? selectedReasons[reason]
                             ? 'bg-red-500/20 border-2 border-red-500/50'
@@ -148,9 +148,9 @@ export default function DeleteAccountPage() {
                         type="checkbox"
                         checked={selectedReasons[reason] || false}
                         onChange={() => handleReasonChange(reason)}
-                        className="mr-3 w-4 h-4 text-red-600 focus:ring-red-500 rounded"
+                        className="mr-2 sm:mr-3 w-4 h-4 text-red-600 focus:ring-red-500 rounded flex-shrink-0"
                       />
-                      <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                      <span className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                         {reason}
                       </span>
                     </label>
@@ -158,13 +158,13 @@ export default function DeleteAccountPage() {
                 </div>
                 
                 {selectedReasons['Other'] && (
-                  <div className="mt-3">
+                  <div className="mt-2 sm:mt-3">
                     <textarea
                       value={otherReason}
                       onChange={(e) => setOtherReason(e.target.value)}
                       placeholder="Please tell us more..."
                       rows={3}
-                      className={`w-full px-4 py-2 rounded-lg border ${
+                      className={`w-full px-3 sm:px-4 py-2 rounded-lg border text-xs sm:text-sm ${
                         isDarkMode
                           ? 'bg-gray-950 border-gray-700 text-white placeholder-gray-500'
                           : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
@@ -174,11 +174,11 @@ export default function DeleteAccountPage() {
                 )}
               </div>
 
-              <div className={`rounded-lg p-4 border-2 ${isDarkMode ? 'bg-red-500/10 border-red-500/50' : 'bg-red-50 border-red-200'}`}>
-                <p className={`text-sm font-semibold mb-2 ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>
+              <div className={`rounded-lg p-3 sm:p-4 border-2 ${isDarkMode ? 'bg-red-500/10 border-red-500/50' : 'bg-red-50 border-red-200'}`}>
+                <p className={`text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2 ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>
                   ⚠️ Warning: This action cannot be undone
                 </p>
-                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                <p className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                   Once you confirm deletion via email, all your data including courses, materials, todos, and settings will be permanently deleted. This action is irreversible.
                 </p>
               </div>
@@ -189,11 +189,11 @@ export default function DeleteAccountPage() {
                 </div>
               )}
 
-              <div className="flex justify-end gap-3 pt-4">
+              <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-3 sm:pt-4">
                 <button
                   type="button"
                   onClick={() => navigate('/settings')}
-                  className={`px-6 py-2 rounded-lg font-semibold ${
+                  className={`px-4 sm:px-6 py-2 rounded-lg text-sm sm:text-base font-semibold ${
                     isDarkMode
                       ? 'bg-gray-800 text-gray-200 hover:bg-gray-700'
                       : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
@@ -205,7 +205,7 @@ export default function DeleteAccountPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="px-6 py-2 rounded-lg bg-red-600 text-white font-semibold hover:bg-red-500 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="px-4 sm:px-6 py-2 rounded-lg text-sm sm:text-base bg-red-600 text-white font-semibold hover:bg-red-500 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {loading ? 'Sending...' : 'Request Account Deletion'}
                 </button>

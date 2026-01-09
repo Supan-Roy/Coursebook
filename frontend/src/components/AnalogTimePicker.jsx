@@ -10,23 +10,51 @@ const AnalogTimePicker = ({ value, onChange, isDarkMode, inline = false }) => {
   const [selectingHours, setSelectingHours] = useState(true);
   const dropdownRef = useRef(null);
   const clockRef = useRef(null);
+  const isTypingRef = useRef(false);
 
   useEffect(() => {
+    // Don't sync from value prop if user is actively typing
+    if (isTypingRef.current) return;
+    
     if (value) {
       const [h, m] = value.split(':');
-      const hour24 = parseInt(h);
+      const hour24 = parseInt(h, 10);
       const hour12 = hour24 % 12 || 12;
-      setHours(String(hour12).padStart(2, '0'));
-      setMinutes(m);
-      setPeriod(hour24 >= 12 ? 'PM' : 'AM');
+      // Only update if the value actually changed to avoid interfering with user typing
+      const newHours = String(hour12).padStart(2, '0');
+      const newMinutes = m;
+      // Check if the current state matches what we would set
+      // If user typed "4" and we're about to set "04", don't do it while they're typing
+      const currentHourInt = parseInt(hours, 10) || 0;
+      const currentMinuteInt = parseInt(minutes, 10) || 0;
+      const newHourInt = parseInt(newHours, 10);
+      const newMinuteInt = parseInt(newMinutes, 10);
+      
+      // Only update if values are actually different (not just formatting)
+      if (currentHourInt !== newHourInt || currentMinuteInt !== newMinuteInt) {
+        setHours(newHours);
+        setMinutes(newMinutes);
+        setPeriod(hour24 >= 12 ? 'PM' : 'AM');
+      }
+    } else if (value === '' && (hours !== '' || minutes !== '')) {
+      // Only clear if value is explicitly empty and we have values
+      setHours('12');
+      setMinutes('00');
+      setPeriod('AM');
     }
-  }, [value]);
+  }, [value, hours, minutes]);
 
   // Emit time changes automatically in inline mode after user interaction
+  // Use a ref to track if we're currently typing to avoid interrupting user input
   useEffect(() => {
     if (!inline || !hasInteracted) return;
+    
+    // Don't emit if user is still typing (single digit that could become two digits)
+    // Only emit when we have complete valid values or when both are empty
     if (hours === '' || minutes === '') {
-      onChange('');
+      if (hours === '' && minutes === '') {
+        onChange('');
+      }
       return;
     }
 
@@ -34,11 +62,21 @@ const AnalogTimePicker = ({ value, onChange, isDarkMode, inline = false }) => {
     const minuteInt = parseInt(minutes, 10);
     if (Number.isNaN(hourInt) || Number.isNaN(minuteInt)) return;
 
+    // Only emit if we have valid complete values
+    // This allows typing "4" then "5" to make "45" without interruption
     const hour24 = period === 'PM'
       ? (hourInt === 12 ? 12 : hourInt + 12)
       : (hourInt === 12 ? 0 : hourInt);
     const timeString = `${String(hour24).padStart(2, '0')}:${String(minuteInt).padStart(2, '0')}`;
-    onChange(timeString);
+    
+    // Use a small delay to allow user to continue typing
+    const timeoutId = setTimeout(() => {
+      if (!isTypingRef.current) {
+        onChange(timeString);
+      }
+    }, 300);
+    
+    return () => clearTimeout(timeoutId);
   }, [hours, minutes, period, inline, hasInteracted, onChange]);
 
   useEffect(() => {
@@ -58,6 +96,9 @@ const AnalogTimePicker = ({ value, onChange, isDarkMode, inline = false }) => {
 
   const handleClockClick = (e) => {
     if (!clockRef.current) return;
+    
+    // Don't process if clicking on a number directly (they have their own handlers)
+    if (e.target.closest('.clock-number')) return;
 
     const rect = clockRef.current.getBoundingClientRect();
     const centerX = rect.width / 2;
@@ -69,16 +110,79 @@ const AnalogTimePicker = ({ value, onChange, isDarkMode, inline = false }) => {
     const degrees = (angle * 180) / Math.PI + 90;
     const normalizedDegrees = degrees < 0 ? degrees + 360 : degrees;
 
+    isTypingRef.current = false; // Clear typing flag immediately
+    
     if (selectingHours) {
       const hour = Math.round(normalizedDegrees / 30) % 12 || 12;
-      setHours(String(hour).padStart(2, '0'));
+      const hourStr = String(hour);
+      setHours(hourStr);
       setSelectingHours(false);
+      setHasInteracted(true);
+      
+      // Immediately emit time change
+      setTimeout(() => {
+        const hourInt = parseInt(hourStr, 10);
+        const minuteInt = parseInt(minutes, 10) || 0;
+        const hour24 = period === 'PM'
+          ? (hourInt === 12 ? 12 : hourInt + 12)
+          : (hourInt === 12 ? 0 : hourInt);
+        const timeString = `${String(hour24).padStart(2, '0')}:${String(minuteInt).padStart(2, '0')}`;
+        onChange(timeString);
+      }, 0);
     } else {
       const minute = Math.round(normalizedDegrees / 6) % 60;
-      setMinutes(String(minute).padStart(2, '0'));
+      const minuteStr = String(minute).padStart(2, '0');
+      setMinutes(minuteStr);
+      setHasInteracted(true);
+      
+      // Immediately emit time change
+      setTimeout(() => {
+        const hourInt = parseInt(hours, 10) || 12;
+        const minuteInt = parseInt(minuteStr, 10);
+        const hour24 = period === 'PM'
+          ? (hourInt === 12 ? 12 : hourInt + 12)
+          : (hourInt === 12 ? 0 : hourInt);
+        const timeString = `${String(hour24).padStart(2, '0')}:${minuteStr}`;
+        onChange(timeString);
+      }, 0);
     }
+  };
 
-    setHasInteracted(true);
+  const handleNumberClick = (num) => {
+    isTypingRef.current = false; // Clear typing flag immediately
+    
+    if (selectingHours) {
+      const hourStr = String(num);
+      setHours(hourStr);
+      setSelectingHours(false);
+      setHasInteracted(true);
+      
+      // Immediately emit time change
+      setTimeout(() => {
+        const hourInt = parseInt(hourStr, 10);
+        const minuteInt = parseInt(minutes, 10) || 0;
+        const hour24 = period === 'PM'
+          ? (hourInt === 12 ? 12 : hourInt + 12)
+          : (hourInt === 12 ? 0 : hourInt);
+        const timeString = `${String(hour24).padStart(2, '0')}:${String(minuteInt).padStart(2, '0')}`;
+        onChange(timeString);
+      }, 0);
+    } else {
+      const minuteStr = String(num).padStart(2, '0');
+      setMinutes(minuteStr);
+      setHasInteracted(true);
+      
+      // Immediately emit time change
+      setTimeout(() => {
+        const hourInt = parseInt(hours, 10) || 12;
+        const minuteInt = parseInt(minuteStr, 10);
+        const hour24 = period === 'PM'
+          ? (hourInt === 12 ? 12 : hourInt + 12)
+          : (hourInt === 12 ? 0 : hourInt);
+        const timeString = `${String(hour24).padStart(2, '0')}:${minuteStr}`;
+        onChange(timeString);
+      }, 0);
+    }
   };
 
   const handleDone = () => {
@@ -103,24 +207,46 @@ const AnalogTimePicker = ({ value, onChange, isDarkMode, inline = false }) => {
   };
 
   const handleManualHourChange = (e) => {
+    isTypingRef.current = true;
     let val = e.target.value.replace(/\D/g, '');
     if (val === '') {
       setHours('');
+      setHasInteracted(false);
+      setTimeout(() => { isTypingRef.current = false; }, 100);
       return;
     }
-    // Allow typing without immediate padding
+    // Allow typing without immediate padding - keep raw input until blur
     if (val.length <= 2) {
-      let num = parseInt(val);
+      let num = parseInt(val, 10);
+      if (isNaN(num)) {
+        setHours('');
+        setTimeout(() => { isTypingRef.current = false; }, 100);
+        return;
+      }
       if (num > 12) {
         setHours('12');
       } else if (num < 1 && val.length === 2) {
         setHours('01');
       } else {
+        // Keep the raw input value (e.g., "1" or "12") without padding
         setHours(val);
+      }
+    } else {
+      // If more than 2 digits, take only first 2
+      const twoDigits = val.slice(0, 2);
+      const num = parseInt(twoDigits, 10);
+      if (num > 12) {
+        setHours('12');
+      } else if (num < 1) {
+        setHours('01');
+      } else {
+        setHours(twoDigits);
       }
     }
 
     setHasInteracted(true);
+    // Reset typing flag after a short delay to allow continued typing
+    setTimeout(() => { isTypingRef.current = false; }, 500);
   };
 
   const handleHourBlur = () => {
@@ -137,22 +263,43 @@ const AnalogTimePicker = ({ value, onChange, isDarkMode, inline = false }) => {
   };
 
   const handleManualMinuteChange = (e) => {
+    isTypingRef.current = true;
     let val = e.target.value.replace(/\D/g, '');
     if (val === '') {
       setMinutes('');
+      setHasInteracted(false);
+      setTimeout(() => { isTypingRef.current = false; }, 100);
       return;
     }
-    // Allow typing without immediate padding
+    // Allow typing without immediate padding - keep raw input until blur
     if (val.length <= 2) {
-      let num = parseInt(val);
+      let num = parseInt(val, 10);
+      if (isNaN(num)) {
+        setMinutes('');
+        setTimeout(() => { isTypingRef.current = false; }, 100);
+        return;
+      }
+      if (num > 59) {
+        // If user types something like "60", cap at 59
+        setMinutes('59');
+      } else {
+        // Keep the raw input value (e.g., "4" or "45") without padding
+        setMinutes(val);
+      }
+    } else {
+      // If more than 2 digits, take only first 2
+      const twoDigits = val.slice(0, 2);
+      const num = parseInt(twoDigits, 10);
       if (num > 59) {
         setMinutes('59');
       } else {
-        setMinutes(val);
+        setMinutes(twoDigits);
       }
     }
 
     setHasInteracted(true);
+    // Reset typing flag after a short delay to allow continued typing
+    setTimeout(() => { isTypingRef.current = false; }, 500);
   };
 
   const handleMinuteBlur = () => {
@@ -198,7 +345,11 @@ const AnalogTimePicker = ({ value, onChange, isDarkMode, inline = false }) => {
       return (
         <div
           key={num}
-          className={`absolute w-6 h-6 flex items-center justify-center rounded-full text-xs font-medium transition-all ${
+          onClick={(e) => {
+            e.stopPropagation();
+            handleNumberClick(num);
+          }}
+          className={`clock-number absolute w-6 h-6 flex items-center justify-center rounded-full text-xs font-medium transition-all cursor-pointer z-10 ${
             isSelected
               ? 'bg-blue-600 text-white scale-110'
               : isDarkMode
@@ -274,11 +425,11 @@ const AnalogTimePicker = ({ value, onChange, isDarkMode, inline = false }) => {
         }`}></div>
         
         {/* Center dot */}
-        <div className="absolute top-1/2 left-1/2 w-3 h-3 bg-blue-600 rounded-full transform -translate-x-1/2 -translate-y-1/2 z-10"></div>
+        <div className="absolute top-1/2 left-1/2 w-3 h-3 bg-blue-600 rounded-full transform -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-none"></div>
         
         {/* Clock hand */}
         <div
-          className="absolute top-1/2 left-1/2 w-16 h-0.5 bg-blue-600 rounded-full"
+          className="absolute top-1/2 left-1/2 w-16 h-0.5 bg-blue-600 rounded-full pointer-events-none"
           style={getClockHandStyle()}
         ></div>
         

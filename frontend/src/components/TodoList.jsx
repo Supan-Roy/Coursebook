@@ -48,6 +48,7 @@ const MyPlans = ({ isDarkMode }) => {
     priority: 'medium',
     due_date: getTodayDate(),
     due_time: '',
+    repeat: '',
   });
   const [isAddingTodo, setIsAddingTodo] = useState(false);
   const [editingTodo, setEditingTodo] = useState(null);
@@ -59,6 +60,7 @@ const MyPlans = ({ isDarkMode }) => {
     priority: 'medium',
     due_date: getTodayDate(),
     due_time: '',
+    repeat: '',
   });
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -149,15 +151,26 @@ const MyPlans = ({ isDarkMode }) => {
         todoService.getAll(),
       ]);
       
-      setCategories(categoriesData);
-      setTodos(todosData);
-      
-      // Set active category to first one if exists
-      if (categoriesData.length > 0) {
-        setActiveCategory(categoriesData[0].id);
+      // If authenticated user has no categories, use default categories
+      if (categoriesData.length === 0) {
+        setCategories(defaultCategories);
+        setActiveCategory(1); // Academic
+      } else {
+        setCategories(categoriesData);
+        // Set active category to first one if exists
+        if (categoriesData.length > 0) {
+          setActiveCategory(categoriesData[0].id);
+        }
       }
+      
+      setTodos(todosData);
     } catch (error) {
       console.error('Failed to load data:', error);
+      // On error, show default categories for authenticated users too
+      if (isAuthenticated) {
+        setCategories(defaultCategories);
+        setActiveCategory(1); // Academic
+      }
     } finally {
       setLoading(false);
     }
@@ -190,11 +203,12 @@ const MyPlans = ({ isDarkMode }) => {
         priority: newTodo.priority,
         due_date: newTodo.due_date || null,
         due_time: newTodo.due_time || null,
+        repeat: newTodo.repeat || null,
         category_id: activeCategory,
       };
       const created = await todoService.create(todoData);
       setTodos([created, ...todos]);
-      setNewTodo({ title: '', description: '', priority: 'medium', due_date: getTodayDate(), due_time: '' });
+      setNewTodo({ title: '', description: '', priority: 'medium', due_date: getTodayDate(), due_time: '', repeat: '' });
       setIsAddingTodo(false);
     } catch (error) {
       console.error('Failed to create todo:', error);
@@ -214,6 +228,15 @@ const MyPlans = ({ isDarkMode }) => {
       setCategories([...categories, newCategory]);
       setNewCategoryName('');
       setShowAddCategory(false);
+      // Scroll to the end to show the newly added category and Add button
+      setTimeout(() => {
+        if (sliderRef.current) {
+          sliderRef.current.scrollTo({
+            left: sliderRef.current.scrollWidth,
+            behavior: 'smooth',
+          });
+        }
+      }, 100);
     } catch (error) {
       console.error('Failed to create category:', error);
     }
@@ -273,10 +296,18 @@ const MyPlans = ({ isDarkMode }) => {
 
   const scrollSlider = (direction) => {
     if (sliderRef.current) {
-      sliderRef.current.scrollBy({
-        left: direction === 'left' ? -200 : 200,
-        behavior: 'smooth',
-      });
+      if (direction === 'right') {
+        // Scroll to the end to show the "Add Category" button
+        sliderRef.current.scrollTo({
+          left: sliderRef.current.scrollWidth,
+          behavior: 'smooth',
+        });
+      } else {
+        sliderRef.current.scrollBy({
+          left: -200,
+          behavior: 'smooth',
+        });
+      }
     }
   };
 
@@ -323,6 +354,7 @@ const MyPlans = ({ isDarkMode }) => {
       priority: todo.priority,
       due_date: todo.due_date || '',
       due_time: todo.due_time || '',
+      repeat: todo.repeat || '',
     });
   };
 
@@ -353,6 +385,7 @@ const MyPlans = ({ isDarkMode }) => {
         priority: editFormData.priority,
         due_date: editFormData.due_date || null,
         due_time: editFormData.due_time || null,
+        repeat: editFormData.repeat || null,
       });
       setTodos(todos.map((t) => (t.id === editingTodo ? updated : t)));
       cancelEdit();
@@ -432,7 +465,9 @@ const MyPlans = ({ isDarkMode }) => {
     );
   }
 
-  if (categories.length === 0) {
+  // Show empty state only for unauthenticated users or if there's an error
+  // For authenticated users with no categories, show the category slider with Add button
+  if (categories.length === 0 && !isAuthenticated) {
     return (
       <div className="max-w-7xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-2.5 sm:py-3 md:py-4 lg:py-6 xl:py-8">
         <h1 className={`text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold mb-3 sm:mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -445,7 +480,10 @@ const MyPlans = ({ isDarkMode }) => {
     );
   }
 
-  const categoryTodos = todos.filter(t => t.category_id === activeCategory);
+  // Handle case when authenticated user has no categories yet
+  const categoryTodos = (categories.length === 0 || !activeCategory) 
+    ? [] 
+    : todos.filter(t => t.category_id === activeCategory);
   const activeTodos = categoryTodos.filter((t) => !t.is_completed);
   const completedTodos = categoryTodos.filter((t) => t.is_completed);
 
@@ -458,7 +496,10 @@ const MyPlans = ({ isDarkMode }) => {
             My Plans
           </h1>
           <p className={`text-xs sm:text-sm md:text-base ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-            {activeTodos.length} active, {completedTodos.length} completed in {categories.find(c => c.id === activeCategory)?.name}
+            {categories.length === 0 
+              ? 'Create your first category to get started!'
+              : `${activeTodos.length} active, ${completedTodos.length} completed${activeCategory ? ` in ${categories.find(c => c.id === activeCategory)?.name || ''}` : ''}`
+            }
           </p>
         </div>
         <button
@@ -493,10 +534,13 @@ const MyPlans = ({ isDarkMode }) => {
 
           <div
             ref={sliderRef}
-            className="flex-1 overflow-x-auto scrollbar-hide scroll-smooth -mx-2 sm:-mx-3 md:mx-0 px-2 sm:px-3 md:px-0"
-            style={{ scrollBehavior: 'smooth' }}
+            className="flex-1 overflow-x-auto scrollbar-hide scroll-smooth min-w-0"
+            style={{ 
+              scrollBehavior: 'smooth', 
+              WebkitOverflowScrolling: 'touch',
+            }}
           >
-            <div className="flex gap-1.5 sm:gap-2 md:gap-3 pb-2">
+            <div className="flex gap-1.5 sm:gap-2 md:gap-3 pb-2 pr-2 sm:pr-0">
               {categories.map(category => {
                 const isActive = activeCategory === category.id;
                 const isDefault = isDefaultCategory(category);
@@ -599,7 +643,7 @@ const MyPlans = ({ isDarkMode }) => {
                 );
               })}
 
-              {/* Add More Category Button */}
+              {/* Add More Category Button - Always visible at the end */}
               {!showAddCategory ? (
                 <button
                   onClick={() => {
@@ -609,18 +653,19 @@ const MyPlans = ({ isDarkMode }) => {
                     }
                     setShowAddCategory(true);
                   }}
-                  className={`flex-shrink-0 px-2.5 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 rounded-lg border-2 border-dashed transition-all text-xs sm:text-sm md:text-base ${
+                  className={`flex-shrink-0 px-2 sm:px-2.5 md:px-3 lg:px-4 py-2 sm:py-2.5 md:py-3 rounded-lg border-2 border-dashed transition-all text-xs sm:text-sm md:text-base ${
                     isDarkMode
                       ? 'border-gray-700 hover:border-gray-600 text-gray-400 hover:text-gray-300 hover:bg-gray-800'
                       : 'border-gray-400 hover:border-gray-500 text-gray-600 hover:text-gray-700 hover:bg-gray-100'
-                  } min-w-max font-medium flex items-center gap-1.5 sm:gap-2`}
+                  } font-medium flex items-center gap-1 sm:gap-1.5 whitespace-nowrap`}
+                  style={{ minWidth: 'fit-content' }}
                 >
-                  <FiPlus className="w-4 h-4" />
+                  <FiPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
                   <span className="hidden sm:inline">Add Category</span>
                   <span className="sm:hidden">Add</span>
                 </button>
               ) : (
-                <div className={`flex-shrink-0 flex items-center gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg min-w-max ${
+                <div className={`flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 md:py-3 rounded-lg whitespace-nowrap ${
                   isDarkMode ? 'bg-gray-800' : 'bg-gray-200'
                 }`}>
                   <input
@@ -763,10 +808,11 @@ const MyPlans = ({ isDarkMode }) => {
                 <option value="high">High Priority</option>
               </select>
               <DateTimePicker
-                value={{ date: newTodo.due_date, time: newTodo.due_time }}
-                onChange={({ date, time }) => setNewTodo({ ...newTodo, due_date: date, due_time: time })}
+                value={{ date: newTodo.due_date, time: newTodo.due_time, repeat: newTodo.repeat }}
+                onChange={({ date, time, repeat }) => setNewTodo({ ...newTodo, due_date: date, due_time: time, repeat: repeat || '' })}
                 isDarkMode={isDarkMode}
                 includeTime={true}
+                onRepeatChange={(repeat) => setNewTodo({ ...newTodo, repeat: repeat || '' })}
               />
             </div>
           </div>
@@ -805,14 +851,18 @@ const MyPlans = ({ isDarkMode }) => {
             {activeTodos.map((todo, index) => (
               <div
                 key={todo.id}
-                className={`p-2.5 sm:p-3 md:p-4 rounded-xl border-2 transition-all duration-200 hover:shadow-lg animate-fadeIn ${
+                className={`${editingTodo === todo.id ? 'p-3 sm:p-4 md:p-5 mb-2' : 'p-2.5 sm:p-3 md:p-4'} rounded-xl border-2 transition-all duration-200 hover:shadow-lg animate-fadeIn relative ${
                   isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
-                }`}
-                style={{ animationDelay: `${index * 50}ms` }}
+                } ${editingTodo === todo.id ? 'shadow-xl' : ''}`}
+                style={{ 
+                  animationDelay: `${index * 50}ms`, 
+                  zIndex: editingTodo === todo.id ? 50 : 1,
+                  marginBottom: editingTodo === todo.id ? '0.75rem' : '0'
+                }}
               >
                 {editingTodo === todo.id ? (
                   /* Edit Form */
-                  <form onSubmit={handleUpdateTodo} className="space-y-3">
+                  <form onSubmit={handleUpdateTodo} className="space-y-3 relative z-10">
                     <input
                       type="text"
                       value={editFormData.title}
@@ -851,23 +901,24 @@ const MyPlans = ({ isDarkMode }) => {
                         <option value="high">High Priority</option>
                       </select>
                       <DateTimePicker
-                        value={{ date: editFormData.due_date, time: editFormData.due_time }}
-                        onChange={({ date, time }) => setEditFormData({ ...editFormData, due_date: date, due_time: time })}
+                        value={{ date: editFormData.due_date, time: editFormData.due_time, repeat: editFormData.repeat }}
+                        onChange={({ date, time, repeat }) => setEditFormData({ ...editFormData, due_date: date, due_time: time, repeat: repeat || '' })}
                         isDarkMode={isDarkMode}
                         includeTime={true}
+                        onRepeatChange={(repeat) => setEditFormData({ ...editFormData, repeat: repeat || '' })}
                       />
                     </div>
-                    <div className="flex gap-2">
+                    <div className={`flex gap-2 sm:gap-3 mt-4 pt-3 border-t-2 ${isDarkMode ? 'border-gray-700' : 'border-gray-300'}`}>
                       <button
                         type="submit"
-                        className="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-all text-sm sm:text-base"
+                        className="flex-1 px-3 sm:px-4 py-2.5 sm:py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-all text-sm sm:text-base relative z-20"
                       >
                         Save
                       </button>
                       <button
                         type="button"
                         onClick={cancelEdit}
-                        className={`px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg font-medium transition-all text-sm sm:text-base ${
+                        className={`px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg font-medium transition-all text-sm sm:text-base relative z-20 ${
                           isDarkMode
                             ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                             : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -944,6 +995,15 @@ const MyPlans = ({ isDarkMode }) => {
                             {todo.due_time && ` at ${formatTime(todo.due_time)}`}
                           </span>
                         </div>
+                        {todo.repeat && (
+                          <span className={`px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full border text-[10px] sm:text-[11px] font-semibold ${
+                            isDarkMode
+                              ? 'bg-blue-500/10 border-blue-500/50 text-blue-400'
+                              : 'bg-blue-100 border-blue-300 text-blue-700'
+                          }`}>
+                            {todo.repeat.charAt(0).toUpperCase() + todo.repeat.slice(1)}
+                          </span>
+                        )}
                         {isOverdue(todo) && (
                           <span className="px-2 py-1 rounded-full border text-[11px] font-semibold bg-red-500/10 border-red-500/50 text-red-400">
                             Overdue

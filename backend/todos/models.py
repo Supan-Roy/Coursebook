@@ -33,6 +33,19 @@ class Todo(models.Model):
     )
     due_date = models.DateField(null=True, blank=True)
     due_time = models.TimeField(null=True, blank=True)
+    repeat = models.CharField(
+        max_length=20,
+        choices=[
+            ("daily", "Daily"),
+            ("weekly", "Weekly"),
+            ("monthly", "Monthly"),
+            ("yearly", "Yearly"),
+            ("weekdays", "Weekdays"),
+            ("weekends", "Weekends")
+        ],
+        null=True,
+        blank=True
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
