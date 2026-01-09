@@ -42,10 +42,21 @@ This guide will help you deploy the Coursebook application to production.
    - Go to your project → Variables tab
    - Add the following variables:
 
+   **First, generate your SECRET_KEY:**
+   - Open terminal/command prompt
+   - Run: `python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"`
+   - Copy the output (long string)
+   
+   **Find your Railway domain:**
+   - After deploying, Railway will show your domain in the service dashboard
+   - It looks like: `your-app-name.up.railway.app`
+   - Or check the "Settings" tab → "Domains" section
+   - You can also see it in the deployment logs
+
    ```env
    # Django Settings
    DJANGO_DEBUG=False
-   DJANGO_SECRET_KEY=<generate-a-secure-random-key>
+   DJANGO_SECRET_KEY=<paste-the-generated-key-here>
    DJANGO_ALLOWED_HOSTS=<your-railway-domain>.up.railway.app
 
    # Database (Railway provides this automatically)

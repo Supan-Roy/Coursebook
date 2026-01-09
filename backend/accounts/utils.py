@@ -1,10 +1,13 @@
-import secrets
 import random
+import secrets
 import threading
-from django.core.mail import send_mail
-from django.conf import settings
-from django.utils import timezone
 from datetime import timedelta
+
+from django.conf import settings
+from django.core.mail import send_mail
+from django.utils import timezone
+
+from .email_service import send_email_via_resend
 
 
 def generate_verification_token():
@@ -41,13 +44,16 @@ The Coursebook Team
 """
     
     try:
-        send_mail(
-            subject,
-            message,
-            settings.DEFAULT_FROM_EMAIL,
-            [user.email],
-            fail_silently=False,
-        )
+        if getattr(settings, "USE_RESEND_API", False):
+            send_email_via_resend(subject, message, [user.email])
+        else:
+            send_mail(
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                [user.email],
+                fail_silently=False,
+            )
     except Exception as e:
         # Log error but don't raise - email sending failure shouldn't break registration
         print(f"Failed to send verification email to {user.email}: {e}")
@@ -98,13 +104,16 @@ The Coursebook Team
 """
     
     try:
-        send_mail(
-            subject,
-            message,
-            settings.DEFAULT_FROM_EMAIL,
-            [user.email],
-            fail_silently=False,
-        )
+        if getattr(settings, "USE_RESEND_API", False):
+            send_email_via_resend(subject, message, [user.email])
+        else:
+            send_mail(
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                [user.email],
+                fail_silently=False,
+            )
     except Exception as e:
         print(f"Failed to send password reset email to {user.email}: {e}")
 
@@ -145,13 +154,16 @@ Best regards,
 The Coursebook Team
 """
     
-    send_mail(
-        subject,
-        message,
-        settings.DEFAULT_FROM_EMAIL,
-        [user.email],
-        fail_silently=False,
-    )
+    if getattr(settings, "USE_RESEND_API", False):
+        send_email_via_resend(subject, message, [user.email])
+    else:
+        send_mail(
+            subject,
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            [user.email],
+            fail_silently=False,
+        )
 
 
 def generate_account_deletion_token():
@@ -188,13 +200,16 @@ The Coursebook Team
 """
     
     try:
-        send_mail(
-            subject,
-            message,
-            settings.DEFAULT_FROM_EMAIL,
-            [user.email],
-            fail_silently=False,
-        )
+        if getattr(settings, "USE_RESEND_API", False):
+            send_email_via_resend(subject, message, [user.email])
+        else:
+            send_mail(
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                [user.email],
+                fail_silently=False,
+            )
     except Exception as e:
         print(f"Failed to send account deletion email to {user.email}: {e}")
 

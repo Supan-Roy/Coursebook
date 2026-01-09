@@ -198,6 +198,10 @@ if FRONTEND_URL and FRONTEND_URL not in CORS_ALLOWED_ORIGINS:
 if DEBUG and EMAIL_BACKEND == 'django.core.mail.backends.smtp.EmailBackend' and not EMAIL_HOST_USER:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
+# Resend HTTP API configuration (for Railway/production)
+RESEND_API_KEY = env('RESEND_API_KEY', default=os.environ.get('EMAIL_HOST_PASSWORD', ''))
+USE_RESEND_API = env.bool('USE_RESEND_API', default=False)
+
 # Google OAuth Configuration
 GOOGLE_OAUTH2_CLIENT_ID = env('GOOGLE_OAUTH2_CLIENT_ID', default='')
 GOOGLE_OAUTH2_CLIENT_SECRET = env('GOOGLE_OAUTH2_CLIENT_SECRET', default='')
