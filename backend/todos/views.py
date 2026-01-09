@@ -51,7 +51,7 @@ class MyPlansCreateView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Todo.objects.filter(user=self.request.user)
+        return Todo.objects.filter(user=self.request.user).select_related('category')
 
     def perform_create(self, serializer):
         logger.info(f"Creating todo with data: {serializer.validated_data}")
@@ -64,7 +64,7 @@ class TodoDetailView(generics.RetrieveUpdateDestroyAPIView):
     lookup_field = "id"
 
     def get_queryset(self):
-        return Todo.objects.filter(user=self.request.user)
+        return Todo.objects.filter(user=self.request.user).select_related('category')
 
     def perform_update(self, serializer):
         logger.info(f"Updating todo with data: {serializer.validated_data}")
