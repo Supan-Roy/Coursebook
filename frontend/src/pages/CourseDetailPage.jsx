@@ -549,18 +549,29 @@ export default function CourseDetailPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
-              <img src="/coursebook.svg" alt="Coursebook" className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 flex-shrink-0" />
-              <CoursebookTextLogo className="w-36 h-9 sm:w-28 sm:h-7 md:w-40 md:h-10 lg:w-48 lg:h-12 flex-shrink-0" isDarkMode={isDarkMode} showUnderline={false} />
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="flex items-center gap-1.5 sm:gap-2 md:gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+                title="Go to Dashboard"
+              >
+                <img src="/coursebook.svg" alt="Coursebook" className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 flex-shrink-0" />
+                <CoursebookTextLogo className="w-36 h-9 sm:w-28 sm:h-7 md:w-40 md:h-10 lg:w-48 lg:h-12 flex-shrink-0" isDarkMode={isDarkMode} showUnderline={false} />
+              </button>
             </div>
 
             <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 lg:gap-3 flex-shrink-0">
               {/* Mobile greeting */}
-              <span className={`text-[10px] sm:text-xs md:text-sm lg:hidden truncate max-w-[80px] sm:max-w-[100px] ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
+              <div className={`lg:hidden flex flex-col items-end text-right max-w-[80px] sm:max-w-[100px] ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
                 {(() => {
                   const firstName = user?.first_name || 'User';
-                  return <><span className={`font-semibold ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>Welcome, {firstName}</span></>;
+                  return (
+                    <>
+                      <span className={`text-[10px] sm:text-xs md:text-sm ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>Welcome</span>
+                      <span className={`text-[10px] sm:text-xs md:text-sm font-semibold ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>{firstName}</span>
+                    </>
+                  );
                 })()}
-              </span>
+              </div>
               <div className="hidden lg:flex flex-col items-end">
                 <span className={`text-sm ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
                   Welcome, <span className={`font-semibold ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>{user?.first_name && user?.last_name ? `${user.first_name} ${user.last_name}` : user?.first_name || 'Student'}</span>
@@ -738,8 +749,7 @@ export default function CourseDetailPage() {
             <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C6.5 6.253 2 10.998 2 17s4.5 10.747 10 10.747c5.5 0 10-4.998 10-10.747 0-6.002-4.5-10.747-10-10.747z" />
             </svg>
-            <span className="hidden sm:inline">Preparation</span>
-            <span className="sm:hidden">Prep</span>
+            <span>Preparation</span>
           </button>
         </div>
 
@@ -825,7 +835,7 @@ export default function CourseDetailPage() {
               <p className={`mt-2 text-xs sm:text-sm ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>Upload your first file to get started</p>
             </div>
           ) : (
-            <div className="space-y-2 sm:space-y-3">
+            <div className="space-y-2 sm:space-y-3 max-h-[600px] sm:max-h-[700px] md:max-h-[800px] overflow-y-auto pr-1 sm:pr-2">
               {materials.map((material) => (
                 <div
                   key={material.id}
