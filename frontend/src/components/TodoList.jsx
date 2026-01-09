@@ -751,7 +751,7 @@ const MyPlans = ({ isDarkMode }) => {
               <FiChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
 
-            {/* Delete button - smaller on mobile */}
+            {/* Delete button */}
             <button
               onClick={() => {
                 if (!isAuthenticated) {
@@ -760,7 +760,7 @@ const MyPlans = ({ isDarkMode }) => {
                 }
                 setDeleteMode((prev) => !prev);
               }}
-              className={`px-1.5 sm:px-2.5 md:px-3 py-1.5 sm:py-2 rounded-lg text-[10px] sm:text-xs md:text-sm font-medium transition-all border whitespace-nowrap ${
+              className={`px-2 sm:px-2.5 md:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all border whitespace-nowrap ${
                 deleteMode
                   ? isDarkMode
                     ? 'bg-red-900/40 border-red-500 text-red-300'
@@ -772,7 +772,7 @@ const MyPlans = ({ isDarkMode }) => {
               title="Delete a category"
             >
               <span className="hidden sm:inline">{deleteMode ? 'Select category to delete' : 'Delete category'}</span>
-              <span className="sm:hidden">{deleteMode ? 'Select' : 'Del'}</span>
+              <span className="sm:hidden">{deleteMode ? 'Select' : 'Delete'}</span>
             </button>
           </div>
         </div>
