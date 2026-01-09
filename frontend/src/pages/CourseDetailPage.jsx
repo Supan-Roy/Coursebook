@@ -566,18 +566,6 @@ export default function CourseDetailPage() {
                   Welcome, <span className={`font-semibold ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>{user?.first_name && user?.last_name ? `${user.first_name} ${user.last_name}` : user?.first_name || 'Student'}</span>
                 </span>
               </div>
-              
-              <button
-                onClick={() => setShowPreparationMode(true)}
-                className="hidden sm:flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-bold rounded-lg transition-all bg-sky-500 text-white hover:bg-sky-600 flex-shrink-0"
-                title="Open Preparation Mode"
-              >
-                <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C6.5 6.253 2 10.998 2 17s4.5 10.747 10 10.747c5.5 0 10-4.998 10-10.747 0-6.002-4.5-10.747-10-10.747z" />
-                </svg>
-                <span className="hidden md:inline">Preparation Mode</span>
-              </button>
-              
               {/* Theme Toggle */}
               <button
                 onClick={toggleTheme}
@@ -691,7 +679,7 @@ export default function CourseDetailPage() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-2.5 sm:py-3 md:py-4 lg:py-6 xl:py-8">
+      <main className={`max-w-7xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-2.5 sm:py-3 md:py-4 lg:py-6 xl:py-8 ${uploadQueue.length > 0 ? 'pb-32 sm:pb-24' : ''} transition-all`}>
         {/* Course Header */}
         <div className={`rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 lg:p-8 mb-4 sm:mb-6 md:mb-8 border bg-gradient-to-br from-blue-600 to-blue-700 border-blue-500`}>
           <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4">
@@ -715,8 +703,8 @@ export default function CourseDetailPage() {
           </div>
         </div>
 
-        {/* Upload Button */}
-        <div className="mb-4 sm:mb-6 md:mb-8 flex gap-2">
+        {/* Upload Button and Preparation Mode */}
+        <div className="mb-4 sm:mb-6 md:mb-8 flex flex-wrap gap-2">
           <label className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg font-medium transition-all cursor-pointer text-sm sm:text-base ${
             uploading 
               ? 'opacity-50 cursor-not-allowed' 
@@ -737,6 +725,22 @@ export default function CourseDetailPage() {
             </svg>
             {uploading ? 'Uploading...' : 'Upload Material'}
           </label>
+          
+          <button
+            onClick={() => setShowPreparationMode(true)}
+            className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg font-medium transition-all text-sm sm:text-base ${
+              isDarkMode
+                ? 'bg-purple-500/20 text-purple-400 hover:bg-purple-500/30'
+                : 'bg-purple-500 text-white hover:bg-purple-600'
+            }`}
+            title="Open Preparation Mode"
+          >
+            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C6.5 6.253 2 10.998 2 17s4.5 10.747 10 10.747c5.5 0 10-4.998 10-10.747 0-6.002-4.5-10.747-10-10.747z" />
+            </svg>
+            <span className="hidden sm:inline">Preparation</span>
+            <span className="sm:hidden">Prep</span>
+          </button>
         </div>
 
         {/* Materials List */}

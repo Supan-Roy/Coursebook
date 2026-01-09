@@ -59,40 +59,40 @@ export default function PreparationMode({ materials, courseCode, courseId, onClo
         />
       )}
       <div className={`fixed inset-0 z-50 overflow-y-auto ${isDarkMode ? 'bg-black/50' : 'bg-white/50'}`} style={{ backdropFilter: 'blur(4px)' }}>
-        <div className="min-h-screen p-4 flex items-center justify-center">
-          <div className={`w-full max-w-2xl rounded-2xl border shadow-2xl transition-colors ${isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-white border-gray-200'}`}>
-          {/* Header */}
-          <div className={`border-b p-6 flex justify-between items-center ${isDarkMode ? 'border-gray-800 bg-gray-900/50' : 'border-gray-200 bg-gray-50'}`}>
-            <div>
-              <h1 className={`text-2xl font-bold mb-2 flex items-center gap-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+        <div className="min-h-screen p-2 sm:p-4 flex items-center justify-center">
+          <div className={`w-full max-w-2xl rounded-lg sm:rounded-xl md:rounded-2xl border shadow-2xl transition-colors ${isDarkMode ? 'bg-gray-950 border-gray-800' : 'bg-white border-gray-200'}`}>
+            {/* Header */}
+            <div className={`border-b p-3 sm:p-4 md:p-6 flex justify-between items-center gap-2 ${isDarkMode ? 'border-gray-800 bg-gray-900/50' : 'border-gray-200 bg-gray-50'}`}>
+              <div className="flex-1 min-w-0">
+                <h1 className={`text-lg sm:text-xl md:text-2xl font-bold mb-1 sm:mb-2 flex items-center gap-1.5 sm:gap-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  <svg className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                  </svg>
+                  <span className="truncate">Preparation Mode</span>
+                </h1>
+                <p className={`text-xs sm:text-sm truncate ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  {courseCode} - Quick study & quiz
+                </p>
+              </div>
+              <button
+                onClick={onClose}
+                className={`p-1.5 sm:p-2 rounded-lg transition-colors flex-shrink-0 ${
+                  isDarkMode
+                    ? 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                }`}
+              >
+                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
-                Preparation Mode
-              </h1>
-              <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                {courseCode} - Quick study & quiz
-              </p>
+              </button>
             </div>
-            <button
-              onClick={onClose}
-              className={`p-2 rounded-lg transition-colors ${
-                isDarkMode
-                  ? 'text-gray-400 hover:bg-gray-800 hover:text-white'
-                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-              }`}
-            >
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
 
-          {/* Content */}
-          <div className="p-6">
+            {/* Content */}
+            <div className="p-3 sm:p-4 md:p-6">
             {/* Step 1: Select Files */}
             {step === 1 && !selectedAction && (
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 <FileSelector
                   materials={materials}
                   selectedFiles={selectedFiles}
@@ -102,10 +102,10 @@ export default function PreparationMode({ materials, courseCode, courseId, onClo
                 {selectedFiles.length > 0 && (
                   <button
                     onClick={() => setStep(2)}
-                    className="w-full px-6 py-3 bg-sky-500 text-white font-bold rounded-lg hover:bg-sky-600 transition-colors flex items-center justify-center gap-2"
+                    className="w-full px-4 sm:px-6 py-2.5 sm:py-3 bg-sky-500 text-white font-bold rounded-lg hover:bg-sky-600 transition-colors flex items-center justify-center gap-2 text-sm sm:text-base"
                   >
                     Continue
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                     </svg>
                   </button>
@@ -115,28 +115,28 @@ export default function PreparationMode({ materials, courseCode, courseId, onClo
 
             {/* Step 2: Choose Action */}
             {step === 2 && !selectedAction && (
-              <div className="space-y-4">
-                <div className={`p-3 rounded-lg ${isDarkMode ? 'bg-sky-500/10 border border-sky-500/30' : 'bg-sky-50 border border-sky-200'}`}>
-                  <p className={`text-sm ${isDarkMode ? 'text-sky-300' : 'text-sky-700'}`}>
-                    📌 <strong>Selected:</strong> {selectedFiles.map(f => f.filename).join(', ')}
+              <div className="space-y-3 sm:space-y-4">
+                <div className={`p-2.5 sm:p-3 rounded-lg ${isDarkMode ? 'bg-sky-500/10 border border-sky-500/30' : 'bg-sky-50 border border-sky-200'}`}>
+                  <p className={`text-xs sm:text-sm break-words ${isDarkMode ? 'text-sky-300' : 'text-sky-700'}`}>
+                    📌 <strong>Selected:</strong> <span className="break-all">{selectedFiles.map(f => f.filename).join(', ')}</span>
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                   {/* Notes Option */}
                   <button
                     onClick={() => handleActionSelect('summary')}
-                    className={`p-6 rounded-xl border-2 transition-all text-left ${
+                    className={`p-4 sm:p-5 md:p-6 rounded-lg sm:rounded-xl border-2 transition-all text-left ${
                       isDarkMode
                         ? 'border-gray-700 bg-gray-800/50 hover:border-sky-500 hover:bg-sky-500/10'
                         : 'border-gray-300 bg-gray-50 hover:border-sky-400 hover:bg-sky-50'
                     }`}
                   >
-                    <div className="text-3xl mb-3">📝</div>
-                    <h3 className={`font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                    <div className="text-2xl sm:text-3xl mb-2 sm:mb-3">📝</div>
+                    <h3 className={`font-bold mb-1.5 sm:mb-2 text-sm sm:text-base ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                       Study Notes
                     </h3>
-                    <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                    <p className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                       Generate detailed study notes based on the selected materials
                     </p>
                   </button>
@@ -144,17 +144,17 @@ export default function PreparationMode({ materials, courseCode, courseId, onClo
                   {/* Quiz Option */}
                   <button
                     onClick={() => handleActionSelect('quiz')}
-                    className={`p-6 rounded-xl border-2 transition-all text-left ${
+                    className={`p-4 sm:p-5 md:p-6 rounded-lg sm:rounded-xl border-2 transition-all text-left ${
                       isDarkMode
                         ? 'border-gray-700 bg-gray-800/50 hover:border-sky-500 hover:bg-sky-500/10'
                         : 'border-gray-300 bg-gray-50 hover:border-sky-400 hover:bg-sky-50'
                     }`}
                   >
-                    <div className="text-3xl mb-3">✏️</div>
-                    <h3 className={`font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                    <div className="text-2xl sm:text-3xl mb-2 sm:mb-3">✏️</div>
+                    <h3 className={`font-bold mb-1.5 sm:mb-2 text-sm sm:text-base ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                       Quiz
                     </h3>
-                    <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                    <p className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                       Generate and take a quiz based on the selected materials
                     </p>
                   </button>
@@ -165,7 +165,7 @@ export default function PreparationMode({ materials, courseCode, courseId, onClo
                     setStep(1);
                     setSelectedFiles([]);
                   }}
-                  className={`w-full px-6 py-2 rounded-lg font-medium transition-colors ${
+                  className={`w-full px-4 sm:px-6 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base ${
                     isDarkMode
                       ? 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -178,7 +178,7 @@ export default function PreparationMode({ materials, courseCode, courseId, onClo
 
             {/* Summary Panel */}
             {selectedAction === 'summary' && (
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 <SummaryPanel
                   courseId={courseId}
                   selectedFiles={selectedFiles}
@@ -187,7 +187,7 @@ export default function PreparationMode({ materials, courseCode, courseId, onClo
                 />
                 <button
                   onClick={() => setSelectedAction(null)}
-                  className={`w-full px-6 py-2 rounded-lg font-medium transition-colors ${
+                  className={`w-full px-4 sm:px-6 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base ${
                     isDarkMode
                       ? 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -200,11 +200,11 @@ export default function PreparationMode({ materials, courseCode, courseId, onClo
 
             {/* Quiz Generator */}
             {selectedAction === 'quiz' && (
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 <QuizGenerator courseId={courseId} selectedFiles={selectedFiles} />
                 <button
                   onClick={() => setSelectedAction(null)}
-                  className={`w-full px-6 py-2 rounded-lg font-medium transition-colors ${
+                  className={`w-full px-4 sm:px-6 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base ${
                     isDarkMode
                       ? 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'

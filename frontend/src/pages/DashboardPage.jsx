@@ -90,8 +90,6 @@ export default function DashboardPage() {
     // Load semester order from localStorage
     return JSON.parse(localStorage.getItem('semesterOrder') || '[]');
   });
-  const DOB_STORAGE_KEY = 'user_dob';
-  const [dob, setDob] = useState('');
   const { isDarkMode, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
@@ -183,10 +181,6 @@ export default function DashboardPage() {
     loadData();
   }, [isAuthenticated]); // Reload data when authentication changes
 
-  useEffect(() => {
-    const savedDob = typeof window !== 'undefined' ? localStorage.getItem(DOB_STORAGE_KEY) : '';
-    setDob(savedDob || '');
-  }, []);
 
   const loadData = async () => {
     // For unauthenticated users, just set loading to false
@@ -281,8 +275,8 @@ export default function DashboardPage() {
       return `${specialDays[key]}, ${name}!`;
     }
 
-    if (dob) {
-      const [year, monthStr, dayStr] = dob.split('-');
+    if (user?.date_of_birth) {
+      const [year, monthStr, dayStr] = user.date_of_birth.split('-');
       if (monthStr && dayStr && dayStr.padStart(2, '0') === day && monthStr.padStart(2, '0') === month) {
         return `Happy Birthday, ${name}!`;
       }
@@ -825,12 +819,22 @@ export default function DashboardPage() {
                   const name = user?.first_name && user?.last_name
                     ? `${user.first_name} ${user.last_name}`
                     : user?.first_name || 'Student';
+                  // Desktop: All greetings stay on same line, but make name blue
                   if (greeting.includes(', ')) {
                     const parts = greeting.split(', ');
                     const message = parts.slice(0, -1).join(', ');
+                    const hasExclamation = greeting.endsWith('!');
                     return (
                       <>
-                        {message}, <span className={`font-semibold ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>{name}</span>{greeting.endsWith('!') ? '!' : ''}
+                        {message}, <span className={`font-semibold ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>{name}</span>{hasExclamation ? '!' : ''}
+                      </>
+                    );
+                  }
+                  // For "Welcome, name" format
+                  if (greeting.startsWith('Welcome,')) {
+                    return (
+                      <>
+                        Welcome, <span className={`font-semibold ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>{name}</span>
                       </>
                     );
                   }
@@ -842,22 +846,27 @@ export default function DashboardPage() {
                     </span>
                   </div>
                   {/* Mobile greeting - Welcome, First Name */}
-                  <span className={`text-[10px] sm:text-xs md:text-sm lg:hidden truncate max-w-[80px] sm:max-w-[100px] ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
+                  <div className={`text-[10px] sm:text-xs md:text-sm lg:hidden text-right max-w-[80px] sm:max-w-[100px] ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
                 {(() => {
                   const greeting = getGreeting();
                   const firstName = user?.first_name || 'User';
-                  if (greeting.includes(', ')) {
+                  // Mobile: Only split special greetings (not "Welcome")
+                  if (greeting.includes(', ') && !greeting.startsWith('Welcome,')) {
                     const parts = greeting.split(', ');
                     const message = parts.slice(0, -1).join(', ');
                     return (
                       <>
-                        {message}, <span className={`font-semibold ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>{firstName}</span>
+                        <div className="leading-tight">
+                          <div className="truncate">{message}{greeting.endsWith('!') ? '!' : ''}</div>
+                          <div className={`font-semibold truncate ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>{firstName}</div>
+                        </div>
                       </>
                     );
                   }
-                  return <><span className={`font-semibold ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>Welcome, {firstName}</span></>;
+                  // Mobile: "Welcome, [name]" stays on same line
+                  return <><span>Welcome, <span className={`font-semibold ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>{firstName}</span></span></>;
                 })()}
-              </span>
+              </div>
               
               {/* Theme Toggle */}
               <button
@@ -1119,7 +1128,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-2.5 sm:py-3 md:py-4 lg:py-6 xl:py-8">
+      <main className="max-w-7xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-2.5 sm:py-3 md:py-4 lg:py-6 xl:py-8 w-full overflow-x-hidden">
         {activeTab === 'todos' ? (
           <MyPlans isDarkMode={isDarkMode} />
         ) : activeTab === 'workspace' ? (
@@ -1204,7 +1213,7 @@ export default function DashboardPage() {
             .map((semesterName) => (
             <div 
               key={semesterName}
-                  className={`rounded-lg sm:rounded-xl md:rounded-2xl p-2 sm:p-2.5 md:p-3 lg:p-4 xl:p-6 mb-2.5 sm:mb-3 md:mb-4 lg:mb-6 border transition-all hover:shadow-lg ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200'}`}
+                  className={`rounded-lg sm:rounded-xl md:rounded-2xl p-2 sm:p-2.5 md:p-3 lg:p-4 xl:p-6 mb-2.5 sm:mb-3 md:mb-4 lg:mb-6 border transition-all hover:shadow-lg w-full ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200'}`}
                 >
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-0 mb-4 sm:mb-6">
                     <div className="flex-1">
@@ -1381,7 +1390,7 @@ export default function DashboardPage() {
                   </div>
                     )}
                 </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 sm:gap-2 md:gap-2.5 lg:gap-3 xl:gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 sm:gap-2 md:gap-2.5 lg:gap-3 xl:gap-4 w-full">
                     {(groupedBySemester[semesterName] || []).map((course) => (
                   <div
                     key={course.id}

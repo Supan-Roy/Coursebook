@@ -138,12 +138,12 @@ export default function ProfilePage() {
   const navigate = useNavigate();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const profileMenuRef = useRef(null);
-  const DOB_STORAGE_KEY = 'user_dob';
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
     email: '',
     university: '',
+    date_of_birth: '',
   });
   const [dob, setDob] = useState('');
   const [isEditing, setIsEditing] = useState(false);
@@ -163,14 +163,15 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (user) {
+      const userDob = user.date_of_birth || '';
       setFormData({
         first_name: user.first_name || '',
         last_name: user.last_name || '',
         email: user.email || '',
         university: user.university || '',
+        date_of_birth: userDob,
       });
-      const savedDob = typeof window !== 'undefined' ? localStorage.getItem(DOB_STORAGE_KEY) : '';
-      setDob(savedDob || '');
+      setDob(userDob);
     }
   }, [user]);
 
@@ -316,8 +317,8 @@ export default function ProfilePage() {
       return `${specialDays[key]}, ${name}!`;
     }
 
-    if (dob) {
-      const [year, monthStr, dayStr] = dob.split('-');
+    if (user?.date_of_birth) {
+      const [year, monthStr, dayStr] = user.date_of_birth.split('-');
       if (monthStr && dayStr && dayStr.padStart(2, '0') === day && monthStr.padStart(2, '0') === month) {
         return `Happy Birthday, ${name}!`;
       }
@@ -332,15 +333,12 @@ export default function ProfilePage() {
     setMessage({ type: '', text: '' });
 
     try {
-      await authService.updateProfile(formData);
+      const updateData = {
+        ...formData,
+        date_of_birth: dob || null, // Send null to remove DOB
+      };
+      await authService.updateProfile(updateData);
       await refreshUser();
-      if (typeof window !== 'undefined') {
-        if (dob) {
-          localStorage.setItem(DOB_STORAGE_KEY, dob);
-        } else {
-          localStorage.removeItem(DOB_STORAGE_KEY);
-        }
-      }
       setMessage({ type: 'success', text: 'Profile updated successfully!' });
       setIsEditing(false);
       setUniversitySearch('');
@@ -665,17 +663,34 @@ export default function ProfilePage() {
               <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Email cannot be changed</p>
             </div>
 
-            {/* Date of Birth (local only) */}
+            {/* Date of Birth */}
             <div>
-              <label htmlFor="dob" className={`block text-sm font-semibold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                Date of Birth
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label htmlFor="dob" className={`block text-sm font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  Date of Birth
+                </label>
+                {isEditing && dob && (
+                  <button
+                    type="button"
+                    onClick={() => setDob('')}
+                    className={`text-xs px-2 py-1 rounded transition-colors ${isDarkMode ? 'text-red-400 hover:text-red-300 hover:bg-red-500/20' : 'text-red-600 hover:text-red-700 hover:bg-red-50'}`}
+                    title="Remove Date of Birth"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
               <DatePicker
                 value={dob}
                 onChange={setDob}
                 disabled={!isEditing}
                 maxDate={new Date().toISOString().split('T')[0]} // Can't select future dates
               />
+              {!isEditing && !dob && (
+                <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  No date of birth set. Edit profile to add one.
+                </p>
+              )}
             </div>
 
             {/* University */}
@@ -800,12 +815,15 @@ export default function ProfilePage() {
                     type="button"
                     onClick={() => {
                       setIsEditing(false);
+                      const userDob = user?.date_of_birth || '';
                       setFormData({
                         first_name: user?.first_name || '',
                         last_name: user?.last_name || '',
                         email: user?.email || '',
                         university: user?.university || '',
+                        date_of_birth: userDob,
                       });
+                      setDob(userDob);
                       setMessage({ type: '', text: '' });
                       setUniversitySearch('');
                       setUniversityDropdownOpen(false);

@@ -167,24 +167,24 @@ export default function QuizGenerator({ courseId, selectedFiles }) {
     const correctCount = generatedQuiz.filter((q) => userAnswers[q.id] === q.correctAnswer).length;
     return (
       <div className={`rounded-lg border transition-colors ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}>
-        <div className="p-6 text-center">
-          <div className={`text-6xl font-bold mb-4 ${score >= 70 ? 'text-green-500' : score >= 50 ? 'text-yellow-500' : 'text-red-500'}`}>
+        <div className="p-3 sm:p-4 md:p-6 text-center">
+          <div className={`text-4xl sm:text-5xl md:text-6xl font-bold mb-3 sm:mb-4 ${score >= 70 ? 'text-green-500' : score >= 50 ? 'text-yellow-500' : 'text-red-500'}`}>
             {score}%
           </div>
-          <p className={`text-xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+          <p className={`text-base sm:text-lg md:text-xl font-bold mb-3 sm:mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
             {score >= 70 ? '🎉 Great Job!' : score >= 50 ? '👍 Good Effort!' : '📚 Keep Studying!'}
           </p>
-          <p className={`text-sm mb-6 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+          <p className={`text-xs sm:text-sm mb-4 sm:mb-6 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
             You got {correctCount} out of {generatedQuiz.length} questions correct
           </p>
-          {error && <p className="text-sm text-red-500 mb-4">{error}</p>}
+          {error && <p className="text-xs sm:text-sm text-red-500 mb-3 sm:mb-4">{error}</p>}
 
           {/* Review Answers */}
-          <div className="space-y-3 mt-6 max-h-96 overflow-y-auto text-left">
+          <div className="space-y-2 sm:space-y-3 mt-4 sm:mt-6 max-h-[200px] sm:max-h-96 overflow-y-auto text-left">
             {generatedQuiz.map((q, idx) => (
               <div
                 key={q.id}
-                className={`p-3 rounded-lg border-l-4 ${
+                className={`p-2.5 sm:p-3 rounded-lg border-l-4 ${
                   userAnswers[q.id] === q.correctAnswer
                     ? isDarkMode
                       ? 'bg-green-500/10 border-green-500'
@@ -194,14 +194,14 @@ export default function QuizGenerator({ courseId, selectedFiles }) {
                       : 'bg-red-50 border-red-500'
                 }`}
               >
-                <p className={`font-medium text-sm mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                <p className={`font-medium text-xs sm:text-sm mb-1 break-words ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                   {idx + 1}. {q.question}
                 </p>
-                <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                <p className={`text-[10px] sm:text-xs break-words ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                   Your answer: <span className={`${userAnswers[q.id] === q.correctAnswer ? isDarkMode ? 'text-green-400' : 'text-green-600' : isDarkMode ? 'text-red-400' : 'text-red-600'} font-bold`}>{q.options[userAnswers[q.id]] ?? '—'}</span>
                 </p>
                 {userAnswers[q.id] !== q.correctAnswer && (
-                  <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  <p className={`text-[10px] sm:text-xs break-words ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                     Correct answer: <span className={`${isDarkMode ? 'text-green-400' : 'text-green-600'} font-bold`}>{q.options[q.correctAnswer]}</span>
                   </p>
                 )}
@@ -211,7 +211,7 @@ export default function QuizGenerator({ courseId, selectedFiles }) {
 
           <button
             onClick={handleReset}
-            className={`mt-6 px-6 py-2 rounded-lg font-medium transition-colors ${
+            className={`mt-4 sm:mt-6 px-4 sm:px-6 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base ${
               isDarkMode
                 ? 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -231,16 +231,16 @@ export default function QuizGenerator({ courseId, selectedFiles }) {
     return (
       <div className={`rounded-lg border transition-colors ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}>
         {/* Header */}
-        <div className={`border-b p-4 ${isDarkMode ? 'border-gray-800 bg-gray-900/50' : 'border-gray-200 bg-gray-50'}`}>
-          <div className="flex justify-between items-center">
-            <h3 className={`font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+        <div className={`border-b p-3 sm:p-4 ${isDarkMode ? 'border-gray-800 bg-gray-900/50' : 'border-gray-200 bg-gray-50'}`}>
+          <div className="flex justify-between items-center gap-2 mb-2">
+            <h3 className={`font-bold text-sm sm:text-base ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
               Question {currentQuestion + 1} of {generatedQuiz.length}
             </h3>
-            <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+            <div className={`text-xs sm:text-sm flex-shrink-0 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
               {Object.keys(userAnswers).length} answered
             </div>
           </div>
-          <div className={`mt-2 h-2 rounded-full overflow-hidden ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}>
+          <div className={`h-1.5 sm:h-2 rounded-full overflow-hidden ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}>
             <div
               className="h-full bg-sky-500 transition-all"
               style={{ width: `${((currentQuestion + 1) / generatedQuiz.length) * 100}%` }}
@@ -249,18 +249,18 @@ export default function QuizGenerator({ courseId, selectedFiles }) {
         </div>
 
         {/* Question */}
-        <div className="p-6">
-          <p className={`text-lg font-bold mb-6 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+        <div className="p-3 sm:p-4 md:p-6">
+          <p className={`text-base sm:text-lg font-bold mb-4 sm:mb-6 break-words ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
             {question.question}
           </p>
 
           {/* Options */}
-          <div className="space-y-3 mb-6">
+          <div className="space-y-2 sm:space-y-3 mb-4 sm:mb-6">
             {question.options.map((option, idx) => (
               <button
                 key={idx}
                 onClick={() => handleAnswer(idx)}
-                className={`w-full p-4 text-left rounded-lg border-2 transition-all font-medium ${
+                className={`w-full p-3 sm:p-4 text-left rounded-lg border-2 transition-all font-medium text-sm sm:text-base ${
                   userAnswer === idx
                     ? isDarkMode
                       ? 'border-sky-500 bg-sky-500/10 text-sky-300'
@@ -270,9 +270,9 @@ export default function QuizGenerator({ courseId, selectedFiles }) {
                       : 'border-gray-300 bg-white text-gray-700 hover:border-gray-200'
                 }`}
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 sm:gap-3">
                   <div
-                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                    className={`w-4 h-4 sm:w-5 sm:h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
                       userAnswer === idx
                         ? isDarkMode
                           ? 'bg-sky-500 border-sky-500'
@@ -282,20 +282,20 @@ export default function QuizGenerator({ courseId, selectedFiles }) {
                           : 'border-gray-300'
                     }`}
                   >
-                    {userAnswer === idx && <div className="w-2 h-2 rounded-full bg-white" />}
+                    {userAnswer === idx && <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-white" />}
                   </div>
-                  {option}
+                  <span className="break-words">{option}</span>
                 </div>
               </button>
             ))}
           </div>
 
           {/* Navigation */}
-          <div className="flex gap-3">
+          <div className="flex gap-2 sm:gap-3">
             <button
               onClick={handlePreviousQuestion}
               disabled={currentQuestion === 0}
-              className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
+              className={`flex-1 px-3 sm:px-4 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base ${
                 currentQuestion === 0
                   ? isDarkMode
                     ? 'bg-gray-800 text-gray-600 cursor-not-allowed'
@@ -311,7 +311,7 @@ export default function QuizGenerator({ courseId, selectedFiles }) {
               <button
                 onClick={handleNextQuestion}
                 disabled={userAnswer === undefined}
-                className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
+                className={`flex-1 px-3 sm:px-4 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base ${
                   userAnswer === undefined
                     ? isDarkMode
                       ? 'bg-gray-800 text-gray-600 cursor-not-allowed'
@@ -327,7 +327,7 @@ export default function QuizGenerator({ courseId, selectedFiles }) {
               <button
                 onClick={handleSubmitQuiz}
                 disabled={Object.keys(userAnswers).length < generatedQuiz.length || isSubmitting}
-                className={`flex-1 px-4 py-2 rounded-lg font-bold transition-colors ${
+                className={`flex-1 px-3 sm:px-4 py-2 rounded-lg font-bold transition-colors text-sm sm:text-base ${
                   Object.keys(userAnswers).length < generatedQuiz.length || isSubmitting
                     ? isDarkMode
                       ? 'bg-gray-800 text-gray-600 cursor-not-allowed'
@@ -348,25 +348,25 @@ export default function QuizGenerator({ courseId, selectedFiles }) {
 
   return (
     <div className={`rounded-lg border transition-colors ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}>
-      <div className="p-6 text-center">
-        <h3 className={`text-lg font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+      <div className="p-3 sm:p-4 md:p-6 text-center">
+        <h3 className={`text-base sm:text-lg font-bold mb-3 sm:mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
           ✏️ Quiz Generator
         </h3>
-        <p className={`text-sm mb-6 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+        <p className={`text-xs sm:text-sm mb-4 sm:mb-6 break-words px-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
           Based on: {selectedFiles.map(f => f.filename).join(', ')}
         </p>
 
-        {error && <p className="text-sm text-red-500 mb-4">{error}</p>}
+        {error && <p className="text-xs sm:text-sm text-red-500 mb-3 sm:mb-4 px-2">{error}</p>}
 
-        <div className="space-y-4 max-w-sm mx-auto">
+        <div className="space-y-3 sm:space-y-4 max-w-sm mx-auto">
           <div>
-            <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+            <label className={`block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               Number of Questions
             </label>
             <select
               value={numQuestions}
               onChange={(e) => setNumQuestions(e.target.value)}
-              className={`w-full px-4 py-2 rounded-lg border-2 focus:outline-none transition-colors ${
+              className={`w-full px-3 sm:px-4 py-2 rounded-lg border-2 focus:outline-none transition-colors text-sm sm:text-base ${
                 isDarkMode
                   ? 'bg-gray-800 border-gray-700 text-white focus:border-sky-500'
                   : 'bg-white border-gray-300 text-gray-900 focus:border-sky-500'
@@ -380,13 +380,13 @@ export default function QuizGenerator({ courseId, selectedFiles }) {
           </div>
 
           <div>
-            <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+            <label className={`block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               Difficulty Level
             </label>
             <select
               value={difficulty}
               onChange={(e) => setDifficulty(e.target.value)}
-              className={`w-full px-4 py-2 rounded-lg border-2 focus:outline-none transition-colors ${
+              className={`w-full px-3 sm:px-4 py-2 rounded-lg border-2 focus:outline-none transition-colors text-sm sm:text-base ${
                 isDarkMode
                   ? 'bg-gray-800 border-gray-700 text-white focus:border-sky-500'
                   : 'bg-white border-gray-300 text-gray-900 focus:border-sky-500'
@@ -401,7 +401,7 @@ export default function QuizGenerator({ courseId, selectedFiles }) {
           <button
             onClick={handleStartQuiz}
             disabled={isLoading}
-            className={`w-full px-6 py-3 rounded-lg font-bold transition-colors mt-6 ${
+            className={`w-full px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-bold transition-colors mt-4 sm:mt-6 text-sm sm:text-base ${
               isLoading
                 ? isDarkMode
                   ? 'bg-gray-800 text-gray-500 cursor-not-allowed'

@@ -63,26 +63,26 @@ export default function SavedSummaries({ courseId, onLoadSummary, onRefresh }) {
 
   if (!summaries.length) {
     return (
-      <div className={`p-4 rounded-lg border-2 text-center ${
+      <div className={`p-3 sm:p-4 rounded-lg border-2 text-center ${
         isDarkMode
           ? 'bg-gray-800/50 border-gray-700 text-gray-400'
           : 'bg-gray-50 border-gray-200 text-gray-600'
       }`}>
-        <p className="text-sm">No saved summaries yet. Create one to get started!</p>
+        <p className="text-xs sm:text-sm">No saved summaries yet. Create one to get started!</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h3 className={`font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+    <div className="space-y-2 sm:space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className={`font-bold text-sm sm:text-base ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
           📚 Saved Summaries ({summaries.length})
         </h3>
         <button
           onClick={loadSummaries}
           disabled={loading}
-          className={`text-xs px-2 py-1 rounded transition-colors ${
+          className={`text-[10px] sm:text-xs px-2 py-1 rounded transition-colors whitespace-nowrap flex-shrink-0 ${
             isDarkMode
               ? 'text-sky-300 hover:bg-sky-500/10'
               : 'text-sky-600 hover:bg-sky-50'
@@ -93,7 +93,7 @@ export default function SavedSummaries({ courseId, onLoadSummary, onRefresh }) {
       </div>
 
       {error && (
-        <div className={`p-2 rounded text-sm ${
+        <div className={`p-2 rounded text-xs sm:text-sm ${
           isDarkMode
             ? 'bg-red-500/10 text-red-300 border border-red-500/30'
             : 'bg-red-50 text-red-600 border border-red-200'
@@ -102,12 +102,12 @@ export default function SavedSummaries({ courseId, onLoadSummary, onRefresh }) {
         </div>
       )}
 
-      <div className="space-y-2 max-h-96 overflow-y-auto">
+      <div className="space-y-2 max-h-[200px] sm:max-h-96 overflow-y-auto">
         {summaries.map((summary) => (
           <div
             key={summary.id}
             onClick={() => handleLoadSummary(summary)}
-            className={`p-3 rounded-lg border cursor-pointer transition-all ${
+            className={`p-2.5 sm:p-3 rounded-lg border cursor-pointer transition-all ${
               selectedSummary?.id === summary.id
                 ? isDarkMode
                   ? 'border-sky-500 bg-sky-500/10'
@@ -119,13 +119,13 @@ export default function SavedSummaries({ courseId, onLoadSummary, onRefresh }) {
           >
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
-                <p className={`font-semibold text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                <p className={`font-semibold text-xs sm:text-sm break-words ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                   {summary.title}
                 </p>
-                <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                <p className={`text-[10px] sm:text-xs mt-0.5 sm:mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                   {summary.word_count} words • {new Date(summary.created_at).toLocaleDateString()}
                 </p>
-                <p className={`text-xs mt-1 line-clamp-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                <p className={`text-[10px] sm:text-xs mt-1 line-clamp-2 break-words ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                   {summary.content}
                 </p>
               </div>
@@ -146,7 +146,7 @@ export default function SavedSummaries({ courseId, onLoadSummary, onRefresh }) {
                 }`}
                 title="Delete summary"
               >
-                <svg className={`w-4 h-4 ${deleting === summary.id ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${deleting === summary.id ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   {deleting === summary.id ? (
                     <>
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
