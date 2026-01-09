@@ -219,6 +219,13 @@ class FileUploadView(APIView):
         # Parse file to extract course information (supports PDF and images)
         extracted_courses = self._extract_courses_from_file(file)
         
+        # Create or get the Semester model instance to ensure proper created_at timestamp
+        from courses.models import Semester
+        semester_obj, semester_created = Semester.objects.get_or_create(
+            user=request.user,
+            name=semester_name
+        )
+        
         # Create courses with the new semester
         created_courses = []
         for course_data in extracted_courses:
@@ -337,8 +344,8 @@ class FileUploadView(APIView):
         logger = logging.getLogger(__name__)
         
         # Pattern to match course with name and code
-        # More precise: captures only the immediate text before the code
-        course_with_name_pattern = r'([A-Za-z][A-Za-z\s&]+?)\s*-\s*([A-Z]{2,4})[\s-]?(\d{3,4})'
+        # Updated to include parentheses, hyphens, and other common characters in course names
+        course_with_name_pattern = r'([A-Za-z][A-Za-z\s&()\-:,\']+?)\s*-\s*([A-Z]{2,4})[\s-]?(\d{3,4})'
         
         matches_with_names = re.findall(course_with_name_pattern, text)
         logger.info(f"Found {len(matches_with_names)} course matches with names: {matches_with_names}")
@@ -370,12 +377,24 @@ class FileUploadView(APIView):
             # Clean the title
             title = raw_title
             
-            # Remove teacher initials from the beginning (2-4 uppercase letters)
-            title = re.sub(r'^[A-Z]{2,4}\s+', '', title).strip()
+            # Remove letter prefixes like "A)", "B)", "C)" at the beginning
+            title = re.sub(r'^[A-Z]\)\s*', '', title).strip()
+            
+            # Remove room/lab indicators like "(COM LAB)", "(LAB)", etc.
+            title = re.sub(r'\([^)]*(?:LAB|ROOM|COM)[^)]*\)', '', title, flags=re.IGNORECASE).strip()
+            
+            # Remove teacher initials (2-4 uppercase letters) from anywhere in the title
+            # Teacher initials are typically standalone words, not part of course names
+            # Common teacher initials: SEA, FFN, MSM, SH, etc.
+            # Be careful not to remove legitimate acronyms (we'll be conservative)
+            title = re.sub(r'^[A-Z]{2,4}\s+', '', title).strip()  # At the beginning
+            title = re.sub(r'\s+[A-Z]{2,4}\s+', ' ', title).strip()  # In the middle (with spaces on both sides)
+            title = re.sub(r'\s+[A-Z]{2,4}$', '', title).strip()  # At the end
             
             # Remove day names from the beginning or anywhere
             for day in day_names:
-                title = title.replace(day, '').strip()
+                title = re.sub(rf'\b{day}\b', '', title, flags=re.IGNORECASE).strip()
+            
             # Remove junk words
             words = title.split()
             filtered_words = []
@@ -383,11 +402,14 @@ class FileUploadView(APIView):
                 # Skip single letters and junk words
                 if len(word) > 1 and word not in junk_words:
                     filtered_words.append(word)
-                # If we have at least 6 good words, stop (we got the course name)
-                if len(filtered_words) >= 6:
+                # If we have at least 8 good words, stop (we got the course name)
+                if len(filtered_words) >= 8:
                     break
             
             title = ' '.join(filtered_words).strip()
+            
+            # Clean up extra spaces
+            title = re.sub(r'\s+', ' ', title).strip()
             
             # Skip if title is empty or too short after cleaning
             if len(title) < 5:

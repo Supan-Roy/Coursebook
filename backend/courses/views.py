@@ -119,7 +119,7 @@ class SemesterListView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        semesters = Semester.objects.filter(user=request.user)
+        semesters = Semester.objects.filter(user=request.user).order_by('-created_at')
         serializer = SemesterSerializer(semesters, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 

@@ -278,18 +278,35 @@ export default function DashboardPage() {
   }, {});
 
   // Merge database semesters with course-based semesters
-  const semesterNames = new Set();
+  // Create a map of semester names to their created_at dates
+  const semesterMap = new Map();
   
-  // Add semesters from courses
-  Object.keys(groupedBySemester).forEach(sem => semesterNames.add(sem));
+  // Add semesters from database with their created_at dates
+  semesters.forEach(sem => {
+    semesterMap.set(sem.name, sem.created_at);
+  });
   
-  // Add semesters from database that don't have courses yet
-  semesters.forEach(sem => semesterNames.add(sem.name));
+  // Add semesters from courses (use the earliest course created_at if not in database)
+  Object.keys(groupedBySemester).forEach(semName => {
+    if (!semesterMap.has(semName)) {
+      // Find the earliest created_at from courses in this semester
+      const coursesInSemester = groupedBySemester[semName];
+      if (coursesInSemester && coursesInSemester.length > 0) {
+        const earliestCourse = coursesInSemester.reduce((earliest, course) => {
+          if (!earliest || !course.created_at) return course;
+          return new Date(course.created_at) < new Date(earliest.created_at) ? course : earliest;
+        }, null);
+        if (earliestCourse && earliestCourse.created_at) {
+          semesterMap.set(semName, earliestCourse.created_at);
+        }
+      }
+    }
+  });
   
   // Create semester list with custom ordering
-  let semesterList = Array.from(semesterNames);
+  let semesterList = Array.from(semesterMap.keys());
   
-  // Sort by custom order if available, otherwise use newest first
+  // Sort by custom order if available, otherwise use newest first by created_at
   if (semesterOrder.length > 0) {
     semesterList.sort((a, b) => {
       const indexA = semesterOrder.indexOf(a);
@@ -299,8 +316,21 @@ export default function DashboardPage() {
       return indexA - indexB;
     });
   } else {
-    // Default: newest first (alphabetical reverse)
-    semesterList = semesterList.sort().reverse();
+    // Sort by created_at (newest first), fallback to alphabetical reverse
+    semesterList.sort((a, b) => {
+      const dateA = semesterMap.get(a);
+      const dateB = semesterMap.get(b);
+      
+      // If both have dates, sort by date (newest first)
+      if (dateA && dateB) {
+        return new Date(dateB) - new Date(dateA);
+      }
+      // If only one has a date, prioritize it
+      if (dateA && !dateB) return -1;
+      if (dateB && !dateA) return 1;
+      // If neither has a date, sort alphabetically reverse
+      return b.localeCompare(a);
+    });
   }
 
   const handleDeleteCourse = async (courseId) => {
