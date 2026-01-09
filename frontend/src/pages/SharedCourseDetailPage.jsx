@@ -67,6 +67,33 @@ export default function SharedCourseDetailPage() {
     return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`;
   };
 
+  const truncateFileName = (filename, maxLength = 25) => {
+    if (filename.length <= maxLength) {
+      return filename;
+    }
+    
+    // Extract extension
+    const lastDotIndex = filename.lastIndexOf('.');
+    if (lastDotIndex === -1) {
+      // No extension, just truncate
+      return filename.substring(0, maxLength - 3) + '...';
+    }
+    
+    const extension = filename.substring(lastDotIndex); // includes the dot
+    const nameWithoutExt = filename.substring(0, lastDotIndex);
+    
+    // Calculate available space: maxLength - extension length - 3 (for "...")
+    const availableSpace = maxLength - extension.length - 3;
+    
+    if (availableSpace <= 0) {
+      // Extension is too long, just show extension
+      return '...' + extension;
+    }
+    
+    // Truncate name and add ellipsis + extension
+    return nameWithoutExt.substring(0, availableSpace) + '...' + extension;
+  };
+
   const handleDownload = async (material) => {
     try {
       const fileUrl = `${BACKEND_BASE_URL}/materials/files/${material.id}/`;
@@ -219,8 +246,9 @@ export default function SharedCourseDetailPage() {
                         </svg>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className={`font-medium truncate text-sm sm:text-base ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                          {material.filename}
+                        <p className={`font-medium text-sm sm:text-base ${isDarkMode ? 'text-white' : 'text-gray-900'}`} title={material.filename}>
+                          <span className="hidden sm:inline truncate">{material.filename}</span>
+                          <span className="sm:hidden">{truncateFileName(material.filename, 25)}</span>
                         </p>
                         <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                           {formatBytes(material.size_bytes)} • {new Date(material.uploaded_at).toLocaleDateString()}

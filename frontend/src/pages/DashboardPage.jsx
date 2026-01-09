@@ -755,6 +755,33 @@ export default function DashboardPage() {
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
   };
 
+  const truncateFileName = (filename, maxLength = 25) => {
+    if (filename.length <= maxLength) {
+      return filename;
+    }
+    
+    // Extract extension
+    const lastDotIndex = filename.lastIndexOf('.');
+    if (lastDotIndex === -1) {
+      // No extension, just truncate
+      return filename.substring(0, maxLength - 3) + '...';
+    }
+    
+    const extension = filename.substring(lastDotIndex); // includes the dot
+    const nameWithoutExt = filename.substring(0, lastDotIndex);
+    
+    // Calculate available space: maxLength - extension length - 3 (for "...")
+    const availableSpace = maxLength - extension.length - 3;
+    
+    if (availableSpace <= 0) {
+      // Extension is too long, just show extension
+      return '...' + extension;
+    }
+    
+    // Truncate name and add ellipsis + extension
+    return nameWithoutExt.substring(0, availableSpace) + '...' + extension;
+  };
+
   // Search functionality
   const getSearchResults = () => {
     if (!searchQuery.trim()) return { courses: [], materials: [] };
@@ -2330,8 +2357,9 @@ export default function DashboardPage() {
                                     <svg className={`w-4 h-4 flex-shrink-0 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                                     </svg>
-                                    <span className={`text-sm font-medium truncate ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                                      {material.filename}
+                                    <span className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`} title={material.filename}>
+                                      <span className="hidden sm:inline truncate">{material.filename}</span>
+                                      <span className="sm:hidden">{truncateFileName(material.filename, 25)}</span>
                                     </span>
                                   </div>
                                   <div className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>

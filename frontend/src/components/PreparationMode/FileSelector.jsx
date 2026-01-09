@@ -28,6 +28,33 @@ export default function FileSelector({ materials, selectedFiles, onSelect, onDes
     return icons[type];
   };
 
+  const truncateFileName = (filename, maxLength = 25) => {
+    if (filename.length <= maxLength) {
+      return filename;
+    }
+    
+    // Extract extension
+    const lastDotIndex = filename.lastIndexOf('.');
+    if (lastDotIndex === -1) {
+      // No extension, just truncate
+      return filename.substring(0, maxLength - 3) + '...';
+    }
+    
+    const extension = filename.substring(lastDotIndex); // includes the dot
+    const nameWithoutExt = filename.substring(0, lastDotIndex);
+    
+    // Calculate available space: maxLength - extension length - 3 (for "...")
+    const availableSpace = maxLength - extension.length - 3;
+    
+    if (availableSpace <= 0) {
+      // Extension is too long, just show extension
+      return '...' + extension;
+    }
+    
+    // Truncate name and add ellipsis + extension
+    return nameWithoutExt.substring(0, availableSpace) + '...' + extension;
+  };
+
   const filteredMaterials = filter === 'all' 
     ? materials 
     : materials.filter(m => getFileType(m.filename) === filter);
@@ -114,8 +141,9 @@ export default function FileSelector({ materials, selectedFiles, onSelect, onDes
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 sm:gap-2">
                       <span className="text-base sm:text-lg flex-shrink-0">{getFileIcon(material.filename)}</span>
-                      <p className={`font-medium line-clamp-1 text-xs sm:text-sm md:text-base break-words ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                        {material.filename}
+                      <p className={`font-medium text-xs sm:text-sm md:text-base break-words ${isDarkMode ? 'text-white' : 'text-gray-900'}`} title={material.filename}>
+                        <span className="hidden sm:inline line-clamp-1">{material.filename}</span>
+                        <span className="sm:hidden">{truncateFileName(material.filename, 25)}</span>
                       </p>
                     </div>
                     <p className={`text-[10px] sm:text-xs mt-0.5 sm:mt-1 ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>

@@ -140,6 +140,33 @@ export default function TrashBinPage() {
     return iconMap[ext] || '📄';
   };
 
+  const truncateFileName = (filename, maxLength = 25) => {
+    if (filename.length <= maxLength) {
+      return filename;
+    }
+    
+    // Extract extension
+    const lastDotIndex = filename.lastIndexOf('.');
+    if (lastDotIndex === -1) {
+      // No extension, just truncate
+      return filename.substring(0, maxLength - 3) + '...';
+    }
+    
+    const extension = filename.substring(lastDotIndex); // includes the dot
+    const nameWithoutExt = filename.substring(0, lastDotIndex);
+    
+    // Calculate available space: maxLength - extension length - 3 (for "...")
+    const availableSpace = maxLength - extension.length - 3;
+    
+    if (availableSpace <= 0) {
+      // Extension is too long, just show extension
+      return '...' + extension;
+    }
+    
+    // Truncate name and add ellipsis + extension
+    return nameWithoutExt.substring(0, availableSpace) + '...' + extension;
+  };
+
   if (loading) {
     return (
       <div className={`min-h-screen flex items-center justify-center ${isDarkMode ? 'bg-[#0B1120]' : 'bg-gray-50'}`}>
@@ -386,10 +413,11 @@ export default function TrashBinPage() {
                         </div>
 
                         <div className="flex-1 min-w-0">
-                          <h3 className={`font-medium text-sm truncate ${
+                          <h3 className={`font-medium text-sm ${
                             isDarkMode ? 'text-white' : 'text-gray-900'
-                          }`}>
-                            {material.filename}
+                          }`} title={material.filename}>
+                            <span className="hidden sm:inline truncate">{material.filename}</span>
+                            <span className="sm:hidden">{truncateFileName(material.filename, 25)}</span>
                           </h3>
                           <div className="flex items-center gap-2 mt-0.5 text-xs">
                             <span className={`${

@@ -3,6 +3,33 @@ import { useTheme } from '../context/ThemeContext';
 export default function UploadQueue({ uploads, onRemove, onCancel }) {
   const { isDarkMode } = useTheme();
 
+  const truncateFileName = (filename, maxLength = 25) => {
+    if (filename.length <= maxLength) {
+      return filename;
+    }
+    
+    // Extract extension
+    const lastDotIndex = filename.lastIndexOf('.');
+    if (lastDotIndex === -1) {
+      // No extension, just truncate
+      return filename.substring(0, maxLength - 3) + '...';
+    }
+    
+    const extension = filename.substring(lastDotIndex); // includes the dot
+    const nameWithoutExt = filename.substring(0, lastDotIndex);
+    
+    // Calculate available space: maxLength - extension length - 3 (for "...")
+    const availableSpace = maxLength - extension.length - 3;
+    
+    if (availableSpace <= 0) {
+      // Extension is too long, just show extension
+      return '...' + extension;
+    }
+    
+    // Truncate name and add ellipsis + extension
+    return nameWithoutExt.substring(0, availableSpace) + '...' + extension;
+  };
+
   if (!uploads || uploads.length === 0) return null;
 
   const hasActiveUploads = uploads.some(u => u.status === 'uploading' || u.status === 'pending');
@@ -86,8 +113,9 @@ export default function UploadQueue({ uploads, onRemove, onCancel }) {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-0.5 sm:mb-1 gap-1">
-                    <p className={`text-xs sm:text-sm font-medium truncate ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                      {upload.filename}
+                    <p className={`text-xs sm:text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`} title={upload.filename}>
+                      <span className="hidden sm:inline truncate">{upload.filename}</span>
+                      <span className="sm:hidden">{truncateFileName(upload.filename, 25)}</span>
                     </p>
                     {upload.status === 'uploading' && (
                       <span className={`text-[10px] sm:text-xs ml-1 sm:ml-2 flex-shrink-0 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>

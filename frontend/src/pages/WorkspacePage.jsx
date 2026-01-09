@@ -191,6 +191,33 @@ export default function WorkspacePage({ isDarkMode: propIsDarkMode }) {
     return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`;
   };
 
+  const truncateFileName = (filename, maxLength = 25) => {
+    if (filename.length <= maxLength) {
+      return filename;
+    }
+    
+    // Extract extension
+    const lastDotIndex = filename.lastIndexOf('.');
+    if (lastDotIndex === -1) {
+      // No extension, just truncate
+      return filename.substring(0, maxLength - 3) + '...';
+    }
+    
+    const extension = filename.substring(lastDotIndex); // includes the dot
+    const nameWithoutExt = filename.substring(0, lastDotIndex);
+    
+    // Calculate available space: maxLength - extension length - 3 (for "...")
+    const availableSpace = maxLength - extension.length - 3;
+    
+    if (availableSpace <= 0) {
+      // Extension is too long, just show extension
+      return '...' + extension;
+    }
+    
+    // Truncate name and add ellipsis + extension
+    return nameWithoutExt.substring(0, availableSpace) + '...' + extension;
+  };
+
   // Analyze big files (minimum 5 MB)
   const bigFiles = useMemo(() => {
     const MIN_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
@@ -755,8 +782,9 @@ export default function WorkspacePage({ isDarkMode: propIsDarkMode }) {
                                         className={`flex items-center justify-between p-3 rounded-lg border ${isDarkMode ? 'bg-gray-900/50 border-gray-700' : 'bg-gray-50 border-gray-200'}`}
                                       >
                                         <div className="flex-1 min-w-0">
-                                          <p className={`text-sm font-medium truncate ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                                            {material.filename}
+                                          <p className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`} title={material.filename}>
+                                            <span className="hidden sm:inline truncate">{material.filename}</span>
+                                            <span className="sm:hidden">{truncateFileName(material.filename, 25)}</span>
                                           </p>
                                           <div className="flex items-center gap-2 mt-1">
                                             <span className={`text-xs px-2 py-0.5 rounded ${isDarkMode ? 'bg-sky-500/20 text-sky-400' : 'bg-sky-100 text-sky-700'}`}>
