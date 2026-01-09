@@ -13,6 +13,8 @@ import UploadQueue from '../components/UploadQueue';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
 const BACKEND_BASE_URL = API_BASE_URL.replace(/\/api$/, '');
+// Use frontend domain for material files (proxied through Vercel)
+const FRONTEND_BASE_URL = typeof window !== 'undefined' ? window.location.origin : '';
 
 export default function CourseDetailPage() {
   const { courseId } = useParams();
@@ -95,7 +97,7 @@ export default function CourseDetailPage() {
 
   const handleDownload = async (material) => {
     try {
-      const fileUrl = `${BACKEND_BASE_URL}/materials/files/${material.id}/`;
+      const fileUrl = `${FRONTEND_BASE_URL}/materials/files/${material.id}/`;
       const response = await fetch(fileUrl);
       if (!response.ok) throw new Error('Failed to download file');
       
@@ -806,7 +808,7 @@ export default function CourseDetailPage() {
                     if (isSelectionMode) {
                       toggleMaterialSelection(material.id);
                     } else {
-                      window.open(`${BACKEND_BASE_URL}/materials/files/${material.id}/`, '_blank');
+                      window.open(`${FRONTEND_BASE_URL}/materials/files/${material.id}/`, '_blank');
                     }
                   }}
                   className={`group flex items-center justify-between p-4 rounded-lg border transition-all ${
@@ -868,7 +870,7 @@ export default function CourseDetailPage() {
                       <button
                         onClick={async (e) => {
                           e.stopPropagation();
-                          const shareUrl = `${BACKEND_BASE_URL}/materials/files/${material.id}/`;
+                          const shareUrl = `${FRONTEND_BASE_URL}/materials/files/${material.id}/`;
                           if (navigator.share) {
                             try {
                               await navigator.share({

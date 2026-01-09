@@ -7,6 +7,8 @@ import CoursebookTextLogo from '../components/CoursebookTextLogo';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
 const BACKEND_BASE_URL = API_BASE_URL.replace(/\/api$/, '');
+// Use frontend domain for material files (proxied through Vercel)
+const FRONTEND_BASE_URL = typeof window !== 'undefined' ? window.location.origin : '';
 
 export default function SharedCourseDetailPage() {
   const { token, courseId } = useParams();
@@ -69,7 +71,7 @@ export default function SharedCourseDetailPage() {
 
   const handleDownload = async (material) => {
     try {
-      const fileUrl = `${BACKEND_BASE_URL}/materials/files/${material.id}/`;
+      const fileUrl = `${FRONTEND_BASE_URL}/materials/files/${material.id}/`;
       const response = await fetch(fileUrl);
       if (!response.ok) throw new Error('Failed to download file');
       
@@ -206,7 +208,7 @@ export default function SharedCourseDetailPage() {
               {materials.map((material) => (
                 <div
                   key={material.id}
-                  onClick={() => window.open(`${BACKEND_BASE_URL}/materials/files/${material.id}/`, '_blank')}
+                  onClick={() => window.open(`${FRONTEND_BASE_URL}/materials/files/${material.id}/`, '_blank')}
                   className={`p-4 rounded-lg border cursor-pointer ${isDarkMode ? 'border-gray-700 bg-gray-900/30 hover:bg-gray-900/50' : 'border-gray-200 bg-gray-50 hover:bg-gray-100'} transition-colors`}
                 >
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
@@ -229,7 +231,7 @@ export default function SharedCourseDetailPage() {
                     </div>
                     <div className="flex items-center gap-2 w-full sm:w-auto sm:ml-4" onClick={(e) => e.stopPropagation()}>
                       <a
-                        href={`${BACKEND_BASE_URL}/materials/files/${material.id}/`}
+                        href={`${FRONTEND_BASE_URL}/materials/files/${material.id}/`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg transition-colors font-semibold text-sm text-center ${
