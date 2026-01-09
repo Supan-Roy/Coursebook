@@ -849,37 +849,22 @@ export default function DashboardPage() {
                     </span>
                   </div>
                   {/* Mobile greeting - Welcome, First Name */}
-                  <div className={`lg:hidden flex flex-col items-end ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
+                  <span className={`text-[10px] sm:text-xs md:text-sm lg:hidden truncate max-w-[80px] sm:max-w-[100px] ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
                 {(() => {
                   const greeting = getGreeting();
-                  const name = user?.first_name && user?.last_name
-                    ? `${user.first_name} ${user.last_name}`
-                    : user?.first_name || 'User';
-                  
-                  // Extract the greeting message (everything before the name)
-                  let message = greeting;
-                  
+                  const firstName = user?.first_name || 'User';
                   if (greeting.includes(', ')) {
-                    // For greetings like "Happy Birthday, John Doe!" or "Happy New Year, John Doe!"
-                    const lastCommaIndex = greeting.lastIndexOf(', ');
-                    message = greeting.substring(0, lastCommaIndex);
-                  } else if (greeting.startsWith('Welcome, ')) {
-                    // For "Welcome, John Doe"
-                    message = 'Welcome';
+                    const parts = greeting.split(', ');
+                    const message = parts.slice(0, -1).join(', ');
+                    return (
+                      <>
+                        {message}, <span className={`font-semibold ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>{firstName}</span>
+                      </>
+                    );
                   }
-                  
-                  return (
-                    <>
-                      <span className={`text-[10px] sm:text-xs md:text-sm leading-tight ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
-                        {message}
-                      </span>
-                      <span className={`text-[10px] sm:text-xs md:text-sm font-semibold leading-tight ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>
-                        {name}
-                      </span>
-                    </>
-                  );
+                  return <><span className={`font-semibold ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>Welcome, {firstName}</span></>;
                 })()}
-              </div>
+              </span>
               
               {/* Theme Toggle */}
               <button
