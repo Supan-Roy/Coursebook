@@ -620,37 +620,40 @@ const MyPlans = ({ isDarkMode }) => {
                     style={{ cursor: deleteMode && !isDefault ? 'pointer' : 'default' }}
                   >
                     {editingCategory === category.id && !isDefault ? (
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="text"
-                          value={editingCategoryName}
-                          onChange={(e) => setEditingCategoryName(e.target.value)}
-                          autoFocus
-                          className={`px-2 py-1 rounded text-sm border-2 focus:outline-none ${
-                            isDarkMode
-                              ? 'bg-gray-900 border-gray-700 text-white'
-                              : 'bg-white border-gray-300 text-gray-900'
-                          }`}
-                        />
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleUpdateCategory(category.id);
-                          }}
-                          className="text-green-500 hover:text-green-400"
-                        >
-                          <FiCheck className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setEditingCategory(null);
-                          }}
-                          className="text-red-500 hover:text-red-400"
-                        >
-                          <FiX className="w-4 h-4" />
-                        </button>
-                      </div>
+                      <>
+                        {/* Desktop: Inline editing */}
+                        <div className="hidden md:flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={editingCategoryName}
+                            onChange={(e) => setEditingCategoryName(e.target.value)}
+                            autoFocus
+                            className={`px-2 py-1 rounded text-sm border-2 focus:outline-none ${
+                              isDarkMode
+                                ? 'bg-gray-900 border-gray-700 text-white'
+                                : 'bg-white border-gray-300 text-gray-900'
+                            }`}
+                          />
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleUpdateCategory(category.id);
+                            }}
+                            className="text-green-500 hover:text-green-400"
+                          >
+                            <FiCheck className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingCategory(null);
+                            }}
+                            className="text-red-500 hover:text-red-400"
+                          >
+                            <FiX className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </>
                     ) : (
                       <div className="flex items-center gap-3">
                         <button
@@ -851,6 +854,66 @@ const MyPlans = ({ isDarkMode }) => {
                   onClick={() => {
                     setShowAddCategory(false);
                     setNewCategoryName('');
+                  }}
+                  className={`px-4 py-2.5 rounded-lg font-medium transition-all duration-200 ${
+                    isDarkMode
+                      ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile: Rename Category Popup Modal */}
+      {editingCategory && (
+        <div className="md:hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className={`w-full max-w-sm rounded-xl border-2 p-4 sm:p-6 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+            <div className="mb-4">
+              <h3 className={`text-lg font-semibold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                Rename Category
+              </h3>
+              <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                Enter a new name for this category
+              </p>
+            </div>
+            <div className="space-y-3">
+              <input
+                type="text"
+                value={editingCategoryName}
+                onChange={(e) => setEditingCategoryName(e.target.value)}
+                placeholder="Category name..."
+                autoFocus
+                className={`w-full px-4 py-3 rounded-lg border-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base ${
+                  isDarkMode
+                    ? 'bg-gray-900 border-gray-700 text-white placeholder-gray-500'
+                    : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
+                }`}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleUpdateCategory(editingCategory);
+                  } else if (e.key === 'Escape') {
+                    setEditingCategory(null);
+                    setEditingCategoryName('');
+                  }
+                }}
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleUpdateCategory(editingCategory)}
+                  className="flex-1 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 transition-all duration-200"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={() => {
+                    setEditingCategory(null);
+                    setEditingCategoryName('');
                   }}
                   className={`px-4 py-2.5 rounded-lg font-medium transition-all duration-200 ${
                     isDarkMode
