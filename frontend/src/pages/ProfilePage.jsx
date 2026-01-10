@@ -419,11 +419,11 @@ export default function ProfilePage() {
               
               {/* Mobile greeting - Hidden on very small screens */}
               {showMobileGreeting && (
-                <div className={`flex flex-col items-end text-right max-w-[45px] sm:max-w-[50px] md:max-w-[60px] lg:hidden leading-tight ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
+                <div className={`flex flex-col items-end text-right max-w-[70px] sm:max-w-[80px] md:max-w-[90px] lg:hidden leading-tight ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
                   {(() => {
                     const firstName = user?.first_name || 'User';
-                    // Truncate first name to max 6 characters on mobile
-                    const truncatedFirstName = firstName.length > 6 ? firstName.substring(0, 5) + '..' : firstName;
+                    // Truncate first name to max 10 characters on mobile
+                    const truncatedFirstName = firstName.length > 10 ? firstName.substring(0, 8) + '..' : firstName;
                     return (
                       <>
                         <div className={`text-[9px] sm:text-[10px] md:text-xs ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>Welcome</div>

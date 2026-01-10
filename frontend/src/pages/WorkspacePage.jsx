@@ -655,8 +655,59 @@ export default function WorkspacePage({ isDarkMode: propIsDarkMode }) {
           ) : (
             <div className={`rounded-xl border ${isDarkMode ? 'border-gray-700 bg-gray-900/30' : 'border-gray-200 bg-gray-50'}`}>
               {/* Material Manager Sub-tabs */}
-              <div className={`border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                <div className="flex gap-1 px-4 pt-2">
+              <div className={`md:border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                {/* Mobile: Vertical stacked tabs */}
+                <div className="md:hidden flex flex-col gap-1 p-2">
+                  <button
+                    onClick={() => setActiveMaterialManagerTab('big-files')}
+                    className={`px-3 py-2 text-xs font-medium rounded-lg transition-all duration-200 ${
+                      activeMaterialManagerTab === 'big-files'
+                        ? isDarkMode
+                          ? 'bg-sky-500/20 text-sky-400 border border-sky-500/50'
+                          : 'bg-sky-100 text-sky-600 border border-sky-300'
+                        : isDarkMode
+                        ? 'bg-gray-800/50 text-gray-400 border border-gray-700 hover:bg-gray-700'
+                        : 'bg-gray-100 text-gray-600 border border-gray-300 hover:bg-gray-200'
+                    }`}
+                  >
+                    Delete Big Files
+                  </button>
+                  <button
+                    onClick={() => setActiveMaterialManagerTab('duplicates')}
+                    className={`px-3 py-2 text-xs font-medium rounded-lg transition-all duration-200 relative ${
+                      activeMaterialManagerTab === 'duplicates'
+                        ? isDarkMode
+                          ? 'bg-sky-500/20 text-sky-400 border border-sky-500/50'
+                          : 'bg-sky-100 text-sky-600 border border-sky-300'
+                        : isDarkMode
+                        ? 'bg-gray-800/50 text-gray-400 border border-gray-700 hover:bg-gray-700'
+                        : 'bg-gray-100 text-gray-600 border border-gray-300 hover:bg-gray-200'
+                    }`}
+                  >
+                    Duplicate Detection
+                    {totalDuplicateCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1 py-0.5 rounded-full">
+                        {totalDuplicateCount}
+                      </span>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => setActiveMaterialManagerTab('activity')}
+                    className={`px-3 py-2 text-xs font-medium rounded-lg transition-all duration-200 ${
+                      activeMaterialManagerTab === 'activity'
+                        ? isDarkMode
+                          ? 'bg-sky-500/20 text-sky-400 border border-sky-500/50'
+                          : 'bg-sky-100 text-sky-600 border border-sky-300'
+                        : isDarkMode
+                        ? 'bg-gray-800/50 text-gray-400 border border-gray-700 hover:bg-gray-700'
+                        : 'bg-gray-100 text-gray-600 border border-gray-300 hover:bg-gray-200'
+                    }`}
+                  >
+                    Recent Activity
+                  </button>
+                </div>
+                {/* Desktop: Horizontal tabs */}
+                <div className="hidden md:flex gap-1 px-4 pt-2">
                   <button
                     onClick={() => setActiveMaterialManagerTab('big-files')}
                     className={`px-4 py-3 font-medium text-sm transition-all duration-200 border-b-2 ${
@@ -708,7 +759,7 @@ export default function WorkspacePage({ isDarkMode: propIsDarkMode }) {
               </div>
 
               {/* Tab Content */}
-              <div className="p-6">
+              <div className="p-3 sm:p-4 md:p-6">
                 {materialsLoading ? (
                   <div className="text-center py-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-500 mx-auto"></div>
@@ -718,35 +769,35 @@ export default function WorkspacePage({ isDarkMode: propIsDarkMode }) {
                     {/* Delete Big Files Tab */}
                     {activeMaterialManagerTab === 'big-files' && (
                       <div>
-                        <div className="flex items-center justify-between mb-4">
-                          <h3 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                        <div className="flex items-center justify-between mb-3 sm:mb-4">
+                          <h3 className={`text-sm sm:text-base font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                             Large Files
                           </h3>
                           {bigFiles.length > 0 && (
-                            <span className={`text-xs px-2 py-1 rounded ${isDarkMode ? 'bg-gray-800 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>
+                            <span className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded ${isDarkMode ? 'bg-gray-800 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>
                               {bigFiles.length} suggested
                             </span>
                           )}
                         </div>
                         {bigFiles.length > 0 ? (
-                          <div className="space-y-2">
+                          <div className="space-y-1.5 sm:space-y-2">
                             {bigFiles.map((material) => (
                               <div
                                 key={material.id}
-                                className={`flex items-center justify-between p-3 rounded-lg border ${isDarkMode ? 'border-gray-700 bg-gray-800/50' : 'border-gray-200 bg-white'}`}
+                                className={`flex items-center justify-between p-2 sm:p-3 rounded-lg border ${isDarkMode ? 'border-gray-700 bg-gray-800/50' : 'border-gray-200 bg-white'}`}
                               >
-                                <div className="flex-1 min-w-0">
-                                  <p className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`} title={material.filename}>
+                                <div className="flex-1 min-w-0 pr-2">
+                                  <p className={`text-xs sm:text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`} title={material.filename}>
                                     <span className="hidden sm:inline truncate">{material.filename}</span>
                                     <span className="sm:hidden">{truncateFileName(material.filename, 25)}</span>
                                   </p>
-                                  <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                  <p className={`text-[10px] sm:text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                                     {getCourseName(material.course)} • {formatBytes(material.size_bytes)}
                                   </p>
                                 </div>
                                 <button
                                   onClick={() => handleDeleteMaterial(material.id)}
-                                  className={`ml-4 px-3 py-1.5 text-xs rounded-lg transition-colors ${
+                                  className={`ml-2 sm:ml-4 px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs rounded-lg transition-colors flex-shrink-0 ${
                                     isDarkMode
                                       ? 'bg-red-600 hover:bg-red-700 text-white'
                                       : 'bg-red-500 hover:bg-red-600 text-white'
@@ -758,7 +809,7 @@ export default function WorkspacePage({ isDarkMode: propIsDarkMode }) {
                             ))}
                           </div>
                         ) : (
-                          <p className={`text-sm text-center py-8 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                          <p className={`text-xs sm:text-sm text-center py-6 sm:py-8 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                             No large files found.
                           </p>
                         )}
@@ -768,56 +819,56 @@ export default function WorkspacePage({ isDarkMode: propIsDarkMode }) {
                     {/* Duplicate Detection Tab */}
                     {activeMaterialManagerTab === 'duplicates' && (
                       <div>
-                        <div className="flex items-center justify-between mb-4">
-                          <h3 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                        <div className="flex items-center justify-between mb-3 sm:mb-4">
+                          <h3 className={`text-sm sm:text-base font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                             Duplicate Files
                           </h3>
                         </div>
                         {duplicates.length > 0 ? (
-                          <div className="space-y-4">
+                          <div className="space-y-2 sm:space-y-4">
                             {duplicates.map((group, idx) => {
                               // Check if duplicates are in same course or different courses
                               const courseIds = [...new Set(group.map(m => m.course))];
                               const isSameCourse = courseIds.length === 1;
                               
                               return (
-                                <div key={idx} className={`rounded-lg p-4 border ${isDarkMode ? 'border-gray-700 bg-gray-800/50' : 'border-gray-200 bg-white'}`}>
-                                  <div className="flex items-center justify-between mb-3">
-                                    <p className={`text-sm font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                                      {group.length} duplicate{group.length > 1 ? 's' : ''} found: <span className="font-normal text-xs" title={group[0]?.filename || 'Unknown'}>
+                                <div key={idx} className={`rounded-lg p-2 sm:p-4 border ${isDarkMode ? 'border-gray-700 bg-gray-800/50' : 'border-gray-200 bg-white'}`}>
+                                  <div className="flex items-center justify-between mb-2 sm:mb-3">
+                                    <p className={`text-xs sm:text-sm font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                                      {group.length} duplicate{group.length > 1 ? 's' : ''} found: <span className="font-normal text-[10px] sm:text-xs" title={group[0]?.filename || 'Unknown'}>
                                         <span className="hidden sm:inline">{group[0]?.filename || 'Unknown'}</span>
                                         <span className="sm:hidden">{truncateFileName(group[0]?.filename || 'Unknown', 25)}</span>
                                       </span>
                                     </p>
                                     {!isSameCourse && (
-                                      <span className={`text-xs px-2 py-1 rounded ${isDarkMode ? 'bg-yellow-500/20 text-yellow-400' : 'bg-yellow-100 text-yellow-700'}`}>
+                                      <span className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded flex-shrink-0 ${isDarkMode ? 'bg-yellow-500/20 text-yellow-400' : 'bg-yellow-100 text-yellow-700'}`}>
                                         Multiple locations
                                       </span>
                                     )}
                                   </div>
-                                  <div className="space-y-2">
+                                  <div className="space-y-1.5 sm:space-y-2">
                                     {group.map((material) => (
                                       <div
                                         key={material.id}
-                                        className={`flex items-center justify-between p-3 rounded-lg border ${isDarkMode ? 'bg-gray-900/50 border-gray-700' : 'bg-gray-50 border-gray-200'}`}
+                                        className={`flex items-center justify-between p-2 sm:p-3 rounded-lg border ${isDarkMode ? 'bg-gray-900/50 border-gray-700' : 'bg-gray-50 border-gray-200'}`}
                                       >
-                                        <div className="flex-1 min-w-0">
-                                          <p className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`} title={material.filename}>
+                                        <div className="flex-1 min-w-0 pr-2">
+                                          <p className={`text-xs sm:text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`} title={material.filename}>
                                             <span className="hidden sm:inline truncate">{material.filename}</span>
                                             <span className="sm:hidden">{truncateFileName(material.filename, 25)}</span>
                                           </p>
-                                          <div className="flex items-center gap-2 mt-1">
-                                            <span className={`text-xs px-2 py-0.5 rounded ${isDarkMode ? 'bg-sky-500/20 text-sky-400' : 'bg-sky-100 text-sky-700'}`}>
+                                          <div className="flex items-center gap-1.5 sm:gap-2 mt-1 flex-wrap">
+                                            <span className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded ${isDarkMode ? 'bg-sky-500/20 text-sky-400' : 'bg-sky-100 text-sky-700'}`}>
                                               📁 {getCourseName(material.course)}
                                             </span>
-                                            <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                            <span className={`text-[10px] sm:text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                                               • {formatBytes(material.size_bytes)}
                                             </span>
                                           </div>
                                         </div>
                                         <button
                                           onClick={() => handleDeleteMaterial(material.id)}
-                                          className={`ml-3 px-3 py-1.5 text-xs rounded-lg transition-colors ${
+                                          className={`ml-2 sm:ml-3 px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs rounded-lg transition-colors flex-shrink-0 ${
                                             isDarkMode
                                               ? 'bg-red-600 hover:bg-red-700 text-white'
                                               : 'bg-red-500 hover:bg-red-600 text-white'
@@ -833,7 +884,7 @@ export default function WorkspacePage({ isDarkMode: propIsDarkMode }) {
                             })}
                           </div>
                         ) : (
-                          <p className={`text-sm text-center py-8 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                          <p className={`text-xs sm:text-sm text-center py-6 sm:py-8 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                             No duplicate files found.
                           </p>
                         )}
@@ -843,18 +894,18 @@ export default function WorkspacePage({ isDarkMode: propIsDarkMode }) {
                     {/* Recent Activity Tab */}
                     {activeMaterialManagerTab === 'activity' && (
                       <div>
-                        <h3 className={`font-semibold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                        <h3 className={`text-sm sm:text-base font-semibold mb-3 sm:mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                           Recent Activity
                         </h3>
                         {paginatedActivities.length > 0 ? (
                           <>
-                            <div className="space-y-2 mb-4">
+                            <div className="space-y-1.5 sm:space-y-2 mb-3 sm:mb-4">
                               {paginatedActivities.map((activity, idx) => (
                                 <div
                                   key={idx}
-                                  className={`flex items-start gap-3 p-3 rounded-lg border ${isDarkMode ? 'border-gray-700 bg-gray-800/50' : 'border-gray-200 bg-white'}`}
+                                  className={`flex items-start gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg border ${isDarkMode ? 'border-gray-700 bg-gray-800/50' : 'border-gray-200 bg-white'}`}
                                 >
-                                  <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                                  <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
                                     activity.type === 'uploaded'
                                       ? isDarkMode ? 'bg-green-500/20 text-green-400' : 'bg-green-100 text-green-600'
                                       : activity.type === 'deleted'
@@ -868,34 +919,34 @@ export default function WorkspacePage({ isDarkMode: propIsDarkMode }) {
                                       : isDarkMode ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-100 text-blue-600'
                                   }`}>
                                     {activity.type === 'uploaded' ? (
-                                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                                       </svg>
                                     ) : activity.type === 'deleted' ? (
-                                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                       </svg>
                                     ) : activity.type === 'viewed' ? (
-                                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                       </svg>
                                     ) : activity.type === 'summary' ? (
-                                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                       </svg>
                                     ) : activity.type === 'quiz_created' || activity.type === 'quiz_completed' ? (
-                                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                                       </svg>
                                     ) : (
-                                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                                       </svg>
                                     )}
                                   </div>
                                   <div className="flex-1 min-w-0">
-                                    <p className={`text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'} break-words`} title={activity.fullDescription || activity.description}>
+                                    <p className={`text-xs sm:text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'} break-words`} title={activity.fullDescription || activity.description}>
                                       <span className="hidden sm:inline">{activity.description}</span>
                                       <span className="sm:hidden">
                                         {(() => {
@@ -911,13 +962,13 @@ export default function WorkspacePage({ isDarkMode: propIsDarkMode }) {
                                         })()}
                                       </span>
                                     </p>
-                                    <div className="flex items-center gap-2 mt-1">
+                                    <div className="flex items-center gap-1.5 sm:gap-2 mt-1 flex-wrap">
                                       {activity.courseName && (
-                                        <span className={`text-xs px-2 py-0.5 rounded ${isDarkMode ? 'bg-sky-500/20 text-sky-400' : 'bg-sky-100 text-sky-700'}`}>
+                                        <span className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded ${isDarkMode ? 'bg-sky-500/20 text-sky-400' : 'bg-sky-100 text-sky-700'}`}>
                                           📁 {activity.courseName}
                                         </span>
                                       )}
-                                      <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                      <p className={`text-[10px] sm:text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                                         {activity.timestamp.toLocaleString()}
                                       </p>
                                     </div>
@@ -930,7 +981,7 @@ export default function WorkspacePage({ isDarkMode: propIsDarkMode }) {
                                 <button
                                   onClick={() => setActivityPage(p => Math.max(1, p - 1))}
                                   disabled={activityPage === 1}
-                                  className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                                  className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm rounded-lg transition-colors ${
                                     activityPage === 1
                                       ? isDarkMode
                                         ? 'bg-gray-800 text-gray-600 cursor-not-allowed'
@@ -942,13 +993,13 @@ export default function WorkspacePage({ isDarkMode: propIsDarkMode }) {
                                 >
                                   Previous
                                 </button>
-                                <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                <span className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                                   Page {activityPage} of {totalActivityPages}
                                 </span>
                                 <button
                                   onClick={() => setActivityPage(p => Math.min(totalActivityPages, p + 1))}
                                   disabled={activityPage === totalActivityPages}
-                                  className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                                  className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm rounded-lg transition-colors ${
                                     activityPage === totalActivityPages
                                       ? isDarkMode
                                         ? 'bg-gray-800 text-gray-600 cursor-not-allowed'
@@ -964,7 +1015,7 @@ export default function WorkspacePage({ isDarkMode: propIsDarkMode }) {
                             )}
                           </>
                         ) : (
-                          <p className={`text-sm text-center py-8 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                          <p className={`text-xs sm:text-sm text-center py-6 sm:py-8 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                             No recent activity.
                           </p>
                         )}

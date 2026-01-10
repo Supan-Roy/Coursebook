@@ -664,13 +664,13 @@ const MyPlans = ({ isDarkMode }) => {
                 return (
                   <div
                     key={category.id}
-                    className={`flex flex-shrink-0 relative group overflow-hidden ${baseClasses} ${isDefault ? (isMobile ? 'px-1 py-0.5' : 'px-2 py-1') : (isMobile ? 'px-2 sm:px-2.5 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3' : 'px-2 sm:px-2.5 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3')} rounded-lg transition-all duration-200 ${isMobile ? '' : 'min-w-max'} ${deleteMode && !isDefault ? 'border-2 border-red-400/70' : ''}`}
+                    className={`flex flex-shrink-0 relative group overflow-hidden ${baseClasses} ${isDefault ? (isMobile ? 'pl-1 pr-0.5 py-0.5' : 'px-2 py-1') : (isMobile ? 'px-2 sm:px-2.5 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3' : 'px-2 sm:px-2.5 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3')} rounded-lg transition-all duration-200 ${isMobile ? '' : 'min-w-max'} ${deleteMode && !isDefault ? 'border-2 border-red-400/70' : ''}`}
                     onClick={handleCategoryClick}
                     style={{ 
                       cursor: deleteMode && !isDefault ? 'pointer' : 'default',
-                      width: isMobile ? 'calc(50% - 0.375rem)' : (isDefault ? 'fit-content' : 'auto'),
-                      minWidth: isMobile ? 'calc(50% - 0.375rem)' : (isDefault ? 'fit-content' : 'auto'),
-                      maxWidth: isMobile ? 'calc(50% - 0.375rem)' : (isDefault ? 'fit-content' : 'none'),
+                      width: isMobile && isDefault ? 'fit-content' : (isMobile ? 'calc(50% - 0.375rem)' : (isDefault ? 'fit-content' : 'auto')),
+                      minWidth: isMobile && isDefault ? 'fit-content' : (isMobile ? 'calc(50% - 0.375rem)' : (isDefault ? 'fit-content' : 'auto')),
+                      maxWidth: isMobile && isDefault ? 'fit-content' : (isMobile ? 'calc(50% - 0.375rem)' : (isDefault ? 'fit-content' : 'none')),
                       flexShrink: isDefault ? 0 : 0
                     }}
                   >
@@ -726,13 +726,13 @@ const MyPlans = ({ isDarkMode }) => {
                           <span className="hidden md:inline">{category.name}</span>
                           <span className="md:hidden">
                             {category.name.length > 10 
-                              ? category.name.substring(0, 7) + '...' 
+                              ? category.name.substring(0, 8) + '..' 
                               : category.name}
                           </span>
                         </button>
 
-                        {/* Tiny rename control on hover (non-default only) */}
-                        {!isDefault && (
+                        {/* Tiny rename control on hover (non-default only, hidden in delete mode) */}
+                        {!isDefault && !deleteMode && (
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -774,19 +774,13 @@ const MyPlans = ({ isDarkMode }) => {
                       }
                       setShowAddCategory(true);
                     }}
-                    className={`flex-shrink-0 px-2 sm:px-2.5 md:px-3 lg:px-4 py-2 sm:py-2.5 md:py-3 rounded-lg border-2 border-dashed transition-all text-xs sm:text-sm md:text-base ${
+                    className={`flex-shrink-0 w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-lg border border-dashed transition-all flex items-center justify-center ${
                       isDarkMode
-                        ? 'border-gray-700 hover:border-gray-600 text-gray-400 hover:text-gray-300 hover:bg-gray-800'
-                        : 'border-gray-400 hover:border-gray-500 text-gray-600 hover:text-gray-700 hover:bg-gray-100'
-                    } font-medium flex items-center justify-center gap-1 sm:gap-1.5 whitespace-nowrap`}
-                    style={{ 
-                      width: isMobile ? 'calc(50% - 0.375rem)' : 'fit-content',
-                      minWidth: isMobile ? 'calc(50% - 0.375rem)' : 'fit-content'
-                    }}
+                        ? 'border-green-500/50 hover:border-green-400 text-green-400 hover:text-green-300 hover:bg-green-500/10'
+                        : 'border-green-500/50 hover:border-green-600 text-green-600 hover:text-green-700 hover:bg-green-50'
+                    }`}
                   >
-                    <FiPlus className="w-5 h-5 sm:w-4 sm:h-4 md:w-5 md:h-5 flex-shrink-0" />
-                    <span className="hidden md:inline">Add Category</span>
-                    <span className="hidden sm:inline md:hidden">Add</span>
+                    <FiPlus className="w-4 h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5 flex-shrink-0" />
                   </button>
                 );
               })()}
