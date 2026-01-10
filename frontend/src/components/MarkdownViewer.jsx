@@ -27,6 +27,16 @@ export default function MarkdownViewer({ content, className = '', isDarkMode: pr
   
   return (
     <div className={`prose prose-sm max-w-none ${className}`}>
+      <style>{`
+        .katex-display {
+          margin: 1em 0 !important;
+          overflow-x: auto;
+          overflow-y: hidden;
+        }
+        .katex {
+          font-size: 1.1em !important;
+        }
+      `}</style>
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkMath]}
         rehypePlugins={[rehypeKatex]}

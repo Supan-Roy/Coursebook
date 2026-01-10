@@ -1101,22 +1101,22 @@ export default function CourseDetailPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backdropFilter: 'blur(4px)' }}>
           <div className={`absolute inset-0 ${isDarkMode ? 'bg-black/60' : 'bg-black/30'}`} onClick={() => setSelectedSummary(null)} />
           
-          <div className={`relative rounded-xl border shadow-2xl max-w-3xl w-full mx-4 max-h-[80vh] overflow-y-auto ${
+          <div className={`relative rounded-xl border shadow-2xl max-w-3xl w-full mx-4 max-h-[80vh] flex flex-col ${
             isDarkMode 
               ? 'bg-gray-900 border-gray-800' 
               : 'bg-white border-gray-200'
           }`}>
-            <div className={`border-b p-6 sticky top-0 ${isDarkMode ? 'border-gray-800 bg-gray-900' : 'border-gray-200 bg-white'}`}>
+            <div className={`border-b p-6 sticky top-0 z-10 flex-shrink-0 ${isDarkMode ? 'border-gray-800 bg-gray-900' : 'border-gray-200 bg-white'}`}>
               <div className="flex items-start justify-between">
-                <div>
-                  <h2 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                <div className="flex-1 min-w-0 pr-4">
+                  <h2 className={`text-xl font-bold break-words ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                     {selectedSummary.title}
                   </h2>
                   <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                     {selectedSummary.word_count} words • {new Date(selectedSummary.created_at).toLocaleDateString()}
                   </p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-shrink-0">
                   <button
                     onClick={async () => {
                       try {
@@ -1158,11 +1158,13 @@ export default function CourseDetailPage() {
               </div>
             </div>
 
-            <div className="p-6">
-              <MarkdownViewer 
-                content={selectedSummary.content} 
-                isDarkMode={isDarkMode}
-              />
+            <div className="flex-1 overflow-y-auto">
+              <div className="p-6 pt-6">
+                <MarkdownViewer 
+                  content={selectedSummary.content} 
+                  isDarkMode={isDarkMode}
+                />
+              </div>
             </div>
           </div>
         </div>
