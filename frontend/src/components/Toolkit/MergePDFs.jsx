@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import toolkitService from '../../services/toolkitService';
+import { FaObjectGroup } from 'react-icons/fa';
+import { FiX } from 'react-icons/fi';
 import './ToolkitModal.css';
 
 const MergePDFs = ({ onClose }) => {
@@ -88,8 +90,20 @@ const MergePDFs = ({ onClose }) => {
     <div className="toolkit-modal-overlay" onClick={onClose}>
       <div className={`toolkit-modal-content ${isDarkMode ? 'dark-mode' : ''}`} onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>Merge PDFs</h2>
-          <button className="close-btn" onClick={onClose}>×</button>
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-white flex-shrink-0`}>
+              <FaObjectGroup className="w-5 h-5" />
+            </div>
+            <div>
+              <h2>Merge PDFs</h2>
+              <p className={`text-sm mt-0.5 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                Combine multiple PDF files into one
+              </p>
+            </div>
+          </div>
+          <button className="close-btn" onClick={onClose}>
+            <FiX className="w-5 h-5" />
+          </button>
         </div>
 
         <div className="modal-body">

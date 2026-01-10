@@ -1,6 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import toolkitService from '../../services/toolkitService';
+import { FaCut } from 'react-icons/fa';
+import { FiX } from 'react-icons/fi';
 import './ToolkitModal.css';
 
 export const SplitPDF = ({ onClose }) => {
@@ -94,8 +96,20 @@ export const SplitPDF = ({ onClose }) => {
     <div className="toolkit-modal-overlay" onClick={onClose}>
       <div className={`toolkit-modal-content ${isDarkMode ? 'dark-mode' : ''}`} onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>Split PDF</h2>
-          <button className="close-btn" onClick={onClose}>×</button>
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-lg bg-gradient-to-br from-yellow-500 to-yellow-600 flex items-center justify-center text-white flex-shrink-0`}>
+              <FaCut className="w-5 h-5" />
+            </div>
+            <div>
+              <h2>Split PDF</h2>
+              <p className={`text-sm mt-0.5 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                Extract specific pages from your PDF
+              </p>
+            </div>
+          </div>
+          <button className="close-btn" onClick={onClose}>
+            <FiX className="w-5 h-5" />
+          </button>
         </div>
 
         <div className="modal-body">

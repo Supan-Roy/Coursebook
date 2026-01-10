@@ -124,20 +124,20 @@ export default function ImagesToPDF({ onClose }) {
       onClick={onClose}
     >
       <div
-        className={`w-full max-w-2xl mx-4 rounded-2xl shadow-2xl transform transition-all ${
+        className={`w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl shadow-2xl transform transition-all ${
           isDarkMode ? 'bg-gray-900 border border-gray-800' : 'bg-white border border-gray-200'
         }`}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
+        {/* Header - Fixed */}
         <div
-          className={`flex items-center justify-between p-6 border-b ${
+          className={`flex items-center justify-between p-4 sm:p-6 border-b flex-shrink-0 ${
             isDarkMode ? 'border-gray-800' : 'border-gray-200'
           }`}
         >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center text-white">
-              <FiImage className="w-6 h-6" />
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center text-white flex-shrink-0">
+              <FiImage className="w-5 h-5" />
             </div>
             <div>
               <h2 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -158,7 +158,8 @@ export default function ImagesToPDF({ onClose }) {
           </button>
         </div>
 
-        <div className="p-6 space-y-6">
+        {/* Content - Scrollable */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
           {/* Dropzone */}
           <label
             onDragEnter={handleDrag}
@@ -300,28 +301,32 @@ export default function ImagesToPDF({ onClose }) {
             </div>
           )}
 
-          {/* Actions */}
-          <div className="flex justify-end gap-3">
-            <button
-              onClick={onClose}
-              className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
-                isDarkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleConvert}
-              disabled={isConverting || !files.length}
-              className={`px-4 py-2 rounded-lg font-semibold text-white transition-colors flex items-center gap-2 ${
-                isConverting || !files.length
-                  ? 'bg-pink-400/60 cursor-not-allowed'
-                  : 'bg-pink-500 hover:bg-pink-600'
-              }`}
-            >
-              {isConverting ? 'Converting...' : 'Convert to PDF'}
-            </button>
-          </div>
+        </div>
+
+        {/* Footer - Fixed */}
+        <div className={`flex items-center justify-end gap-3 p-4 sm:p-6 border-t flex-shrink-0 ${isDarkMode ? 'border-gray-800 bg-gray-800/30' : 'border-gray-200 bg-gray-50'}`}>
+          <button
+            onClick={onClose}
+            className={`px-4 sm:px-6 py-2 rounded-lg font-medium transition-colors ${
+              isDarkMode ? 'bg-gray-700 hover:bg-gray-600 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-900'
+            }`}
+            disabled={isConverting}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleConvert}
+            disabled={isConverting || !files.length}
+            className={`px-4 sm:px-6 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
+              isConverting || !files.length
+                ? isDarkMode
+                  ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                  : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                : 'bg-gradient-to-r from-pink-600 to-purple-700 hover:from-pink-700 hover:to-purple-800 text-white shadow-lg'
+            }`}
+          >
+            {isConverting ? 'Converting...' : 'Convert to PDF'}
+          </button>
         </div>
       </div>
 

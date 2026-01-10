@@ -78,6 +78,10 @@ export default function HelpSupportPage() {
         onSelectTab={(key) => {
           if (key === 'dashboard') navigate('/dashboard');
           else if (key === 'help') navigate('/help-support');
+          else if (key === 'toolkit') {
+            localStorage.setItem('dashboardActiveTab', 'toolkit');
+            navigate('/dashboard');
+          }
         }}
         isDarkMode={isDarkMode}
       />

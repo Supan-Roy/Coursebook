@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { FiUpload, FiX, FiCheck, FiMove, FiEdit3, FiPenTool, FiTrash2, FiChevronLeft, FiChevronRight, FiDownload } from 'react-icons/fi';
+import { FiUpload, FiX, FiCheck, FiMove, FiPenTool, FiTrash2, FiChevronLeft, FiChevronRight, FiDownload } from 'react-icons/fi';
+import { FaEdit } from 'react-icons/fa';
 import { useTheme } from '../../context/ThemeContext';
 import { toolkitService } from '../../services';
 import Toast from '../Toast';
@@ -352,8 +353,8 @@ export default function EditPDF({ onClose }) {
           }`}
         >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white">
-              <FiEdit3 className="w-6 h-6" />
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white flex-shrink-0">
+              <FaEdit className="w-5 h-5" />
             </div>
             <div>
               <h2 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>

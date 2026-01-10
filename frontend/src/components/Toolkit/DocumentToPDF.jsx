@@ -3,6 +3,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { toolkitService } from '../../services';
 import Toast from '../Toast';
 import { FiUpload, FiDownload, FiX, FiCheck, FiAlertCircle } from 'react-icons/fi';
+import { FaFileImport } from 'react-icons/fa';
 
 export default function DocumentToPDF({ onClose }) {
   const { isDarkMode } = useTheme();
@@ -147,8 +148,8 @@ export default function DocumentToPDF({ onClose }) {
           }`}
         >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white">
-              📄
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white flex-shrink-0">
+              <FaFileImport className="w-5 h-5" />
             </div>
             <div>
               <h2 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>

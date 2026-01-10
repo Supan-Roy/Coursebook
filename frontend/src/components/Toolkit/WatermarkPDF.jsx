@@ -2,7 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import { toolkitService } from '../../services';
 import Toast from '../Toast';
-import { FiUpload, FiX, FiType, FiImage as FiImageIcon, FiCheck, FiMove } from 'react-icons/fi';
+import { FiUpload, FiX, FiType, FiCheck, FiMove } from 'react-icons/fi';
+import { FaTint } from 'react-icons/fa';
 import * as pdfjsLib from 'pdfjs-dist';
 import './ToolkitModal.css';
 
@@ -567,8 +568,8 @@ export default function WatermarkPDF({ onClose }) {
           }`}
         >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white">
-              <FiImageIcon className="w-6 h-6" />
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white flex-shrink-0">
+              <FaTint className="w-5 h-5" />
             </div>
             <div>
               <h2 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -655,7 +656,7 @@ export default function WatermarkPDF({ onClose }) {
                 className={`tab-btn ${watermarkType === 'image' ? 'active' : ''}`}
                 onClick={() => setWatermarkType('image')}
               >
-                <FiImageIcon className="w-4 h-4 mr-2" />
+                <FaTint className="w-4 h-4 mr-2" />
                 Image
               </button>
             </div>
