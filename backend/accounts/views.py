@@ -279,27 +279,24 @@ class SecureLoginView(APIView):
         email = serializer.validated_data['email']
         password = serializer.validated_data['password']
         
-        # Security: Always perform password check to prevent timing attacks
-        # Use get() with a dummy password check if user doesn't exist
+        # Check if user exists
         try:
             user = User.objects.get(email=email)
-            user_exists = True
         except User.DoesNotExist:
-            # Create a dummy user object for password check to prevent timing attacks
-            # This ensures password verification always takes similar time
-            user = User(email=email)
-            user_exists = False
-        
-        # Always perform password check (prevents timing attacks)
-        password_valid = user.check_password(password) if user_exists else False
-        
-        # If user doesn't exist or password is invalid, return generic error
-        if not user_exists or not password_valid:
-            # Only record failed attempt if user actually exists
-            if user_exists:
-                user.record_failed_login()
+            # User doesn't exist - tell them to create an account
             return Response(
-                {"detail": "Invalid email or password."},
+                {"detail": "No account found with this email. Please create an account to continue."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # User exists - check password
+        password_valid = user.check_password(password)
+        
+        if not password_valid:
+            # Password is incorrect - record failed attempt
+            user.record_failed_login()
+            return Response(
+                {"detail": "Invalid password. Please check your password and try again."},
                 status=status.HTTP_401_UNAUTHORIZED
             )
         
@@ -444,10 +441,10 @@ class PasswordResetRequestView(APIView):
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
-            # Don't reveal if email exists or not (security best practice)
+            # Account doesn't exist - inform user
             return Response(
-                {"detail": "If an account with this email exists, a password reset link has been sent."},
-                status=status.HTTP_200_OK
+                {"detail": "No account found with this email. Please create an account to continue."},
+                status=status.HTTP_404_NOT_FOUND
             )
         
         # Generate reset token
