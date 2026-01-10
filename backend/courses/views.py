@@ -1,4 +1,4 @@
-from django.db.models import Max
+from django.db.models import Max, Min
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -105,11 +105,22 @@ class SemesterCreateView(APIView):
             )
         
         try:
-            # Get the maximum order value for this user and add 1
-            max_order = Semester.objects.filter(user=request.user).aggregate(
-                max_order=Max('order')
-            )['max_order'] or -1
-            new_order = max_order + 1
+            # Get the minimum order value for this user and subtract 1 to put new semester at top
+            # Filter out NULL order values to get actual minimum
+            existing_semesters = Semester.objects.filter(
+                user=request.user,
+                order__isnull=False
+            )
+            
+            if existing_semesters.exists():
+                min_order = existing_semesters.aggregate(
+                    min_order=Min('order')
+                )['min_order']
+                # Subtract 1 to put new semester above all existing ones
+                new_order = min_order - 1
+            else:
+                # First semester gets order 0
+                new_order = 0
             
             semester = Semester.objects.create(user=request.user, name=name, order=new_order)
             serializer = SemesterSerializer(semester)

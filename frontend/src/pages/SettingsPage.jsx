@@ -67,7 +67,7 @@ export default function SettingsPage() {
                 </button>
                 <button
                   onClick={() => navigate('/dashboard')}
-                  className="flex items-center gap-1.5 sm:gap-2 md:gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+                  className="flex items-center gap-0.5 cursor-pointer hover:opacity-80 transition-opacity"
                   title="Go to Dashboard"
                 >
                   <img src="/coursebook.svg" alt="Coursebook" className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 flex-shrink-0" />
@@ -173,73 +173,73 @@ export default function SettingsPage() {
           </div>
         </header>
 
-        <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-          <section className={`rounded-2xl p-8 border ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200 shadow-sm'}`}>
-            <div className="flex items-center justify-between mb-4">
+        <main className="max-w-5xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8 lg:py-10 space-y-4 sm:space-y-6 md:space-y-8">
+          <section className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 border ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200 shadow-sm'}`}>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
               <div>
-                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Account</p>
-                <h1 className="text-2xl font-bold">Profile</h1>
-                <p className={`mt-1 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                <p className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Account</p>
+                <h1 className="text-xl sm:text-2xl font-bold">Profile</h1>
+                <p className={`mt-1 text-xs sm:text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                   Manage your personal info and avatar from your profile page.
                 </p>
               </div>
             </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Signed in as</p>
-                <p className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <p className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Signed in as</p>
+                <p className={`text-sm sm:text-base font-semibold truncate ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                   {user?.first_name} {user?.last_name}
                 </p>
-                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{user?.email}</p>
+                <p className={`text-xs sm:text-sm truncate ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{user?.email}</p>
               </div>
               <button
                 type="button"
                 onClick={() => navigate('/profile')}
-                className="px-4 py-2 rounded-lg bg-sky-600 text-white font-semibold hover:bg-sky-500 transition-colors"
+                className="px-3 sm:px-4 py-2 text-sm sm:text-base rounded-lg bg-sky-600 text-white font-semibold hover:bg-sky-500 transition-colors whitespace-nowrap flex-shrink-0"
               >
                 Open profile
               </button>
             </div>
           </section>
 
-          <section className={`rounded-2xl p-8 border ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200 shadow-sm'}`}>
-            <div className="flex items-center justify-between mb-6">
+          <section className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 border ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200 shadow-sm'}`}>
+            <div className="flex items-center justify-between mb-4 sm:mb-6">
               <div>
-                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Notifications</p>
-                <h2 className="text-xl font-bold">Alerts & emails</h2>
+                <p className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Notifications</p>
+                <h2 className="text-lg sm:text-xl font-bold">Alerts & emails</h2>
               </div>
             </div>
-            <div className="space-y-4">
-              <label className="flex items-center gap-3">
-                <input type="checkbox" className="w-4 h-4" checked={notifyEmail} onChange={(e) => setNotifyEmail(e.target.value ? e.target.checked : e.target.checked)} />
-                <span className={`${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>Email updates about new summaries and reminders</span>
+            <div className="space-y-3 sm:space-y-4">
+              <label className="flex items-start sm:items-center gap-2 sm:gap-3">
+                <input type="checkbox" className="w-4 h-4 mt-0.5 sm:mt-0 flex-shrink-0" checked={notifyEmail} onChange={(e) => setNotifyEmail(e.target.value ? e.target.checked : e.target.checked)} />
+                <span className={`text-sm sm:text-base break-words ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>Email updates about new summaries and reminders</span>
               </label>
-              <label className="flex items-center gap-3">
-                <input type="checkbox" className="w-4 h-4" checked={notifyPush} onChange={(e) => setNotifyPush(e.target.value ? e.target.checked : e.target.checked)} />
-                <span className={`${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>Browser push notifications</span>
+              <label className="flex items-start sm:items-center gap-2 sm:gap-3">
+                <input type="checkbox" className="w-4 h-4 mt-0.5 sm:mt-0 flex-shrink-0" checked={notifyPush} onChange={(e) => setNotifyPush(e.target.value ? e.target.checked : e.target.checked)} />
+                <span className={`text-sm sm:text-base break-words ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>Browser push notifications</span>
               </label>
-              <label className="flex items-center gap-3">
-                <input type="checkbox" className="w-4 h-4" checked={storageAlerts} onChange={(e) => setStorageAlerts(e.target.value ? e.target.checked : e.target.checked)} />
-                <span className={`${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>Storage limit alerts</span>
+              <label className="flex items-start sm:items-center gap-2 sm:gap-3">
+                <input type="checkbox" className="w-4 h-4 mt-0.5 sm:mt-0 flex-shrink-0" checked={storageAlerts} onChange={(e) => setStorageAlerts(e.target.value ? e.target.checked : e.target.checked)} />
+                <span className={`text-sm sm:text-base break-words ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>Storage limit alerts</span>
               </label>
             </div>
           </section>
 
-          <section className={`rounded-2xl p-8 border ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200 shadow-sm'}`}>
+          <section className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 border ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200 shadow-sm'}`}>
             <div className="flex items-center justify-between mb-4">
               <div>
-                <p className={`text-sm ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>Danger zone</p>
-                <h2 className="text-xl font-bold">Account deletion</h2>
+                <p className={`text-xs sm:text-sm ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>Danger zone</p>
+                <h2 className="text-lg sm:text-xl font-bold">Account deletion</h2>
               </div>
             </div>
-            <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mb-4`}>
+            <p className={`text-sm sm:text-base ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mb-4`}>
               Permanently delete your account and data. This action cannot be undone. 
               You'll receive a confirmation email to complete the deletion.
             </p>
             <button
               type="button"
               onClick={() => navigate('/delete-account')}
-              className="px-4 py-2 rounded-lg bg-red-600 text-white font-semibold hover:bg-red-500 transition-colors"
+              className="w-full sm:w-auto px-4 py-2 text-sm sm:text-base rounded-lg bg-red-600 text-white font-semibold hover:bg-red-500 transition-colors"
             >
               Delete account
             </button>

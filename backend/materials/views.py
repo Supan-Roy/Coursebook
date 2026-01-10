@@ -221,10 +221,33 @@ class FileUploadView(APIView):
         
         # Create or get the Semester model instance to ensure proper created_at timestamp
         from courses.models import Semester
+        from django.db.models import Min
+        
+        # Get minimum order of existing semesters (excluding the one we're about to create/get)
+        # Filter out NULL order values to get actual minimum
+        existing_semesters = Semester.objects.filter(
+            user=request.user,
+            order__isnull=False
+        ).exclude(name=semester_name)
+        
         semester_obj, semester_created = Semester.objects.get_or_create(
             user=request.user,
             name=semester_name
         )
+        
+        # If semester was just created, set its order to be at the top (minimum order - 1)
+        if semester_created:
+            if existing_semesters.exists():
+                min_order = existing_semesters.aggregate(
+                    min_order=Min('order')
+                )['min_order']
+                # Subtract 1 to put new semester above all existing ones
+                new_order = min_order - 1
+            else:
+                # First semester gets order 0
+                new_order = 0
+            semester_obj.order = new_order
+            semester_obj.save()
         
         # Create courses with the new semester
         created_courses = []

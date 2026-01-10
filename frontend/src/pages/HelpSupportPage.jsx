@@ -109,7 +109,7 @@ export default function HelpSupportPage() {
                 </button>
                 <button
                   onClick={() => navigate('/dashboard')}
-                  className="flex items-center gap-1.5 sm:gap-2 md:gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+                  className="flex items-center gap-0.5 cursor-pointer hover:opacity-80 transition-opacity"
                   title="Go to Dashboard"
                 >
                   <img src="/coursebook.svg" alt="Coursebook" className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 flex-shrink-0" />

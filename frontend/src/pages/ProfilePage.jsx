@@ -384,7 +384,7 @@ export default function ProfilePage() {
               </button>
               <button
                 onClick={() => navigate('/dashboard')}
-                className="flex items-center gap-1.5 sm:gap-2 md:gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+                className="flex items-center gap-0.5 cursor-pointer hover:opacity-80 transition-opacity"
                 title="Go to Dashboard"
               >
                 <img src="/coursebook.svg" alt="Coursebook" className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 flex-shrink-0" />
@@ -609,8 +609,8 @@ export default function ProfilePage() {
           )}
 
           {/* Profile Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 md:gap-6">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5 md:space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
               {/* First Name */}
               <div>
                 <label htmlFor="first_name" className={`block text-sm font-semibold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -766,20 +766,20 @@ export default function ProfilePage() {
             </div>
 
             {/* Account Info */}
-            <div className={`pt-6 border-t ${isDarkMode ? 'border-gray-700/30' : 'border-gray-200'}`}>
-              <h3 className={`text-sm font-semibold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Account Information</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between text-sm">
+            <div className={`pt-4 sm:pt-5 md:pt-6 border-t ${isDarkMode ? 'border-gray-700/30' : 'border-gray-200'}`}>
+              <h3 className={`text-sm font-semibold mb-3 sm:mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Account Information</h3>
+              <div className="space-y-2 sm:space-y-3">
+                <div className="flex justify-between items-center text-xs sm:text-sm gap-2">
                   <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Plan</span>
-                  <span className={`font-medium capitalize ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{user?.plan || 'Free'}</span>
+                  <span className={`font-medium capitalize truncate ml-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{user?.plan || 'Free'}</span>
                 </div>
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between items-center text-xs sm:text-sm gap-2">
                   <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Storage Quota</span>
-                  <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{user?.quota_mb || 500} MB</span>
+                  <span className={`font-medium truncate ml-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{user?.quota_mb || 500} MB</span>
                 </div>
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between items-center text-xs sm:text-sm gap-2">
                   <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Member Since</span>
-                  <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  <span className={`font-medium truncate ml-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                     {user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}
                   </span>
                 </div>
@@ -787,7 +787,7 @@ export default function ProfilePage() {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 pt-4 sm:pt-6">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-2.5 md:gap-3 pt-4 sm:pt-5 md:pt-6">
               {!isEditing ? (
                 <button
                   type="button"

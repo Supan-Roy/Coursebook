@@ -1141,11 +1141,11 @@ const MyPlans = ({ isDarkMode }) => {
                     {todo.is_completed && <FiCheck className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500" />}
                   </button>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2 sm:gap-3 md:gap-4 mb-1.5 sm:mb-2">
-                      <h3 className={`text-sm sm:text-base md:text-lg font-medium flex-1 min-w-0 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-1.5 sm:mb-2">
+                      <h3 className={`text-sm sm:text-base md:text-lg font-medium flex-1 min-w-0 break-words ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                         {todo.title}
                       </h3>
-                      <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 flex-shrink-0">
+                      <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 flex-shrink-0 flex-wrap">
                         <span className={`flex items-center gap-0.5 sm:gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg border text-[10px] sm:text-xs font-medium ${getPriorityColor(todo.priority)}`}>
                           {getPriorityIcon(todo.priority)}
                           <span className="hidden sm:inline">{todo.priority}</span>
@@ -1175,7 +1175,7 @@ const MyPlans = ({ isDarkMode }) => {
                       </div>
                     </div>
                     {todo.description && (
-                      <p className={`text-xs sm:text-sm mb-1.5 sm:mb-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      <p className={`text-xs sm:text-sm mb-1.5 sm:mb-2 break-words ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                         {todo.description}
                       </p>
                     )}

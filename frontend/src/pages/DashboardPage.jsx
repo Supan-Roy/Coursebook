@@ -41,6 +41,7 @@ export default function DashboardPage() {
   const [addingCourseToSemester, setAddingCourseToSemester] = useState(null);
   const [newCourseData, setNewCourseData] = useState({ code: '', title: '' });
   const [creatingNewSemester, setCreatingNewSemester] = useState(false);
+  const [isCreatingSemester, setIsCreatingSemester] = useState(false);
   const [newSemesterName, setNewSemesterName] = useState('');
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, title: '', message: '', onConfirm: null });
   const [alertDialog, setAlertDialog] = useState({ isOpen: false, title: '', message: '', type: 'info' });
@@ -618,6 +619,7 @@ export default function DashboardPage() {
     const defaultName = generateDefaultSemesterName();
     console.log('Creating semester with name:', defaultName);
 
+    setIsCreatingSemester(true);
     try {
       // Create a blank semester without any courses
       await semesterService.create({
@@ -638,6 +640,8 @@ export default function DashboardPage() {
         message: 'Failed to create semester',
         type: 'error'
       });
+    } finally {
+      setIsCreatingSemester(false);
     }
   };
 
@@ -889,7 +893,7 @@ export default function DashboardPage() {
                   window.scrollTo(0, 0);
                   loadData();
                 }}
-                className="flex items-center gap-1.5 sm:gap-2 md:gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+                className="flex items-center gap-0.5 cursor-pointer hover:opacity-80 transition-opacity"
                 title="Reload Dashboard"
               >
                 <img src="/coursebook.svg" alt="Coursebook" className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 flex-shrink-0" />
@@ -1234,19 +1238,36 @@ export default function DashboardPage() {
                       navigate('/login');
                       return;
                     }
-                    handleCreateNewSemester();
+                    if (!isCreatingSemester) {
+                      handleCreateNewSemester();
+                    }
                   }}
-                  className={`border-2 rounded-xl p-3 sm:p-4 md:p-5 transition-all flex flex-col items-center justify-center hover:shadow-xl hover:scale-[1.02] active:scale-95 min-h-[95px] sm:min-h-[110px] md:min-h-[130px] ${isDarkMode ? 'bg-gradient-to-br from-orange-600 to-orange-700 border-orange-500' : 'bg-gradient-to-br from-orange-400 to-orange-500 border-orange-400'}`}
+                  disabled={isCreatingSemester}
+                  className={`border-2 rounded-xl p-3 sm:p-4 md:p-5 transition-all flex flex-col items-center justify-center hover:shadow-xl hover:scale-[1.02] active:scale-95 min-h-[95px] sm:min-h-[110px] md:min-h-[130px] disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100 ${isDarkMode ? 'bg-gradient-to-br from-orange-600 to-orange-700 border-orange-500' : 'bg-gradient-to-br from-orange-400 to-orange-500 border-orange-400'}`}
                 >
-                  <svg className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 mb-1.5 sm:mb-2 text-white drop-shadow-lg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                  <p className="text-xs sm:text-sm md:text-base font-bold text-white drop-shadow-md text-center">
-                  Create New Semester
-                </p>
-                  <p className="text-[10px] sm:text-xs md:text-sm mt-0.5 sm:mt-1 text-white/90 text-center">
-                    Create your semester manually
-                </p>
+                  {isCreatingSemester ? (
+                    <>
+                      <div className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 mb-1.5 sm:mb-2 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <p className="text-xs sm:text-sm md:text-base font-bold text-white drop-shadow-md text-center">
+                        Creating...
+                      </p>
+                      <p className="text-[10px] sm:text-xs md:text-sm mt-0.5 sm:mt-1 text-white/90 text-center">
+                        Please wait
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 mb-1.5 sm:mb-2 text-white drop-shadow-lg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                      <p className="text-xs sm:text-sm md:text-base font-bold text-white drop-shadow-md text-center">
+                        Create New Semester
+                      </p>
+                      <p className="text-[10px] sm:text-xs md:text-sm mt-0.5 sm:mt-1 text-white/90 text-center">
+                        Create your semester manually
+                      </p>
+                    </>
+                  )}
               </button>
 
             {/* Upload Routine Button */}
@@ -2005,10 +2026,16 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             {/* About Section */}
             <div className="md:col-span-2">
-              <div className="flex items-center gap-3 mb-4">
-                <img src="/coursebook.svg" alt="Coursebook" className="w-10 h-10" />
-                <CoursebookTextLogo className="w-48 h-12" isDarkMode={isDarkMode} showUnderline={false} />
-              </div>
+              <button
+                onClick={() => {
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="flex items-center gap-2 mb-4 cursor-pointer hover:opacity-80 transition-opacity"
+                title="Scroll to top"
+              >
+                <img src="/coursebook.svg" alt="Coursebook" className="w-8 h-8" />
+                <CoursebookTextLogo className="w-36 h-9" isDarkMode={isDarkMode} showUnderline={false} />
+              </button>
               <p className={`text-sm mb-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                 Your all-in-one academic companion for organizing courses, managing study materials, and tracking your academic journey.
               </p>
