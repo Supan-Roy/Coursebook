@@ -109,11 +109,11 @@ export default function HelpSupportPage() {
                 </button>
                 <button
                   onClick={() => navigate('/dashboard')}
-                  className="flex items-center gap-[1px] sm:gap-0.5 cursor-pointer hover:opacity-80 transition-opacity"
+                  className="flex items-center gap-0 cursor-pointer hover:opacity-80 transition-opacity"
                   title="Go to Dashboard"
                 >
-                  <img src="/coursebook.svg" alt="Coursebook" className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 flex-shrink-0" />
-                  <CoursebookTextLogo className="w-36 h-9 sm:w-28 sm:h-7 md:w-40 md:h-10 lg:w-48 lg:h-12 flex-shrink-0" isDarkMode={isDarkMode} showUnderline={false} />
+                  <img src="/coursebook.svg" alt="Coursebook" className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 lg:w-10 lg:h-10 flex-shrink-0" />
+                  <CoursebookTextLogo className="w-28 h-7 sm:w-32 sm:h-8 md:w-40 md:h-10 lg:w-48 lg:h-12 flex-shrink-0 -ml-1 sm:-ml-0.5 md:ml-0" isDarkMode={isDarkMode} showUnderline={false} />
                 </button>
               </div>
               <div className="hidden md:flex items-center gap-1 sm:gap-1.5 md:gap-2 lg:gap-3 flex-shrink-0">
@@ -136,85 +136,87 @@ export default function HelpSupportPage() {
         </header>
 
         {/* Main Content */}
-        <main className="max-w-4xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 md:py-8">
-          <div className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 border transition-all ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200 shadow-sm'}`}>
+        <main className="max-w-4xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 md:py-6 lg:py-8">
+          <div className={`rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 lg:p-8 border transition-all ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200 shadow-sm'}`}>
             {/* Header */}
-            <div className="text-center mb-8 sm:mb-10">
-              <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-sky-500 to-blue-600 mb-4 sm:mb-6">
-                <svg className="w-8 h-8 sm:w-10 sm:h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="text-center mb-6 sm:mb-8 md:mb-10">
+              <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-sky-500 to-blue-600 mb-3 sm:mb-4 md:mb-6">
+                <svg className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <h1 className={`text-2xl sm:text-3xl md:text-4xl font-bold mb-2 sm:mb-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+              <h1 className={`text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-1.5 sm:mb-2 md:mb-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                 Help & Support
               </h1>
-              <p className={`text-sm sm:text-base md:text-lg ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              <p className={`text-xs sm:text-sm md:text-base lg:text-lg ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                 We're here to help! Get in touch with us through any of the channels below.
               </p>
             </div>
 
             {/* Contact Email Section */}
-            <div className={`mb-8 sm:mb-10 p-4 sm:p-5 md:p-6 rounded-xl border-2 ${isDarkMode ? 'bg-gray-800/50 border-gray-700/50' : 'bg-gray-50 border-gray-200'}`}>
-              <div className="flex items-start gap-4">
-                <div className={`flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-lg flex items-center justify-center ${isDarkMode ? 'bg-gray-700/50' : 'bg-gray-100'}`}>
-                  <svg className={`w-6 h-6 sm:w-7 sm:h-7 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className={`mb-6 sm:mb-8 md:mb-10 p-3 sm:p-4 md:p-5 lg:p-6 rounded-xl border-2 ${isDarkMode ? 'bg-gray-800/50 border-gray-700/50' : 'bg-gray-50 border-gray-200'}`}>
+              <div className="flex items-start gap-2 sm:gap-3 md:gap-4">
+                <div className={`flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-lg flex items-center justify-center ${isDarkMode ? 'bg-gray-700/50' : 'bg-gray-100'}`}>
+                  <svg className={`w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h2 className={`text-lg sm:text-xl font-semibold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  <h2 className={`text-base sm:text-lg md:text-xl font-semibold mb-1.5 sm:mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                     Email Support
                   </h2>
-                  <p className={`text-sm sm:text-base mb-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  <p className={`text-xs sm:text-sm md:text-base mb-2 sm:mb-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                     For direct support, questions, or feedback, reach out to us via email:
                   </p>
                   <a
                     href="mailto:support@supanroy.com"
-                    className={`inline-flex items-center gap-2 px-4 py-2.5 sm:px-5 sm:py-3 rounded-lg font-semibold text-sm sm:text-base transition-all shadow-md hover:shadow-lg ${
+                    className={`inline-flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 md:px-5 md:py-3 rounded-lg font-semibold text-xs sm:text-sm md:text-base transition-all shadow-md hover:shadow-lg ${
                       isDarkMode
                         ? 'bg-black hover:bg-gray-900 text-white border-2 border-gray-600'
                         : 'bg-white hover:bg-gray-50 text-black border-2 border-gray-300'
                     }`}
                   >
-                    <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
-                    <span className="font-mono">support@supanroy.com</span>
+                    <span className="font-mono text-[10px] sm:text-xs md:text-sm break-all">support@supanroy.com</span>
                   </a>
                 </div>
               </div>
             </div>
 
             {/* Social Media Section */}
-            <div className="mb-6 sm:mb-8">
-              <h2 className={`text-lg sm:text-xl font-semibold mb-4 sm:mb-6 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+            <div className="mb-5 sm:mb-6 md:mb-8">
+              <h2 className={`text-base sm:text-lg md:text-xl font-semibold mb-3 sm:mb-4 md:mb-6 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                 Connect With Us
               </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 md:gap-4">
                 {socialLinks.map((social) => (
                   <a
                     key={social.name}
                     href={social.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`group flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border-2 transition-all duration-200 hover:shadow-lg hover:scale-[1.02] ${
+                    className={`group flex items-center gap-2 sm:gap-3 md:gap-4 p-2.5 sm:p-3 md:p-4 rounded-xl border-2 transition-all duration-200 hover:shadow-lg hover:scale-[1.02] ${
                       isDarkMode
                         ? 'bg-gray-800/50 border-gray-700 hover:border-gray-600'
                         : 'bg-white border-gray-200 hover:border-gray-300'
                     }`}
                   >
-                    <div className={`flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-lg flex items-center justify-center text-white transition-all ${social.color}`}>
-                      {social.icon}
+                    <div className={`flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-lg flex items-center justify-center text-white transition-all ${social.color}`}>
+                      <div className="w-5 h-5 sm:w-6 sm:h-6">
+                        {social.icon}
+                      </div>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className={`font-semibold text-sm sm:text-base mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                      <h3 className={`font-semibold text-xs sm:text-sm md:text-base mb-0.5 sm:mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                         {social.name}
                       </h3>
-                      <p className={`text-xs sm:text-sm truncate ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      <p className={`text-[10px] sm:text-xs md:text-sm truncate ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                         @{social.username}
                       </p>
                     </div>
-                    <svg className={`w-5 h-5 flex-shrink-0 ${isDarkMode ? 'text-gray-500 group-hover:text-gray-400' : 'text-gray-400 group-hover:text-gray-600'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className={`w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 ${isDarkMode ? 'text-gray-500 group-hover:text-gray-400' : 'text-gray-400 group-hover:text-gray-600'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                     </svg>
                   </a>
@@ -223,17 +225,17 @@ export default function HelpSupportPage() {
             </div>
 
             {/* Additional Help Section */}
-            <div className={`mt-8 sm:mt-10 p-4 sm:p-6 rounded-xl border ${isDarkMode ? 'bg-gray-800/30 border-gray-700/50' : 'bg-gray-50 border-gray-200'}`}>
-              <h2 className={`text-lg sm:text-xl font-semibold mb-3 sm:mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+            <div className={`mt-6 sm:mt-8 md:mt-10 p-3 sm:p-4 md:p-6 rounded-xl border ${isDarkMode ? 'bg-gray-800/30 border-gray-700/50' : 'bg-gray-50 border-gray-200'}`}>
+              <h2 className={`text-base sm:text-lg md:text-xl font-semibold mb-2 sm:mb-3 md:mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                 Need More Help?
               </h2>
-              <p className={`text-sm sm:text-base mb-4 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+              <p className={`text-xs sm:text-sm md:text-base mb-3 sm:mb-4 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                 If you have any questions, suggestions, or need assistance with Coursebook, don't hesitate to reach out. We typically respond within 24-48 hours.
               </p>
               <div className="flex flex-wrap gap-2 sm:gap-3">
                 <button
                   onClick={() => navigate('/dashboard')}
-                  className={`hidden md:flex px-4 py-2 rounded-lg font-medium transition-all ${
+                  className={`hidden md:flex px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm sm:text-base font-medium transition-all ${
                     isDarkMode
                       ? 'bg-gray-700 hover:bg-gray-600 text-white'
                       : 'bg-gray-200 hover:bg-gray-300 text-gray-900'
@@ -243,7 +245,7 @@ export default function HelpSupportPage() {
                 </button>
                 <a
                   href="mailto:support@supanroy.com"
-                  className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                  className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm md:text-base font-medium transition-all ${
                     isDarkMode
                       ? 'bg-sky-600 hover:bg-sky-700 text-white'
                       : 'bg-sky-600 hover:bg-sky-700 text-white'

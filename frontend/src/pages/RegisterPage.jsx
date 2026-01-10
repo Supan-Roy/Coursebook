@@ -105,9 +105,9 @@ export default function RegisterPage() {
           <div className={`rounded-xl sm:rounded-2xl p-6 sm:p-8 shadow-lg transition-colors ${isDarkMode ? 'bg-gray-900 border border-gray-800' : 'bg-white'}`}>
             <div className="text-center mb-6">
               <Link to="/dashboard" className="block">
-                <div className="flex justify-center items-center gap-[1px] sm:gap-0.5 mb-4 cursor-pointer hover:opacity-80 transition-opacity">
+                <div className="flex justify-center items-center gap-0 mb-4 cursor-pointer hover:opacity-80 transition-opacity">
                   <img src="/coursebook.svg" alt="Coursebook" className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 flex-shrink-0" />
-                  <CoursebookTextLogo className="w-40 h-10 sm:w-48 sm:h-12 md:w-56 md:h-14 lg:w-64 lg:h-16 flex-shrink-0" isDarkMode={isDarkMode} />
+                  <CoursebookTextLogo className="w-40 h-10 sm:w-48 sm:h-12 md:w-56 md:h-14 lg:w-64 lg:h-16 flex-shrink-0 -ml-1 sm:-ml-0.5 md:ml-0" isDarkMode={isDarkMode} />
                 </div>
               </Link>
               <p className={`text-sm ${isDarkMode ? 'text-white' : 'text-gray-400'}`}>Create your account</p>

@@ -904,11 +904,11 @@ export default function DashboardPage() {
                   window.scrollTo(0, 0);
                   loadData();
                 }}
-                className="flex items-center gap-[1px] sm:gap-0.5 cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0 min-w-0"
+                className="flex items-center gap-0 cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0 min-w-0"
                 title="Reload Dashboard"
               >
-                <img src="/coursebook.svg" alt="Coursebook" className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 flex-shrink-0" />
-                <CoursebookTextLogo className="w-36 h-9 sm:w-28 sm:h-7 md:w-40 md:h-10 lg:w-48 lg:h-12 flex-shrink-0" isDarkMode={isDarkMode} showUnderline={false} />
+                <img src="/coursebook.svg" alt="Coursebook" className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 lg:w-10 lg:h-10 flex-shrink-0" />
+                <CoursebookTextLogo className="w-28 h-7 sm:w-32 sm:h-8 md:w-40 md:h-10 lg:w-48 lg:h-12 flex-shrink-0 -ml-1 sm:-ml-0.5 md:ml-0" isDarkMode={isDarkMode} showUnderline={false} />
               </button>
             </div>
             <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 lg:gap-3 flex-shrink-0">
