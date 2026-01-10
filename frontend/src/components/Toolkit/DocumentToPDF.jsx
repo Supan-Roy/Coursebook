@@ -126,23 +126,23 @@ export default function DocumentToPDF({ onClose }) {
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm ${
+      className={`fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm p-4 ${
         isDarkMode ? 'bg-black/50' : 'bg-white/30'
       }`}
       onClick={onClose}
     >
       {/* Modal */}
       <div
-        className={`w-full max-w-2xl mx-4 rounded-2xl shadow-2xl transform transition-all ${
+        className={`w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl shadow-2xl transform transition-all ${
           isDarkMode
             ? 'bg-gray-900 border border-gray-800'
             : 'bg-white border border-gray-200'
         }`}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
+        {/* Header - Fixed */}
         <div
-          className={`flex items-center justify-between p-6 border-b ${
+          className={`flex items-center justify-between p-4 sm:p-6 border-b flex-shrink-0 ${
             isDarkMode ? 'border-gray-800' : 'border-gray-200'
           }`}
         >
@@ -169,8 +169,8 @@ export default function DocumentToPDF({ onClose }) {
           </button>
         </div>
 
-        {/* Content */}
-        <div className="p-6 space-y-6">
+        {/* Content - Scrollable */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
           {/* Supported Formats */}
           <div>
             <h3 className={`font-semibold mb-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
@@ -293,9 +293,9 @@ export default function DocumentToPDF({ onClose }) {
           )}
         </div>
 
-        {/* Footer */}
+        {/* Footer - Fixed */}
         <div
-          className={`flex items-center justify-end gap-3 p-6 border-t ${
+          className={`flex items-center justify-end gap-3 p-4 sm:p-6 border-t flex-shrink-0 ${
             isDarkMode ? 'border-gray-800 bg-gray-800/30' : 'border-gray-200 bg-gray-50'
           }`}
         >
