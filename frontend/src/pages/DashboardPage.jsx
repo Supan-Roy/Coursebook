@@ -893,7 +893,7 @@ export default function DashboardPage() {
                   window.scrollTo(0, 0);
                   loadData();
                 }}
-                className="flex items-center gap-[1px] sm:gap-0.5 cursor-pointer hover:opacity-80 transition-opacity"
+                className="flex items-center gap-[1px] sm:gap-0.5 cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0 min-w-0"
                 title="Reload Dashboard"
               >
                 <img src="/coursebook.svg" alt="Coursebook" className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 flex-shrink-0" />
@@ -937,10 +937,12 @@ export default function DashboardPage() {
                     </span>
                   </div>
                   {/* Mobile greeting - Welcome, First Name */}
-                  <div className={`text-[10px] sm:text-xs md:text-sm lg:hidden text-right max-w-[80px] sm:max-w-[100px] ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
+                  <div className={`text-[10px] sm:text-xs md:text-sm lg:hidden text-right max-w-[60px] sm:max-w-[70px] ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
                 {(() => {
                   const greeting = getGreeting();
                   const firstName = user?.first_name || 'User';
+                  // Truncate first name to max 8 characters on mobile
+                  const truncatedFirstName = firstName.length > 8 ? firstName.substring(0, 6) + '..' : firstName;
                   // Mobile: Only split special greetings (not "Welcome")
                   if (greeting.includes(', ') && !greeting.startsWith('Welcome,')) {
                     const parts = greeting.split(', ');
@@ -949,13 +951,13 @@ export default function DashboardPage() {
                       <>
                         <div className="leading-tight">
                           <div className="truncate">{message}{greeting.endsWith('!') ? '!' : ''}</div>
-                          <div className={`font-semibold truncate ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>{firstName}</div>
+                          <div className={`font-semibold truncate ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>{truncatedFirstName}</div>
                         </div>
                       </>
                     );
                   }
                   // Mobile: "Welcome, [name]" stays on same line
-                  return <><span>Welcome, <span className={`font-semibold ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>{firstName}</span></span></>;
+                  return <><span className="truncate block">Welcome, <span className={`font-semibold ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>{truncatedFirstName}</span></span></>;
                 })()}
               </div>
               

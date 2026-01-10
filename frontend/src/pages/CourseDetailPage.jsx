@@ -584,7 +584,7 @@ export default function CourseDetailPage() {
               </button>
               <button
                 onClick={() => navigate('/dashboard')}
-                className="flex items-center gap-[1px] sm:gap-0.5 cursor-pointer hover:opacity-80 transition-opacity"
+                className="flex items-center gap-[1px] sm:gap-0.5 cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0 min-w-0"
                 title="Go to Dashboard"
               >
                 <img src="/coursebook.svg" alt="Coursebook" className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 flex-shrink-0" />
@@ -594,13 +594,15 @@ export default function CourseDetailPage() {
 
             <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 lg:gap-3 flex-shrink-0">
               {/* Mobile greeting */}
-              <div className={`lg:hidden flex flex-col items-end text-right max-w-[80px] sm:max-w-[100px] leading-tight ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
+              <div className={`lg:hidden flex flex-col items-end text-right max-w-[60px] sm:max-w-[70px] leading-tight ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
                 {(() => {
                   const firstName = user?.first_name || 'User';
+                  // Truncate first name to max 8 characters on mobile
+                  const truncatedFirstName = firstName.length > 8 ? firstName.substring(0, 6) + '..' : firstName;
                   return (
                     <>
-                      <div className={`text-[10px] sm:text-xs md:text-sm ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>Welcome</div>
-                      <div className={`text-[10px] sm:text-xs md:text-sm font-semibold ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>{firstName}</div>
+                      <div className={`text-[10px] sm:text-xs md:text-sm truncate ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>Welcome</div>
+                      <div className={`text-[10px] sm:text-xs md:text-sm font-semibold truncate ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>{truncatedFirstName}</div>
                     </>
                   );
                 })()}

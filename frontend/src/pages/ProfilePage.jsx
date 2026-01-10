@@ -407,10 +407,12 @@ export default function ProfilePage() {
               </button>
               
               {/* Mobile greeting */}
-              <span className={`text-[10px] sm:text-xs md:text-sm lg:hidden truncate max-w-[80px] sm:max-w-[100px] ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
+              <span className={`text-[10px] sm:text-xs md:text-sm lg:hidden truncate max-w-[60px] sm:max-w-[70px] ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
                 {(() => {
                   const firstName = user?.first_name || 'User';
-                  return <><span className={`font-semibold ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>Welcome, {firstName}</span></>;
+                  // Truncate first name to max 8 characters on mobile
+                  const truncatedFirstName = firstName.length > 8 ? firstName.substring(0, 6) + '..' : firstName;
+                  return <><span className={`font-semibold ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>Welcome, {truncatedFirstName}</span></>;
                 })()}
               </span>
               <div className="hidden lg:flex flex-col items-end">

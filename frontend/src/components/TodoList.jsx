@@ -603,7 +603,7 @@ const MyPlans = ({ isDarkMode }) => {
 
           <div
             ref={sliderRef}
-            className="flex-1 overflow-hidden md:overflow-x-auto scrollbar-hide scroll-smooth min-w-0"
+            className="flex-1 overflow-hidden md:overflow-x-auto scrollbar-hide scroll-smooth min-w-0 relative"
             style={{ 
               scrollBehavior: 'smooth', 
               WebkitOverflowScrolling: 'touch',
@@ -612,17 +612,37 @@ const MyPlans = ({ isDarkMode }) => {
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
           >
+            {/* Mobile navigation buttons */}
+            {typeof window !== 'undefined' && window.innerWidth < 768 && categories.length > 2 && (
+              <>
+                {mobileCategoryIndex > 0 && (
+                  <button
+                    onClick={() => scrollSlider('left')}
+                    className="absolute left-0 top-1/2 -translate-y-1/2 z-10 p-1.5 rounded-lg bg-gray-800/80 hover:bg-gray-700 text-white shadow-lg"
+                  >
+                    <FiChevronLeft className="w-4 h-4" />
+                  </button>
+                )}
+                {mobileCategoryIndex < categories.length - 2 && (
+                  <button
+                    onClick={() => scrollSlider('right')}
+                    className="absolute right-0 top-1/2 -translate-y-1/2 z-10 p-1.5 rounded-lg bg-gray-800/80 hover:bg-gray-700 text-white shadow-lg"
+                  >
+                    <FiChevronRight className="w-4 h-4" />
+                  </button>
+                )}
+              </>
+            )}
             <div 
-              className="flex gap-1.5 sm:gap-2 md:gap-3 pb-2 pr-2 sm:pr-0 md:pr-0 transition-transform duration-300 ease-in-out"
-              style={{
-                transform: typeof window !== 'undefined' && window.innerWidth < 768 
-                  ? `translateX(calc(-${mobileCategoryIndex} * 50%))` 
-                  : 'translateX(0)',
-              }}
+              className="flex gap-1.5 sm:gap-2 md:gap-3 pb-2 pr-2 sm:pr-0 md:pr-0"
             >
               {categories.map((category, index) => {
-                // On mobile, show all categories but use transform to slide
+                // On mobile, only show 2 categories at a time starting from mobileCategoryIndex
                 const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+                const shouldShow = !isMobile || (index >= mobileCategoryIndex && index < mobileCategoryIndex + 2);
+                
+                // Don't render if not visible on mobile
+                if (!shouldShow) return null;
                 
                 const isActive = activeCategory === category.id;
                 const isDefault = isDefaultCategory(category);
@@ -644,14 +664,14 @@ const MyPlans = ({ isDarkMode }) => {
                 return (
                   <div
                     key={category.id}
-                    className={`flex flex-shrink-0 relative group overflow-hidden ${baseClasses} px-2 sm:px-2.5 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 rounded-lg transition-all duration-200 ${isMobile ? '' : 'min-w-max'} ${deleteMode && !isDefault ? 'border-2 border-red-400/70' : ''}`}
+                    className={`flex flex-shrink-0 relative group overflow-hidden ${baseClasses} ${isDefault ? (isMobile ? 'px-2 py-1.5' : 'px-3 py-2') : (isMobile ? 'px-2 sm:px-2.5 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3' : 'px-2 sm:px-2.5 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3')} rounded-lg transition-all duration-200 ${isMobile ? '' : 'min-w-max'} ${deleteMode && !isDefault ? 'border-2 border-red-400/70' : ''}`}
                     onClick={handleCategoryClick}
                     style={{ 
                       cursor: deleteMode && !isDefault ? 'pointer' : 'default',
-                      width: isMobile ? 'calc(50% - 0.375rem)' : 'auto',
-                      minWidth: isMobile ? 'calc(50% - 0.375rem)' : 'auto',
-                      maxWidth: isMobile ? 'calc(50% - 0.375rem)' : 'none',
-                      flexShrink: 0
+                      width: isMobile ? 'calc(50% - 0.375rem)' : (isDefault ? 'fit-content' : 'auto'),
+                      minWidth: isMobile ? 'calc(50% - 0.375rem)' : (isDefault ? 'fit-content' : 'auto'),
+                      maxWidth: isMobile ? 'calc(50% - 0.375rem)' : (isDefault ? 'fit-content' : 'none'),
+                      flexShrink: isDefault ? 0 : 0
                     }}
                   >
                     {editingCategory === category.id && !isDefault ? (
@@ -690,13 +710,13 @@ const MyPlans = ({ isDarkMode }) => {
                         </div>
                       </>
                     ) : (
-                      <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                      <div className={`flex items-center ${isDefault ? 'gap-1' : 'gap-2 sm:gap-3'} min-w-0 ${isDefault ? '' : 'flex-1'}`}>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             setActiveCategory(category.id);
                           }}
-                          className={`text-sm sm:text-base md:text-lg font-medium transition-all truncate min-w-0 flex-1 ${
+                          className={`text-sm sm:text-base md:text-lg font-medium transition-all ${isDefault ? 'whitespace-nowrap' : 'truncate min-w-0 flex-1'} ${
                             isActive
                               ? 'text-white'
                               : (isDarkMode ? 'text-gray-300' : 'text-gray-700')
@@ -740,31 +760,37 @@ const MyPlans = ({ isDarkMode }) => {
                 );
               })}
 
-              {/* Add More Category Button - Always visible at the end */}
-              {!showAddCategory ? (
-                <button
-                  onClick={() => {
-                    if (!isAuthenticated) {
-                      navigate('/login');
-                      return;
-                    }
-                    setShowAddCategory(true);
-                  }}
-                  className={`flex-shrink-0 px-2 sm:px-2.5 md:px-3 lg:px-4 py-2 sm:py-2.5 md:py-3 rounded-lg border-2 border-dashed transition-all text-xs sm:text-sm md:text-base ${
-                    isDarkMode
-                      ? 'border-gray-700 hover:border-gray-600 text-gray-400 hover:text-gray-300 hover:bg-gray-800'
-                      : 'border-gray-400 hover:border-gray-500 text-gray-600 hover:text-gray-700 hover:bg-gray-100'
-                  } font-medium flex items-center justify-center gap-1 sm:gap-1.5 whitespace-nowrap`}
-                  style={{ 
-                    width: typeof window !== 'undefined' && window.innerWidth < 768 ? 'calc(50% - 0.375rem)' : 'fit-content',
-                    minWidth: typeof window !== 'undefined' && window.innerWidth < 768 ? 'calc(50% - 0.375rem)' : 'fit-content'
-                  }}
-                >
-                  <FiPlus className="w-5 h-5 sm:w-4 sm:h-4 md:w-5 md:h-5 flex-shrink-0" />
-                  <span className="hidden md:inline">Add Category</span>
-                  <span className="hidden sm:inline md:hidden">Add</span>
-                </button>
-              ) : (
+              {/* Add More Category Button - Show on mobile only if we're at the end */}
+              {(() => {
+                const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+                const shouldShowAddButton = !isMobile || (mobileCategoryIndex + 2 >= categories.length);
+                if (!shouldShowAddButton || showAddCategory) return null;
+                return (
+                  <button
+                    onClick={() => {
+                      if (!isAuthenticated) {
+                        navigate('/login');
+                        return;
+                      }
+                      setShowAddCategory(true);
+                    }}
+                    className={`flex-shrink-0 px-2 sm:px-2.5 md:px-3 lg:px-4 py-2 sm:py-2.5 md:py-3 rounded-lg border-2 border-dashed transition-all text-xs sm:text-sm md:text-base ${
+                      isDarkMode
+                        ? 'border-gray-700 hover:border-gray-600 text-gray-400 hover:text-gray-300 hover:bg-gray-800'
+                        : 'border-gray-400 hover:border-gray-500 text-gray-600 hover:text-gray-700 hover:bg-gray-100'
+                    } font-medium flex items-center justify-center gap-1 sm:gap-1.5 whitespace-nowrap`}
+                    style={{ 
+                      width: isMobile ? 'calc(50% - 0.375rem)' : 'fit-content',
+                      minWidth: isMobile ? 'calc(50% - 0.375rem)' : 'fit-content'
+                    }}
+                  >
+                    <FiPlus className="w-5 h-5 sm:w-4 sm:h-4 md:w-5 md:h-5 flex-shrink-0" />
+                    <span className="hidden md:inline">Add Category</span>
+                    <span className="hidden sm:inline md:hidden">Add</span>
+                  </button>
+                );
+              })()}
+              {showAddCategory && (
                 <>
                   {/* Desktop: Inline input */}
                   <div className={`hidden md:flex flex-shrink-0 items-center gap-1.5 sm:gap-2 px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 md:py-3 rounded-lg whitespace-nowrap ${

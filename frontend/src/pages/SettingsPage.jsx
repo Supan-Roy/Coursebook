@@ -67,7 +67,7 @@ export default function SettingsPage() {
                 </button>
                 <button
                   onClick={() => navigate('/dashboard')}
-                  className="flex items-center gap-[1px] sm:gap-0.5 cursor-pointer hover:opacity-80 transition-opacity"
+                  className="flex items-center gap-[1px] sm:gap-0.5 cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0 min-w-0"
                   title="Go to Dashboard"
                 >
                   <img src="/coursebook.svg" alt="Coursebook" className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 flex-shrink-0" />
@@ -76,10 +76,12 @@ export default function SettingsPage() {
               </div>
               <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 lg:gap-3 flex-shrink-0">
                 {/* Mobile greeting - Welcome, First Name */}
-                <span className={`text-[10px] sm:text-xs md:text-sm lg:hidden truncate max-w-[80px] sm:max-w-[100px] ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
+                <span className={`text-[10px] sm:text-xs md:text-sm lg:hidden truncate max-w-[60px] sm:max-w-[70px] ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
                   {(() => {
                     const firstName = user?.first_name || 'User';
-                    return <><span className={`font-semibold ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>Welcome, {firstName}</span></>;
+                    // Truncate first name to max 8 characters on mobile
+                    const truncatedFirstName = firstName.length > 8 ? firstName.substring(0, 6) + '..' : firstName;
+                    return <><span className={`font-semibold ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>Welcome, {truncatedFirstName}</span></>;
                   })()}
                 </span>
                 <div className="hidden lg:flex flex-col items-end">
