@@ -194,10 +194,10 @@ export default function TrashBinPage() {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16 gap-2 sm:gap-4">
-            <div className="flex items-center gap-0.5 cursor-pointer min-w-0" onClick={() => navigate('/dashboard')}>
+            <div className="flex items-center gap-[1px] sm:gap-0.5 cursor-pointer min-w-0" onClick={() => navigate('/dashboard')}>
               <button
                 onClick={() => navigate('/dashboard')}
-                className={`p-2 rounded-lg transition-all border flex-shrink-0 ${isDarkMode ? 'text-gray-400 hover:text-white hover:bg-gray-900 border-gray-700 hover:border-sky-500/50' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 border-gray-300 hover:border-sky-500/50'}`}
+                className={`hidden md:flex p-2 rounded-lg transition-all border flex-shrink-0 ${isDarkMode ? 'text-gray-400 hover:text-white hover:bg-gray-900 border-gray-700 hover:border-sky-500/50' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 border-gray-300 hover:border-sky-500/50'}`}
                 title="Back to Dashboard"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -356,7 +356,7 @@ export default function TrashBinPage() {
               </p>
               <button
                 onClick={() => navigate('/dashboard')}
-                className={`mt-6 px-4 py-2 rounded-lg font-medium transition-all ${
+                className={`hidden md:flex mt-6 px-4 py-2 rounded-lg font-medium transition-all ${
                   isDarkMode 
                     ? 'bg-sky-500/20 text-sky-400 hover:bg-sky-500/30' 
                     : 'bg-sky-500 text-white hover:bg-sky-600'

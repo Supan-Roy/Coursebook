@@ -575,7 +575,7 @@ export default function CourseDetailPage() {
               </button>
               <button
                 onClick={() => navigate('/dashboard')}
-                className={`p-1.5 sm:p-2 rounded-lg transition-all border flex-shrink-0 ${isDarkMode ? 'text-gray-400 hover:text-white hover:bg-gray-900 border-gray-700 hover:border-sky-500/50' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 border-gray-300 hover:border-sky-500/50'}`}
+                className={`hidden md:flex p-1.5 sm:p-2 rounded-lg transition-all border flex-shrink-0 ${isDarkMode ? 'text-gray-400 hover:text-white hover:bg-gray-900 border-gray-700 hover:border-sky-500/50' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 border-gray-300 hover:border-sky-500/50'}`}
                 title="Back to Dashboard"
               >
                 <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -584,7 +584,7 @@ export default function CourseDetailPage() {
               </button>
               <button
                 onClick={() => navigate('/dashboard')}
-                className="flex items-center gap-0.5 cursor-pointer hover:opacity-80 transition-opacity"
+                className="flex items-center gap-[1px] sm:gap-0.5 cursor-pointer hover:opacity-80 transition-opacity"
                 title="Go to Dashboard"
               >
                 <img src="/coursebook.svg" alt="Coursebook" className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 flex-shrink-0" />

@@ -94,13 +94,13 @@ export default function UpgradePage() {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-0.5 cursor-pointer" onClick={() => navigate('/dashboard')}>
+            <div className="flex items-center gap-[1px] sm:gap-0.5 cursor-pointer" onClick={() => navigate('/dashboard')}>
               <img src="/coursebook.svg" alt="Coursebook" className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 flex-shrink-0" />
               <CoursebookTextLogo className="w-36 h-9 sm:w-28 sm:h-7 md:w-40 md:h-10 lg:w-48 lg:h-12 flex-shrink-0" isDarkMode={isDarkMode} showUnderline={false} />
             </div>
             <button
               onClick={() => navigate('/dashboard')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+              className={`hidden md:flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                 isDarkMode
                   ? 'text-gray-300 hover:text-white hover:bg-gray-900 border border-gray-700'
                   : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100 border border-gray-300'

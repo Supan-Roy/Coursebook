@@ -109,14 +109,14 @@ export default function HelpSupportPage() {
                 </button>
                 <button
                   onClick={() => navigate('/dashboard')}
-                  className="flex items-center gap-0.5 cursor-pointer hover:opacity-80 transition-opacity"
+                  className="flex items-center gap-[1px] sm:gap-0.5 cursor-pointer hover:opacity-80 transition-opacity"
                   title="Go to Dashboard"
                 >
                   <img src="/coursebook.svg" alt="Coursebook" className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 flex-shrink-0" />
                   <CoursebookTextLogo className="w-36 h-9 sm:w-28 sm:h-7 md:w-40 md:h-10 lg:w-48 lg:h-12 flex-shrink-0" isDarkMode={isDarkMode} showUnderline={false} />
                 </button>
               </div>
-              <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 lg:gap-3 flex-shrink-0">
+              <div className="hidden md:flex items-center gap-1 sm:gap-1.5 md:gap-2 lg:gap-3 flex-shrink-0">
                 <button
                   onClick={() => navigate('/dashboard')}
                   className={`flex items-center gap-1.5 sm:gap-2 px-2 sm:px-2.5 md:px-3 py-1.5 sm:py-2 rounded-lg transition-colors text-xs sm:text-sm md:text-base ${
@@ -233,7 +233,7 @@ export default function HelpSupportPage() {
               <div className="flex flex-wrap gap-2 sm:gap-3">
                 <button
                   onClick={() => navigate('/dashboard')}
-                  className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                  className={`hidden md:flex px-4 py-2 rounded-lg font-medium transition-all ${
                     isDarkMode
                       ? 'bg-gray-700 hover:bg-gray-600 text-white'
                       : 'bg-gray-200 hover:bg-gray-300 text-gray-900'

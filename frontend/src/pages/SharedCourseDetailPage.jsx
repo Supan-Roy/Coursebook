@@ -194,14 +194,14 @@ export default function SharedCourseDetailPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
-              <div className="flex items-center gap-0.5 cursor-pointer min-w-0" onClick={() => navigate('/dashboard')}>
+              <div className="flex items-center gap-[1px] sm:gap-0.5 cursor-pointer min-w-0" onClick={() => navigate('/dashboard')}>
                 <img src="/coursebook.svg" alt="Coursebook" className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 flex-shrink-0" />
                 <CoursebookTextLogo className="w-36 h-9 sm:w-28 sm:h-7 md:w-40 md:h-10 lg:w-48 lg:h-12 flex-shrink-0" isDarkMode={isDarkMode} showUnderline={false} />
               </div>
             </div>
             <button
               onClick={() => navigate('/dashboard')}
-              className={`px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm rounded-lg transition-colors whitespace-nowrap ${
+              className={`hidden md:flex px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm rounded-lg transition-colors whitespace-nowrap ${
                 isDarkMode
                   ? 'text-gray-300 hover:text-white hover:bg-gray-900 border border-gray-700'
                   : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100 border border-gray-300'

@@ -70,6 +70,8 @@ const MyPlans = ({ isDarkMode }) => {
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const notificationIntervalRef = useRef(null);
   const sliderRef = useRef(null);
+  const touchStartX = useRef(null);
+  const touchEndX = useRef(null);
   const isDefaultCategory = (category) => ['Academic', 'Personal'].includes(category.name);
 
   useEffect(() => {
@@ -345,6 +347,36 @@ const MyPlans = ({ isDarkMode }) => {
     }
   };
 
+  // Touch handlers for swipe gestures
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchMove = (e) => {
+    touchEndX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStartX.current || !touchEndX.current) return;
+    
+    const distance = touchStartX.current - touchEndX.current;
+    const minSwipeDistance = 50; // Minimum distance for a swipe
+    
+    if (Math.abs(distance) > minSwipeDistance) {
+      if (distance > 0) {
+        // Swipe left - move to next categories
+        scrollMobileCategories('right');
+      } else {
+        // Swipe right - move to previous categories
+        scrollMobileCategories('left');
+      }
+    }
+    
+    // Reset
+    touchStartX.current = null;
+    touchEndX.current = null;
+  };
+
   const toggleComplete = async (todo) => {
     if (!isAuthenticated) {
       navigate('/login');
@@ -557,22 +589,12 @@ const MyPlans = ({ isDarkMode }) => {
       {/* Category Slider */}
       <div className="mb-4 sm:mb-5 md:mb-6">
         <div className="flex items-center gap-1.5 sm:gap-2">
-          {/* Left scroll button */}
+          {/* Left scroll button - Hidden on mobile */}
           <button
             onClick={() => {
-              // On mobile, use custom scroll logic
-              if (typeof window !== 'undefined' && window.innerWidth < 768) {
-                scrollMobileCategories('left');
-              } else {
-                scrollSlider('left');
-              }
+              scrollSlider('left');
             }}
-            disabled={typeof window !== 'undefined' && window.innerWidth < 768 && mobileCategoryIndex === 0}
-            className={`p-1.5 sm:p-2 rounded-lg transition-all flex-shrink-0 ${
-              typeof window !== 'undefined' && window.innerWidth < 768 && mobileCategoryIndex === 0
-                ? 'opacity-50 cursor-not-allowed'
-                : ''
-            } ${
+            className={`hidden md:flex p-1.5 sm:p-2 rounded-lg transition-all flex-shrink-0 ${
               isDarkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-gray-200 hover:bg-gray-300'
             }`}
           >
@@ -581,13 +603,16 @@ const MyPlans = ({ isDarkMode }) => {
 
           <div
             ref={sliderRef}
-            className="flex-1 overflow-x-auto scrollbar-hide scroll-smooth min-w-0"
+            className="flex-1 overflow-hidden md:overflow-x-auto scrollbar-hide scroll-smooth min-w-0"
             style={{ 
               scrollBehavior: 'smooth', 
               WebkitOverflowScrolling: 'touch',
             }}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
           >
-            <div className="flex gap-1.5 sm:gap-2 md:gap-3 pb-2 pr-2 sm:pr-0">
+            <div className="flex gap-1.5 sm:gap-2 md:gap-3 pb-2 pr-2 sm:pr-0 md:pr-0">
               {categories.map((category, index) => {
                 // On mobile, show only 2 categories starting from mobileCategoryIndex
                 const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
@@ -615,9 +640,13 @@ const MyPlans = ({ isDarkMode }) => {
                 return (
                   <div
                     key={category.id}
-                    className={`flex flex-shrink-0 relative group overflow-visible ${baseClasses} px-2.5 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 rounded-lg transition-all duration-200 min-w-max ${deleteMode && !isDefault ? 'border-2 border-red-400/70' : ''}`}
+                    className={`flex flex-shrink-0 relative group overflow-visible ${baseClasses} px-2.5 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 rounded-lg transition-all duration-200 ${isMobile ? '' : 'min-w-max'} ${deleteMode && !isDefault ? 'border-2 border-red-400/70' : ''}`}
                     onClick={handleCategoryClick}
-                    style={{ cursor: deleteMode && !isDefault ? 'pointer' : 'default' }}
+                    style={{ 
+                      cursor: deleteMode && !isDefault ? 'pointer' : 'default',
+                      width: isMobile ? 'calc(50% - 0.375rem)' : 'auto',
+                      minWidth: isMobile ? 'calc(50% - 0.375rem)' : 'auto'
+                    }}
                   >
                     {editingCategory === category.id && !isDefault ? (
                       <>
@@ -720,7 +749,9 @@ const MyPlans = ({ isDarkMode }) => {
                       ? 'border-gray-700 hover:border-gray-600 text-gray-400 hover:text-gray-300 hover:bg-gray-800'
                       : 'border-gray-400 hover:border-gray-500 text-gray-600 hover:text-gray-700 hover:bg-gray-100'
                   } font-medium flex items-center gap-1 sm:gap-1.5 whitespace-nowrap`}
-                  style={{ minWidth: 'fit-content' }}
+                  style={{ 
+                    minWidth: typeof window !== 'undefined' && window.innerWidth < 768 ? 'calc(50% - 0.375rem)' : 'fit-content'
+                  }}
                 >
                   <FiPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
                   <span className="hidden sm:inline">Add Category</span>
@@ -766,22 +797,12 @@ const MyPlans = ({ isDarkMode }) => {
           </div>
 
           <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
-            {/* Right scroll button */}
+            {/* Right scroll button - Hidden on mobile */}
             <button
               onClick={() => {
-                // On mobile, use custom scroll logic
-                if (typeof window !== 'undefined' && window.innerWidth < 768) {
-                  scrollMobileCategories('right');
-                } else {
-                  scrollSlider('right');
-                }
+                scrollSlider('right');
               }}
-              disabled={typeof window !== 'undefined' && window.innerWidth < 768 && mobileCategoryIndex >= Math.max(0, categories.length - 2)}
-              className={`p-1.5 sm:p-2 rounded-lg transition-all flex-shrink-0 ${
-                typeof window !== 'undefined' && window.innerWidth < 768 && mobileCategoryIndex >= Math.max(0, categories.length - 2)
-                  ? 'opacity-50 cursor-not-allowed'
-                  : ''
-              } ${
+              className={`hidden md:flex p-1.5 sm:p-2 rounded-lg transition-all flex-shrink-0 ${
                 isDarkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-gray-200 hover:bg-gray-300'
               }`}
             >
