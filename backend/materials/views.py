@@ -366,13 +366,6 @@ class FileUploadView(APIView):
         import logging
         logger = logging.getLogger(__name__)
         
-        # Pattern to match course with name and code
-        # Updated to include parentheses, hyphens, and other common characters in course names
-        course_with_name_pattern = r'([A-Za-z][A-Za-z\s&()\-:,\']+?)\s*-\s*([A-Z]{2,4})[\s-]?(\d{3,4})'
-        
-        matches_with_names = re.findall(course_with_name_pattern, text)
-        logger.info(f"Found {len(matches_with_names)} course matches with names: {matches_with_names}")
-        
         courses = []
         seen = set()
         
@@ -380,69 +373,122 @@ class FileUploadView(APIView):
         day_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
         junk_words = ['Day', 'Course', 'Time', 'Slot', 'Room', 'Teacher']
         
-        for match in matches_with_names:
-            raw_title = match[0].strip()
-            code = f"{match[1]}{match[2]}"
+        # Define multiple patterns to handle different routine formats
+        patterns = [
+            # Pattern 1: Dash-separated - "Course Name - CSE101" or "Course Name - CSE 101"
+            {
+                'pattern': r'([A-Za-z][A-Za-z\s&()\-:,\']+?)\s*-\s*([A-Z]{2,4})[\s-]?(\d{3,4})',
+                'name': 'dash-separated',
+                'title_group': 0,
+                'code_prefix_group': 1,
+                'code_number_group': 2
+            },
+            # Pattern 2: Tabular format - "CSE101    Introduction to Programming"
+            {
+                'pattern': r'([A-Z]{2,4})[\s-]?(\d{3,4})\s+([A-Za-z][A-Za-z\s&()\-:,\']{3,})',
+                'name': 'tabular-code-first',
+                'title_group': 2,
+                'code_prefix_group': 0,
+                'code_number_group': 1
+            },
+            # Pattern 3: Colon-separated - "CSE101: Introduction to Programming"
+            {
+                'pattern': r'([A-Z]{2,4})[\s-]?(\d{3,4})\s*:\s*([A-Za-z][A-Za-z\s&()\-:,\']{3,})',
+                'name': 'colon-separated',
+                'title_group': 2,
+                'code_prefix_group': 0,
+                'code_number_group': 1
+            },
+            # Pattern 4: Period-separated - "CSE101. Introduction to Programming"
+            {
+                'pattern': r'([A-Z]{2,4})[\s-]?(\d{3,4})\s*\.\s*([A-Za-z][A-Za-z\s&()\-:,\']{3,})',
+                'name': 'period-separated',
+                'title_group': 2,
+                'code_prefix_group': 0,
+                'code_number_group': 1
+            },
+            # Pattern 5: Parentheses after name - "Introduction to Programming (CSE101)"
+            {
+                'pattern': r'([A-Za-z][A-Za-z\s&()\-:,\']{3,})\s*\(([A-Z]{2,4})[\s-]?(\d{3,4})\)',
+                'name': 'parentheses-after-name',
+                'title_group': 0,
+                'code_prefix_group': 1,
+                'code_number_group': 2
+            },
+            # Pattern 6: Parentheses after code - "CSE101 (Introduction to Programming)"
+            {
+                'pattern': r'([A-Z]{2,4})[\s-]?(\d{3,4})\s*\(([A-Za-z][A-Za-z\s&()\-:,\']{3,})\)',
+                'name': 'parentheses-after-code',
+                'title_group': 2,
+                'code_prefix_group': 0,
+                'code_number_group': 1
+            },
+            # Pattern 7: Name first, code after (no separator) - "Introduction to Programming CSE101"
+            {
+                'pattern': r'([A-Za-z][A-Za-z\s&()\-:,\']{3,})\s+([A-Z]{2,4})[\s-]?(\d{3,4})(?:\s|$|[^\d])',
+                'name': 'name-first-no-separator',
+                'title_group': 0,
+                'code_prefix_group': 1,
+                'code_number_group': 2
+            },
+            # Pattern 8: Space between letters and numbers - "CS 101 Introduction to Programming"
+            {
+                'pattern': r'([A-Z]{2,4})\s+(\d{3,4})\s+([A-Za-z][A-Za-z\s&()\-:,\']{3,})',
+                'name': 'space-in-code',
+                'title_group': 2,
+                'code_prefix_group': 0,
+                'code_number_group': 1
+            },
+            # Pattern 9: With section number - "CSE101-01 Introduction to Programming"
+            {
+                'pattern': r'([A-Z]{2,4})[\s-]?(\d{3,4})-\d+\s+([A-Za-z][A-Za-z\s&()\-:,\']{3,})',
+                'name': 'with-section-number',
+                'title_group': 2,
+                'code_prefix_group': 0,
+                'code_number_group': 1
+            },
+        ]
+        
+        # Process each pattern
+        for pattern_config in patterns:
+            matches = re.findall(pattern_config['pattern'], text)
+            logger.info(f"Found {len(matches)} course matches with {pattern_config['name']} format: {matches[:5]}")  # Log first 5
             
-            # Filter out room codes and building codes
-            if match[1].startswith('KT') or match[1].startswith('G1') or match[1].startswith('COM'):
-                continue
+            for match in matches:
+                # Extract code and title based on pattern configuration
+                code_prefix = match[pattern_config['code_prefix_group']]
+                code_number = match[pattern_config['code_number_group']]
+                code = f"{code_prefix}{code_number}"
+                raw_title = match[pattern_config['title_group']].strip()
                 
-            # Filter out year-like patterns
-            should_keep = (
-                len(match[1]) <= 3 or 
-                (len(match[1]) == 4 and len(match[2]) == 3)
-            )
-            
-            if not should_keep:
-                continue
-            
-            # Clean the title
-            title = raw_title
-            
-            # Remove letter prefixes like "A)", "B)", "C)" at the beginning
-            title = re.sub(r'^[A-Z]\)\s*', '', title).strip()
-            
-            # Remove room/lab indicators like "(COM LAB)", "(LAB)", etc.
-            title = re.sub(r'\([^)]*(?:LAB|ROOM|COM)[^)]*\)', '', title, flags=re.IGNORECASE).strip()
-            
-            # Remove teacher initials (2-4 uppercase letters) from anywhere in the title
-            # Teacher initials are typically standalone words, not part of course names
-            # Common teacher initials: SEA, FFN, MSM, SH, etc.
-            # Be careful not to remove legitimate acronyms (we'll be conservative)
-            title = re.sub(r'^[A-Z]{2,4}\s+', '', title).strip()  # At the beginning
-            title = re.sub(r'\s+[A-Z]{2,4}\s+', ' ', title).strip()  # In the middle (with spaces on both sides)
-            title = re.sub(r'\s+[A-Z]{2,4}$', '', title).strip()  # At the end
-            
-            # Remove day names from the beginning or anywhere
-            for day in day_names:
-                title = re.sub(rf'\b{day}\b', '', title, flags=re.IGNORECASE).strip()
-            
-            # Remove junk words
-            words = title.split()
-            filtered_words = []
-            for word in words:
-                # Skip single letters and junk words
-                if len(word) > 1 and word not in junk_words:
-                    filtered_words.append(word)
-                # If we have at least 8 good words, stop (we got the course name)
-                if len(filtered_words) >= 8:
-                    break
-            
-            title = ' '.join(filtered_words).strip()
-            
-            # Clean up extra spaces
-            title = re.sub(r'\s+', ' ', title).strip()
-            
-            # Skip if title is empty or too short after cleaning
-            if len(title) < 5:
-                continue
-            
-            # Skip if title contains too many numbers (likely junk)
-            if sum(c.isdigit() for c in title) > len(title) * 0.3:
-                continue
-            
-            if code not in seen:
+                # Skip if we already have this course code
+                if code in seen:
+                    continue
+                
+                # Filter out room codes and building codes
+                if code_prefix.startswith('KT') or code_prefix.startswith('G1') or code_prefix.startswith('COM'):
+                    continue
+                    
+                # Filter out year-like patterns
+                should_keep = (
+                    len(code_prefix) <= 3 or 
+                    (len(code_prefix) == 4 and len(code_number) == 3)
+                )
+                
+                if not should_keep:
+                    continue
+                
+                # Clean the title using shared cleaning logic
+                title = self._clean_course_title(raw_title, day_names, junk_words)
+                
+                # Skip if title is invalid after cleaning
+                if not title or len(title) < 5:
+                    continue
+                
+                # Skip if title contains too many numbers (likely junk)
+                if sum(c.isdigit() for c in title) > len(title) * 0.3:
+                    continue
+                
                 seen.add(code)
                 courses.append({
                     'code': code,
@@ -451,6 +497,46 @@ class FileUploadView(APIView):
         
         logger.info(f"Returning {len(courses)} unique courses: {[(c['code'], c['title']) for c in courses]}")
         return courses
+    
+    def _clean_course_title(self, title, day_names, junk_words):
+        """Helper method to clean course titles extracted from various formats"""
+        import re
+        
+        # Remove letter prefixes like "A)", "B)", "C)" at the beginning
+        title = re.sub(r'^[A-Z]\)\s*', '', title).strip()
+        
+        # Remove room/lab indicators like "(COM LAB)", "(LAB)", etc.
+        title = re.sub(r'\([^)]*(?:LAB|ROOM|COM)[^)]*\)', '', title, flags=re.IGNORECASE).strip()
+        
+        # Remove teacher initials (2-4 uppercase letters) from anywhere in the title
+        title = re.sub(r'^[A-Z]{2,4}\s+', '', title).strip()  # At the beginning
+        title = re.sub(r'\s+[A-Z]{2,4}\s+', ' ', title).strip()  # In the middle
+        title = re.sub(r'\s+[A-Z]{2,4}$', '', title).strip()  # At the end
+        
+        # Remove day names from the beginning or anywhere
+        for day in day_names:
+            title = re.sub(rf'\b{day}\b', '', title, flags=re.IGNORECASE).strip()
+        
+        # Remove time patterns (e.g., "9:00 - 10:30", "10:45 - 12:15")
+        title = re.sub(r'\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2}', '', title).strip()
+        
+        # Remove junk words
+        words = title.split()
+        filtered_words = []
+        for word in words:
+            # Skip single letters and junk words
+            if len(word) > 1 and word not in junk_words:
+                filtered_words.append(word)
+            # If we have at least 8 good words, stop (we got the course name)
+            if len(filtered_words) >= 8:
+                break
+        
+        title = ' '.join(filtered_words).strip()
+        
+        # Clean up extra spaces
+        title = re.sub(r'\s+', ' ', title).strip()
+        
+        return title
 
 
 class TrashBinListView(generics.ListAPIView):

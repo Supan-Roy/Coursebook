@@ -28,6 +28,8 @@ def generate_password_reset_token():
 def _send_verification_email_sync(user, otp):
     """Internal function to send verification email synchronously"""
     subject = "Verify your Coursebook account"
+    
+    # Plain text version
     message = f"""
 Hello {user.first_name or 'there'},
 
@@ -43,15 +45,72 @@ Best regards,
 The Coursebook Team
 """
     
+    # HTML version with bold and larger OTP
+    html_message = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {{
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }}
+        .otp-code {{
+            font-size: 28px;
+            font-weight: bold;
+            color: #2563eb;
+            letter-spacing: 4px;
+            text-align: center;
+            padding: 20px;
+            background-color: #f3f4f6;
+            border-radius: 8px;
+            margin: 20px 0;
+            display: inline-block;
+            width: 100%;
+            box-sizing: border-box;
+        }}
+        .footer {{
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            color: #6b7280;
+            font-size: 14px;
+        }}
+    </style>
+</head>
+<body>
+    <p>Hello {user.first_name or 'there'},</p>
+    
+    <p>Thank you for registering with Coursebook! Please verify your email address using the OTP code below:</p>
+    
+    <div class="otp-code">{otp}</div>
+    
+    <p>This code will expire in 10 minutes.</p>
+    
+    <p>If you didn't create an account with Coursebook, please ignore this email.</p>
+    
+    <div class="footer">
+        <p>Best regards,<br>The Coursebook Team</p>
+    </div>
+</body>
+</html>
+"""
+    
     try:
         if getattr(settings, "USE_RESEND_API", False):
-            send_email_via_resend(subject, message, [user.email])
+            send_email_via_resend(subject, message, [user.email], html_message=html_message)
         else:
             send_mail(
                 subject,
                 message,
                 settings.DEFAULT_FROM_EMAIL,
                 [user.email],
+                html_message=html_message,
                 fail_silently=False,
             )
     except Exception as e:

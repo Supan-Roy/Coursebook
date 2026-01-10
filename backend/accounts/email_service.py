@@ -26,12 +26,19 @@ def send_email_via_resend(
     subject: str,
     message: str,
     to_emails: Iterable[str],
+    html_message: str = None,
 ) -> None:
     """
-    Send plain-text email using Resend HTTP API instead of SMTP.
+    Send email using Resend HTTP API instead of SMTP.
 
     This is mainly for production environments (e.g. Railway) where
     outbound SMTP might be blocked or unreliable.
+    
+    Args:
+        subject: Email subject
+        message: Plain text email message
+        to_emails: List of recipient email addresses
+        html_message: Optional HTML version of the email
     """
     api_key = _get_resend_api_key()
     if not api_key:
@@ -49,6 +56,17 @@ def send_email_via_resend(
     if not from_email:
         raise RuntimeError("DEFAULT_FROM_EMAIL is not configured")
 
+    email_data = {
+        "from": from_email,
+        "to": to_list,
+        "subject": subject,
+        "text": message,
+    }
+    
+    # Add HTML version if provided
+    if html_message:
+        email_data["html"] = html_message
+
     try:
         response = requests.post(
             "https://api.resend.com/emails",
@@ -56,12 +74,7 @@ def send_email_via_resend(
                 "Authorization": f"Bearer {api_key}",
                 "Content-Type": "application/json",
             },
-            json={
-                "from": from_email,
-                "to": to_list,
-                "subject": subject,
-                "text": message,
-            },
+            json=email_data,
             timeout=10,
         )
         response.raise_for_status()
