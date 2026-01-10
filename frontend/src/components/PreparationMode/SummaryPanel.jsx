@@ -3,6 +3,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { preparationService } from '../../services';
 import Toast from '../Toast';
 import ConfirmDialog from '../ConfirmDialog';
+import MarkdownViewer from '../MarkdownViewer';
 
 export default function SummaryPanel({ courseId, selectedFiles, onSave, loadedSummary }) {
   const { isDarkMode } = useTheme();

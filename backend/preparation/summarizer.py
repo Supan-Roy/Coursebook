@@ -309,13 +309,17 @@ def summarize_text(text: str, *, ratio: float = 0.15, min_sentences: int = 2) ->
             
             # Only include section if it has content
             if section_summary_sentences:
-                # Format: section header (if not "Introduction" or generic) + sentences
+                # Format: section header in Markdown (if not "Introduction" or generic) + sentences
                 if section_name not in ["Introduction", "Document"] and len(section_name) < 50:
-                    summary_parts.append(f"\n{section_name}:")
+                    summary_parts.append(f"\n## {section_name}\n")
+                else:
+                    summary_parts.append("")
                 
-                summary_parts.extend(section_summary_sentences)
+                # Join sentences with proper spacing
+                section_text = " ".join(section_summary_sentences)
+                summary_parts.append(section_text)
         
-        summary = " ".join(summary_parts).strip()
+        summary = "\n\n".join(summary_parts).strip()
         logger.info(f"Summary generated: {len(summary)} chars, {len(summary.split())} words")
         
         if not summary:

@@ -118,7 +118,10 @@ class SummaryGenerateView(APIView):
             
             if openrouter.enabled:
                 logger.info("Attempting to generate summary with OpenRouter API")
-                max_words = int(len(combined_text.split()) * 0.15)  # ~15% of source
+                # Calculate max_words but ensure it's reasonable (15% of source, min 500, max 5000)
+                source_word_count = len(combined_text.split())
+                max_words = max(500, min(5000, int(source_word_count * 0.15)))  # ~15% of source, capped at 5000 words
+                logger.info(f"Source text: {source_word_count} words, requesting summary: {max_words} words")
                 result = openrouter.generate_summary(combined_text, max_words=max_words, style='detailed')
                 if result['success']:
                     summary = result['summary']

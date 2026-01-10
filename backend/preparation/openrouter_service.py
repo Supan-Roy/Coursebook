@@ -74,37 +74,58 @@ class OpenRouterService:
         try:
             # Build appropriate prompt
             if style == "bullet_points":
-                prompt = f"""Create comprehensive study notes from the following material in bullet point format.
+                math_example = "$E=mc^2$"
+                block_math_example = "$$\\int_0^{\\infty} e^{-t} dt = 1$$"
+                prompt = f"""Create comprehensive study notes from the following material in Markdown format with bullet points.
 
 {text}
 
 Instructions:
-- Return the notes only. Do NOT add any intro like "Here are notes" or a closing sentence.
-- Use clear bullet points.
+- Return the notes ONLY in Markdown format. Do NOT add any intro like "Here are notes" or a closing sentence.
+- Use Markdown formatting: ## for section headers, - or * for bullet points, **bold** for emphasis, *italic* for emphasis.
+- Math equations: Use LaTeX syntax with $...$ for inline math (e.g., {math_example}) and $$...$$ for block equations (e.g., {block_math_example}).
 - Include key concepts, definitions, main ideas, examples, critical points, and relationships.
+- Structure with clear sections using ## headers.
 
 Notes:"""
             elif style == "concise":
-                prompt = f"""Create focused study notes from the following material (around {max_words} words).
+                math_example = "$E=mc^2$"
+                block_math_example = "$$\\int_0^{\\infty} e^{-t} dt = 1$$"
+                prompt = f"""Create focused study notes from the following material (around {max_words} words) in Markdown format.
 
 {text}
 
 Instructions:
-- Return the notes only. Do NOT add any intro or closing sentence.
+- Return the notes ONLY in Markdown format. Do NOT add any intro or closing sentence.
+- Use Markdown formatting: ## for section headers, **bold** for key terms, *italic* for emphasis, - for lists.
+- Math equations: Use LaTeX syntax with $...$ for inline math (e.g., {math_example}) and $$...$$ for block equations (e.g., {block_math_example}).
 - Cover main concepts, definitions, and essential points to remember.
-- Keep it concise but informative.
+- Keep it concise but informative with clear structure.
 
 Notes:"""
             else:  # detailed
-                prompt = f"""Create comprehensive, detailed study notes from the following material.
+                math_example = "$E=mc^2$"
+                block_math_example = "$$\\int_0^{\\infty} e^{-t} dt = 1$$"
+                prompt = f"""Create comprehensive, detailed study notes from the following material in Markdown format.
 
 {text}
 
 Instructions:
-- Return the notes only. Do NOT include any leading phrase (e.g., "Here are notes") or closing sentence.
+- Return the notes ONLY in Markdown format. Do NOT include any leading phrase (e.g., "Here are notes") or closing sentence.
+- Use Markdown formatting:
+  * ## for main section headers (e.g., ## Key Concepts)
+  * ### for subsections
+  * **bold** for important terms and definitions
+  * *italic* for emphasis
+  * - or * for bullet points
+  * Numbered lists (1., 2., 3.) for sequences
+  * Math equations: Use LaTeX syntax with $...$ for inline math (e.g., {math_example}) and $$...$$ for block equations (e.g., {block_math_example})
 - Explain key concepts clearly and break down complex ideas.
 - Provide context, definitions, relationships, critical points, examples, and logical structure.
-- Aim for around {max_words} words; prioritize completeness.
+- IMPORTANT: Provide a COMPLETE summary. Do not cut off mid-sentence or mid-section. Ensure all sections are fully explained.
+- Aim for around {max_words} words; prioritize completeness and thoroughness over brevity.
+- Structure content with clear sections and subsections.
+- Make sure to cover ALL important points from the source material.
 
 Notes:"""
             
@@ -119,7 +140,7 @@ Notes:"""
                 json={
                     "model": self.model,
                     "messages": [{"role": "user", "content": prompt}],
-                    "max_tokens": max(500, min(4000, max_words * 2))
+                    "max_tokens": max(2000, min(8000, max_words * 4))  # Increased limit: ~1 token = 0.75 words, so 8000 tokens ≈ 6000 words
                 },
                 timeout=60
             )
@@ -127,9 +148,15 @@ Notes:"""
             if response.status_code == 200:
                 result = response.json()
                 summary = result['choices'][0]['message']['content'].strip()
+                
+                # Check if response was truncated (OpenRouter may indicate this)
+                finish_reason = result['choices'][0].get('finish_reason', '')
+                if finish_reason == 'length':
+                    logger.warning("OpenRouter response was truncated due to token limit")
+                
                 word_count = len(summary.split())
                 
-                logger.info(f"Generated summary: {word_count} words via OpenRouter")
+                logger.info(f"Generated summary: {word_count} words via OpenRouter (finish_reason: {finish_reason})")
                 
                 return {
                     'success': True,

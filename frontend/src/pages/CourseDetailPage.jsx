@@ -10,6 +10,7 @@ import PreparationMode from '../components/PreparationMode/PreparationMode';
 import Toast from '../components/Toast';
 import Sidebar from '../components/Sidebar';
 import UploadQueue from '../components/UploadQueue';
+import MarkdownViewer from '../components/MarkdownViewer';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
 const BACKEND_BASE_URL = API_BASE_URL.replace(/\/api$/, '');
@@ -33,6 +34,7 @@ export default function CourseDetailPage() {
   const [toast, setToast] = useState(null);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedMaterials, setSelectedMaterials] = useState(new Set());
+  const [showMobileGreeting, setShowMobileGreeting] = useState(true);
   const { logout, user } = useAuth();
   const { isDarkMode, toggleTheme } = useTheme();
   const navigate = useNavigate();
@@ -1157,9 +1159,10 @@ export default function CourseDetailPage() {
             </div>
 
             <div className="p-6">
-              <div className={`whitespace-pre-wrap ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                {selectedSummary.content}
-              </div>
+              <MarkdownViewer 
+                content={selectedSummary.content} 
+                isDarkMode={isDarkMode}
+              />
             </div>
           </div>
         </div>

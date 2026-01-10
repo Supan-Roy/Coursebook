@@ -247,21 +247,22 @@ export default function Sidebar({
           </div>
         )}
       </nav>
-
-      <ConfirmDialog
-        isOpen={showLogoutConfirm}
-        title="Log out"
-        message="Are you sure you want to log out of Coursebook?"
-        confirmText="Log out"
-        type="danger"
-        onConfirm={() => {
-          setShowLogoutConfirm(false);
-          logout();
-          navigate('/login');
-        }}
-        onCancel={() => setShowLogoutConfirm(false)}
-      />
     </aside>
+
+    {/* Logout confirmation dialog - rendered outside sidebar to center on screen */}
+    <ConfirmDialog
+      isOpen={showLogoutConfirm}
+      title="Log out"
+      message="Are you sure you want to log out of Coursebook?"
+      confirmText="Log out"
+      type="danger"
+      onConfirm={() => {
+        setShowLogoutConfirm(false);
+        logout();
+        navigate('/login');
+      }}
+      onCancel={() => setShowLogoutConfirm(false)}
+    />
     </>
   );
 }
