@@ -137,6 +137,7 @@ export default function ProfilePage() {
   const { isDarkMode, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showMobileGreeting, setShowMobileGreeting] = useState(true);
   const profileMenuRef = useRef(null);
   const [formData, setFormData] = useState({
     first_name: '',
