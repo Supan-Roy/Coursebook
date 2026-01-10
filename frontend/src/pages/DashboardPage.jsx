@@ -1904,12 +1904,12 @@ export default function DashboardPage() {
                     href={`${BACKEND_BASE_URL}/materials/files/${material.id}/`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`flex items-center justify-between p-4 border rounded-lg transition-all group cursor-pointer no-underline ${isDarkMode ? 'border-gray-700/30 hover:border-sky-500/30 bg-gray-900/30 hover:bg-gray-900/50' : 'border-gray-200 hover:border-sky-500/30 bg-gray-50 hover:bg-gray-100'}`}
+                    className={`flex items-center justify-between p-2 sm:p-3 md:p-4 border rounded-lg transition-all group cursor-pointer no-underline ${isDarkMode ? 'border-gray-700/30 hover:border-sky-500/30 bg-gray-900/30 hover:bg-gray-900/50' : 'border-gray-200 hover:border-sky-500/30 bg-gray-50 hover:bg-gray-100'}`}
                 >
-                  <div className="flex items-center space-x-3 flex-1 min-w-0">
-                    <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-sky-500/20 to-cyan-500/20 rounded-lg flex items-center justify-center group-hover:from-sky-500/40 group-hover:to-cyan-500/40 transition-colors border border-sky-500/20">
+                  <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
+                    <div className="flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 bg-gradient-to-br from-sky-500/20 to-cyan-500/20 rounded-lg flex items-center justify-center group-hover:from-sky-500/40 group-hover:to-cyan-500/40 transition-colors border border-sky-500/20">
                       <svg
-                        className="h-5 w-5 text-sky-400 group-hover:text-cyan-300 transition-colors"
+                        className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5 text-sky-400 group-hover:text-cyan-300 transition-colors"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -1930,7 +1930,7 @@ export default function DashboardPage() {
                       <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>{formatBytes(material.size_bytes)}</p>
                     </div>
                   </div>
-                    <span className="ml-3 px-3 py-1.5 text-xs font-semibold text-sky-300 group-hover:text-sky-200 rounded-lg transition-all border border-sky-500/20 group-hover:border-sky-500/50 bg-sky-500/5">
+                    <span className="ml-2 sm:ml-3 px-2 sm:px-2.5 md:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs font-semibold text-sky-300 group-hover:text-sky-200 rounded-lg transition-all border border-sky-500/20 group-hover:border-sky-500/50 bg-sky-500/5">
                       View
                     </span>
                   </a>

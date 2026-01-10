@@ -644,12 +644,13 @@ const MyPlans = ({ isDarkMode }) => {
                 return (
                   <div
                     key={category.id}
-                    className={`flex flex-shrink-0 relative group overflow-visible ${baseClasses} px-2.5 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 rounded-lg transition-all duration-200 ${isMobile ? '' : 'min-w-max'} ${deleteMode && !isDefault ? 'border-2 border-red-400/70' : ''}`}
+                    className={`flex flex-shrink-0 relative group overflow-hidden ${baseClasses} px-2 sm:px-2.5 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 rounded-lg transition-all duration-200 ${isMobile ? '' : 'min-w-max'} ${deleteMode && !isDefault ? 'border-2 border-red-400/70' : ''}`}
                     onClick={handleCategoryClick}
                     style={{ 
                       cursor: deleteMode && !isDefault ? 'pointer' : 'default',
                       width: isMobile ? 'calc(50% - 0.375rem)' : 'auto',
                       minWidth: isMobile ? 'calc(50% - 0.375rem)' : 'auto',
+                      maxWidth: isMobile ? 'calc(50% - 0.375rem)' : 'none',
                       flexShrink: 0
                     }}
                   >
@@ -689,13 +690,13 @@ const MyPlans = ({ isDarkMode }) => {
                         </div>
                       </>
                     ) : (
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             setActiveCategory(category.id);
                           }}
-                          className={`text-sm sm:text-base md:text-lg font-medium transition-all ${
+                          className={`text-sm sm:text-base md:text-lg font-medium transition-all truncate min-w-0 flex-1 ${
                             isActive
                               ? 'text-white'
                               : (isDarkMode ? 'text-gray-300' : 'text-gray-700')
@@ -704,8 +705,8 @@ const MyPlans = ({ isDarkMode }) => {
                         >
                           <span className="hidden md:inline">{category.name}</span>
                           <span className="md:hidden">
-                            {category.name.length > 8 
-                              ? category.name.substring(0, 5) + '...' 
+                            {category.name.length > 10 
+                              ? category.name.substring(0, 7) + '...' 
                               : category.name}
                           </span>
                         </button>

@@ -173,73 +173,73 @@ export default function SettingsPage() {
           </div>
         </header>
 
-        <main className="max-w-5xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4 md:py-6 lg:py-8 space-y-3 sm:space-y-4 md:space-y-6 lg:space-y-8">
-          <section className={`rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 lg:p-8 border ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200 shadow-sm'}`}>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4 gap-2 sm:gap-3">
+        <main className="max-w-5xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-3 md:py-4 lg:py-6 space-y-2 sm:space-y-3 md:space-y-4 lg:space-y-6">
+          <section className={`rounded-lg sm:rounded-xl md:rounded-2xl p-2.5 sm:p-3 md:p-4 lg:p-6 border ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200 shadow-sm'}`}>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 sm:mb-3 gap-1.5 sm:gap-2">
               <div>
-                <p className={`text-[10px] sm:text-xs md:text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Account</p>
-                <h1 className="text-lg sm:text-xl md:text-2xl font-bold">Profile</h1>
-                <p className={`mt-0.5 sm:mt-1 text-[10px] sm:text-xs md:text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                <p className={`text-[9px] sm:text-[10px] md:text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Account</p>
+                <h1 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold">Profile</h1>
+                <p className={`mt-0.5 text-[9px] sm:text-[10px] md:text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                   Manage your personal info and avatar from your profile page.
                 </p>
               </div>
             </div>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 sm:gap-2">
               <div className="min-w-0 flex-1">
-                <p className={`text-[10px] sm:text-xs md:text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Signed in as</p>
+                <p className={`text-[9px] sm:text-[10px] md:text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Signed in as</p>
                 <p className={`text-xs sm:text-sm md:text-base font-semibold truncate ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                   {user?.first_name} {user?.last_name}
                 </p>
-                <p className={`text-[10px] sm:text-xs md:text-sm truncate ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{user?.email}</p>
+                <p className={`text-[9px] sm:text-[10px] md:text-xs truncate ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{user?.email}</p>
               </div>
               <button
                 type="button"
                 onClick={() => navigate('/profile')}
-                className="px-2.5 sm:px-3 md:px-4 py-1.5 sm:py-2 text-xs sm:text-sm md:text-base rounded-lg bg-sky-600 text-white font-semibold hover:bg-sky-500 transition-colors whitespace-nowrap flex-shrink-0"
+                className="px-2 sm:px-2.5 md:px-3 py-1 sm:py-1.5 md:py-2 text-xs sm:text-sm md:text-base rounded-lg bg-sky-600 text-white font-semibold hover:bg-sky-500 transition-colors whitespace-nowrap flex-shrink-0"
               >
                 Open profile
               </button>
             </div>
           </section>
 
-          <section className={`rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 lg:p-8 border ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200 shadow-sm'}`}>
-            <div className="flex items-center justify-between mb-3 sm:mb-4 md:mb-6">
+          <section className={`rounded-lg sm:rounded-xl md:rounded-2xl p-2.5 sm:p-3 md:p-4 lg:p-6 border ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200 shadow-sm'}`}>
+            <div className="flex items-center justify-between mb-2 sm:mb-3 md:mb-4">
               <div>
-                <p className={`text-[10px] sm:text-xs md:text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Notifications</p>
-                <h2 className="text-base sm:text-lg md:text-xl font-bold">Alerts & emails</h2>
+                <p className={`text-[9px] sm:text-[10px] md:text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Notifications</p>
+                <h2 className="text-sm sm:text-base md:text-lg lg:text-xl font-bold">Alerts & emails</h2>
               </div>
             </div>
-            <div className="space-y-2 sm:space-y-3 md:space-y-4">
-              <label className="flex items-start sm:items-center gap-2 sm:gap-3">
-                <input type="checkbox" className="w-3.5 h-3.5 sm:w-4 sm:h-4 mt-0.5 sm:mt-0 flex-shrink-0" checked={notifyEmail} onChange={(e) => setNotifyEmail(e.target.value ? e.target.checked : e.target.checked)} />
+            <div className="space-y-1.5 sm:space-y-2 md:space-y-3">
+              <label className="flex items-start sm:items-center gap-1.5 sm:gap-2">
+                <input type="checkbox" className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 mt-0.5 sm:mt-0 flex-shrink-0" checked={notifyEmail} onChange={(e) => setNotifyEmail(e.target.value ? e.target.checked : e.target.checked)} />
                 <span className={`text-xs sm:text-sm md:text-base break-words ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>Email updates about new summaries and reminders</span>
               </label>
-              <label className="flex items-start sm:items-center gap-2 sm:gap-3">
-                <input type="checkbox" className="w-3.5 h-3.5 sm:w-4 sm:h-4 mt-0.5 sm:mt-0 flex-shrink-0" checked={notifyPush} onChange={(e) => setNotifyPush(e.target.value ? e.target.checked : e.target.checked)} />
+              <label className="flex items-start sm:items-center gap-1.5 sm:gap-2">
+                <input type="checkbox" className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 mt-0.5 sm:mt-0 flex-shrink-0" checked={notifyPush} onChange={(e) => setNotifyPush(e.target.value ? e.target.checked : e.target.checked)} />
                 <span className={`text-xs sm:text-sm md:text-base break-words ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>Browser push notifications</span>
               </label>
-              <label className="flex items-start sm:items-center gap-2 sm:gap-3">
-                <input type="checkbox" className="w-3.5 h-3.5 sm:w-4 sm:h-4 mt-0.5 sm:mt-0 flex-shrink-0" checked={storageAlerts} onChange={(e) => setStorageAlerts(e.target.value ? e.target.checked : e.target.checked)} />
+              <label className="flex items-start sm:items-center gap-1.5 sm:gap-2">
+                <input type="checkbox" className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 mt-0.5 sm:mt-0 flex-shrink-0" checked={storageAlerts} onChange={(e) => setStorageAlerts(e.target.value ? e.target.checked : e.target.checked)} />
                 <span className={`text-xs sm:text-sm md:text-base break-words ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>Storage limit alerts</span>
               </label>
             </div>
           </section>
 
-          <section className={`rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 lg:p-8 border ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200 shadow-sm'}`}>
-            <div className="flex items-center justify-between mb-3 sm:mb-4">
+          <section className={`rounded-lg sm:rounded-xl md:rounded-2xl p-2.5 sm:p-3 md:p-4 lg:p-6 border ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200 shadow-sm'}`}>
+            <div className="flex items-center justify-between mb-2 sm:mb-3">
               <div>
-                <p className={`text-[10px] sm:text-xs md:text-sm ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>Danger zone</p>
-                <h2 className="text-base sm:text-lg md:text-xl font-bold">Account deletion</h2>
+                <p className={`text-[9px] sm:text-[10px] md:text-xs ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>Danger zone</p>
+                <h2 className="text-sm sm:text-base md:text-lg lg:text-xl font-bold">Account deletion</h2>
               </div>
             </div>
-            <p className={`text-xs sm:text-sm md:text-base ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mb-3 sm:mb-4`}>
+            <p className={`text-xs sm:text-sm md:text-base ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mb-2 sm:mb-3`}>
               Permanently delete your account and data. This action cannot be undone. 
               You'll receive a confirmation email to complete the deletion.
             </p>
             <button
               type="button"
               onClick={() => navigate('/delete-account')}
-              className="w-full sm:w-auto px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm md:text-base rounded-lg bg-red-600 text-white font-semibold hover:bg-red-500 transition-colors"
+              className="w-full sm:w-auto px-2.5 sm:px-3 md:px-4 py-1 sm:py-1.5 md:py-2 text-xs sm:text-sm md:text-base rounded-lg bg-red-600 text-white font-semibold hover:bg-red-500 transition-colors"
             >
               Delete account
             </button>
