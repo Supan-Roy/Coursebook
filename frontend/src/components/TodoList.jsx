@@ -664,7 +664,7 @@ const MyPlans = ({ isDarkMode }) => {
                 return (
                   <div
                     key={category.id}
-                    className={`flex flex-shrink-0 relative group overflow-hidden ${baseClasses} ${isDefault ? (isMobile ? 'px-2 py-1.5' : 'px-3 py-2') : (isMobile ? 'px-2 sm:px-2.5 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3' : 'px-2 sm:px-2.5 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3')} rounded-lg transition-all duration-200 ${isMobile ? '' : 'min-w-max'} ${deleteMode && !isDefault ? 'border-2 border-red-400/70' : ''}`}
+                    className={`flex flex-shrink-0 relative group overflow-hidden ${baseClasses} ${isDefault ? (isMobile ? 'px-1.5 py-1' : 'px-2 py-1') : (isMobile ? 'px-2 sm:px-2.5 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3' : 'px-2 sm:px-2.5 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3')} rounded-lg transition-all duration-200 ${isMobile ? '' : 'min-w-max'} ${deleteMode && !isDefault ? 'border-2 border-red-400/70' : ''}`}
                     onClick={handleCategoryClick}
                     style={{ 
                       cursor: deleteMode && !isDefault ? 'pointer' : 'default',
@@ -710,13 +710,13 @@ const MyPlans = ({ isDarkMode }) => {
                         </div>
                       </>
                     ) : (
-                      <div className={`flex items-center ${isDefault ? 'gap-1' : 'gap-2 sm:gap-3'} min-w-0 ${isDefault ? '' : 'flex-1'}`}>
+                      <div className={`flex items-center ${isDefault ? 'gap-0' : 'gap-2 sm:gap-3'} min-w-0 ${isDefault ? '' : 'flex-1'}`}>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             setActiveCategory(category.id);
                           }}
-                          className={`text-sm sm:text-base md:text-lg font-medium transition-all ${isDefault ? 'whitespace-nowrap' : 'truncate min-w-0 flex-1'} ${
+                          className={`text-sm sm:text-base md:text-lg font-medium transition-all ${isDefault ? 'whitespace-nowrap' : 'truncate min-w-0 flex-1'} ${isDefault ? 'px-0' : ''} ${
                             isActive
                               ? 'text-white'
                               : (isDarkMode ? 'text-gray-300' : 'text-gray-700')

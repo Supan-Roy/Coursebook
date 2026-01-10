@@ -17,6 +17,7 @@ export default function SettingsPage() {
   const [storageAlerts, setStorageAlerts] = useState(true);
   const profileMenuRef = useRef(null);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showMobileGreeting, setShowMobileGreeting] = useState(true);
 
   useEffect(() => {
     localStorage.setItem('sidebarCollapsed', sidebarCollapsed);
@@ -32,6 +33,16 @@ export default function SettingsPage() {
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, [showProfileMenu]);
+
+  // Hide mobile greeting on very small screens to protect Coursebook logo
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setShowMobileGreeting(window.innerWidth >= 360);
+    };
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
 
 
   return (
@@ -75,15 +86,22 @@ export default function SettingsPage() {
                 </button>
               </div>
               <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 lg:gap-3 flex-shrink-0">
-                {/* Mobile greeting - Welcome, First Name */}
-                <span className={`text-[10px] sm:text-xs md:text-sm lg:hidden truncate max-w-[60px] sm:max-w-[70px] ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
-                  {(() => {
-                    const firstName = user?.first_name || 'User';
-                    // Truncate first name to max 8 characters on mobile
-                    const truncatedFirstName = firstName.length > 8 ? firstName.substring(0, 6) + '..' : firstName;
-                    return <><span className={`font-semibold ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>Welcome, {truncatedFirstName}</span></>;
-                  })()}
-                </span>
+                {/* Mobile greeting - Welcome, First Name - Hidden on very small screens */}
+                {showMobileGreeting && (
+                  <div className={`flex flex-col items-end text-right max-w-[45px] sm:max-w-[50px] md:max-w-[60px] lg:hidden leading-tight ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
+                    {(() => {
+                      const firstName = user?.first_name || 'User';
+                      // Truncate first name to max 6 characters on mobile
+                      const truncatedFirstName = firstName.length > 6 ? firstName.substring(0, 5) + '..' : firstName;
+                      return (
+                        <>
+                          <div className={`text-[9px] sm:text-[10px] md:text-xs ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>Welcome</div>
+                          <div className={`text-[9px] sm:text-[10px] md:text-xs font-semibold truncate ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>{truncatedFirstName}</div>
+                        </>
+                      );
+                    })()}
+                  </div>
+                )}
                 <div className="hidden lg:flex flex-col items-end">
                   <span className={`text-sm ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
                     {user?.first_name && user?.last_name

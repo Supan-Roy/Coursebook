@@ -54,6 +54,7 @@ export default function DashboardPage() {
   const [showImagesToPDF, setShowImagesToPDF] = useState(false);
   const [showWatermarkPDF, setShowWatermarkPDF] = useState(false);
   const [showEditPDF, setShowEditPDF] = useState(false);
+  const [showMobileGreeting, setShowMobileGreeting] = useState(true);
   const profileMenuRef = useRef(null);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
@@ -108,6 +109,16 @@ export default function DashboardPage() {
       }
     }
   }, [sidebarCollapsed]);
+
+  // Hide mobile greeting on very small screens to protect Coursebook logo
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setShowMobileGreeting(window.innerWidth >= 360);
+    };
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
 
   // Close profile menu on outside click
   useEffect(() => {
@@ -936,30 +947,37 @@ export default function DashboardPage() {
                       {getFormattedDate()}
                     </span>
                   </div>
-                  {/* Mobile greeting - Welcome, First Name */}
-                  <div className={`text-[10px] sm:text-xs md:text-sm lg:hidden text-right max-w-[60px] sm:max-w-[70px] ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
+                  {/* Mobile greeting - Welcome, First Name - Hidden on very small screens */}
+                  {showMobileGreeting && (
+                    <div className={`flex flex-col items-end text-right max-w-[45px] sm:max-w-[50px] md:max-w-[60px] lg:hidden leading-tight ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
                 {(() => {
                   const greeting = getGreeting();
                   const firstName = user?.first_name || 'User';
-                  // Truncate first name to max 8 characters on mobile
-                  const truncatedFirstName = firstName.length > 8 ? firstName.substring(0, 6) + '..' : firstName;
+                  // Truncate first name to max 6 characters on mobile
+                  const truncatedFirstName = firstName.length > 6 ? firstName.substring(0, 5) + '..' : firstName;
                   // Mobile: Only split special greetings (not "Welcome")
                   if (greeting.includes(', ') && !greeting.startsWith('Welcome,')) {
                     const parts = greeting.split(', ');
                     const message = parts.slice(0, -1).join(', ');
                     return (
                       <>
-                        <div className="leading-tight">
+                        <div className="text-[9px] sm:text-[10px] md:text-xs leading-tight">
                           <div className="truncate">{message}{greeting.endsWith('!') ? '!' : ''}</div>
                           <div className={`font-semibold truncate ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>{truncatedFirstName}</div>
                         </div>
                       </>
                     );
                   }
-                  // Mobile: "Welcome, [name]" stays on same line
-                  return <><span className="truncate block">Welcome, <span className={`font-semibold ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>{truncatedFirstName}</span></span></>;
+                  // Mobile: "Welcome" on one line, name on next line
+                  return (
+                    <>
+                      <div className={`text-[9px] sm:text-[10px] md:text-xs ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>Welcome</div>
+                      <div className={`text-[9px] sm:text-[10px] md:text-xs font-semibold truncate ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>{truncatedFirstName}</div>
+                    </>
+                  );
                 })()}
-              </div>
+                    </div>
+                  )}
               
               {/* Theme Toggle */}
               <button

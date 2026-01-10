@@ -55,6 +55,16 @@ export default function CourseDetailPage() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [showProfileMenu]);
 
+  // Hide mobile greeting on very small screens to protect Coursebook logo
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setShowMobileGreeting(window.innerWidth >= 360);
+    };
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
+
   useEffect(() => {
     loadCourseData();
   }, [courseId]);
@@ -593,20 +603,22 @@ export default function CourseDetailPage() {
             </div>
 
             <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 lg:gap-3 flex-shrink-0">
-              {/* Mobile greeting */}
-              <div className={`lg:hidden flex flex-col items-end text-right max-w-[60px] sm:max-w-[70px] leading-tight ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
-                {(() => {
-                  const firstName = user?.first_name || 'User';
-                  // Truncate first name to max 8 characters on mobile
-                  const truncatedFirstName = firstName.length > 8 ? firstName.substring(0, 6) + '..' : firstName;
-                  return (
-                    <>
-                      <div className={`text-[10px] sm:text-xs md:text-sm truncate ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>Welcome</div>
-                      <div className={`text-[10px] sm:text-xs md:text-sm font-semibold truncate ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>{truncatedFirstName}</div>
-                    </>
-                  );
-                })()}
-              </div>
+              {/* Mobile greeting - Hidden on very small screens */}
+              {showMobileGreeting && (
+                <div className={`flex flex-col items-end text-right max-w-[45px] sm:max-w-[50px] md:max-w-[60px] lg:hidden leading-tight ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
+                  {(() => {
+                    const firstName = user?.first_name || 'User';
+                    // Truncate first name to max 6 characters on mobile
+                    const truncatedFirstName = firstName.length > 6 ? firstName.substring(0, 5) + '..' : firstName;
+                    return (
+                      <>
+                        <div className={`text-[9px] sm:text-[10px] md:text-xs ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>Welcome</div>
+                        <div className={`text-[9px] sm:text-[10px] md:text-xs font-semibold truncate ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>{truncatedFirstName}</div>
+                      </>
+                    );
+                  })()}
+                </div>
+              )}
               <div className="hidden lg:flex flex-col items-end">
                 <span className={`text-sm ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
                   Welcome, <span className={`font-semibold ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>{user?.first_name && user?.last_name ? `${user.first_name} ${user.last_name}` : user?.first_name || 'Student'}</span>

@@ -190,6 +190,16 @@ export default function ProfilePage() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [showProfileMenu]);
 
+  // Hide mobile greeting on very small screens to protect Coursebook logo
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setShowMobileGreeting(window.innerWidth >= 360);
+    };
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
+
   // Auto-dismiss success message after 3 seconds
   useEffect(() => {
     if (message.type === 'success' && message.text) {
@@ -406,15 +416,22 @@ export default function ProfilePage() {
                 <span className="hidden sm:inline">Back</span>
               </button>
               
-              {/* Mobile greeting */}
-              <span className={`text-[10px] sm:text-xs md:text-sm lg:hidden truncate max-w-[60px] sm:max-w-[70px] ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
-                {(() => {
-                  const firstName = user?.first_name || 'User';
-                  // Truncate first name to max 8 characters on mobile
-                  const truncatedFirstName = firstName.length > 8 ? firstName.substring(0, 6) + '..' : firstName;
-                  return <><span className={`font-semibold ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>Welcome, {truncatedFirstName}</span></>;
-                })()}
-              </span>
+              {/* Mobile greeting - Hidden on very small screens */}
+              {showMobileGreeting && (
+                <div className={`flex flex-col items-end text-right max-w-[45px] sm:max-w-[50px] md:max-w-[60px] lg:hidden leading-tight ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
+                  {(() => {
+                    const firstName = user?.first_name || 'User';
+                    // Truncate first name to max 6 characters on mobile
+                    const truncatedFirstName = firstName.length > 6 ? firstName.substring(0, 5) + '..' : firstName;
+                    return (
+                      <>
+                        <div className={`text-[9px] sm:text-[10px] md:text-xs ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>Welcome</div>
+                        <div className={`text-[9px] sm:text-[10px] md:text-xs font-semibold truncate ${isDarkMode ? 'text-sky-300' : 'text-sky-600'}`}>{truncatedFirstName}</div>
+                      </>
+                    );
+                  })()}
+                </div>
+              )}
               <div className="hidden lg:flex flex-col items-end">
                 <span className={`text-sm ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
                   {user?.first_name && user?.last_name
