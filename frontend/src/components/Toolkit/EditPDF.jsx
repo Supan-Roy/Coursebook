@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { FiUpload, FiX, FiCheck, FiMove, FiPenTool, FiTrash2, FiChevronLeft, FiChevronRight, FiDownload } from 'react-icons/fi';
+import { FiUpload, FiX, FiCheck, FiMove, FiEdit3, FiPenTool, FiTrash2, FiChevronLeft, FiChevronRight, FiDownload } from 'react-icons/fi';
 import { FaEdit } from 'react-icons/fa';
 import { useTheme } from '../../context/ThemeContext';
 import { toolkitService } from '../../services';
