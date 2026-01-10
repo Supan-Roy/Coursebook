@@ -881,7 +881,7 @@ export default function CourseDetailPage() {
                       window.open(`${BACKEND_BASE_URL}/materials/files/${material.id}/`, '_blank');
                     }
                   }}
-                  className={`group flex items-center justify-between p-3 sm:p-4 rounded-lg border transition-all ${
+                  className={`group flex items-center justify-between p-2 sm:p-3 md:p-4 rounded-lg border transition-all ${
                     isSelectionMode ? 'cursor-pointer' : 'cursor-pointer'
                   } ${
                     isDarkMode 
@@ -893,7 +893,7 @@ export default function CourseDetailPage() {
                       : 'border-gray-200 hover:border-sky-400 bg-gray-50 hover:bg-gray-100'
                   }`}
                 >
-                  <div className="flex items-center gap-2 sm:gap-3 md:gap-4 flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 lg:gap-4 flex-1 min-w-0">
                     {isSelectionMode && (
                       <input
                         type="checkbox"
@@ -907,7 +907,7 @@ export default function CourseDetailPage() {
                         }`}
                       />
                     )}
-                    <span className="text-2xl sm:text-3xl flex-shrink-0">
+                    <span className="text-base sm:text-xl md:text-2xl lg:text-3xl flex-shrink-0">
                       {getFileIcon(material.filename)}
                     </span>
                     <div className="flex-1 min-w-0">
@@ -991,7 +991,7 @@ export default function CourseDetailPage() {
         </div>
 
         {/* Saved Notes */}
-        <div className={`rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 lg:p-8 border ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200 shadow-sm'}`}>
+        <div className={`mt-4 sm:mt-6 md:mt-8 rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 lg:p-8 border ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200 shadow-sm'}`}>
           <h2 className={`text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-5 md:mb-6 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
             📝 Saved Notes ({summaries.length})
           </h2>

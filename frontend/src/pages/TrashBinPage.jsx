@@ -398,18 +398,18 @@ export default function TrashBinPage() {
                 return (
                   <div
                     key={material.id}
-                    className={`py-2 border-b transition-all last:border-b-0 ${
+                    className={`py-1.5 sm:py-2 border-b transition-all last:border-b-0 ${
                       isDarkMode 
                         ? 'bg-gray-900/50 border-gray-800 hover:bg-gray-900/80' 
                         : 'bg-white border-gray-200 hover:bg-gray-50'
                     }`}
                   >
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-3 flex-1">
-                        <div className={`p-2 rounded-lg flex-shrink-0 ${
+                    <div className="flex items-center justify-between gap-2 sm:gap-3">
+                      <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 flex-1">
+                        <div className={`p-1.5 sm:p-2 rounded-lg flex-shrink-0 ${
                           isDarkMode ? 'bg-gray-800' : 'bg-gray-100'
                         }`}>
-                          <span className="text-xl">{getFileIcon(material.filename)}</span>
+                          <span className="text-base sm:text-xl md:text-2xl lg:text-3xl">{getFileIcon(material.filename)}</span>
                         </div>
 
                         <div className="flex-1 min-w-0">

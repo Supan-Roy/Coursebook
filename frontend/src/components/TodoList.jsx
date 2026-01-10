@@ -612,13 +612,17 @@ const MyPlans = ({ isDarkMode }) => {
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
           >
-            <div className="flex gap-1.5 sm:gap-2 md:gap-3 pb-2 pr-2 sm:pr-0 md:pr-0">
+            <div 
+              className="flex gap-1.5 sm:gap-2 md:gap-3 pb-2 pr-2 sm:pr-0 md:pr-0 transition-transform duration-300 ease-in-out"
+              style={{
+                transform: typeof window !== 'undefined' && window.innerWidth < 768 
+                  ? `translateX(calc(-${mobileCategoryIndex} * 50%))` 
+                  : 'translateX(0)',
+              }}
+            >
               {categories.map((category, index) => {
-                // On mobile, show only 2 categories starting from mobileCategoryIndex
+                // On mobile, show all categories but use transform to slide
                 const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-                const shouldShow = !isMobile || (index >= mobileCategoryIndex && index < mobileCategoryIndex + 2);
-                
-                if (!shouldShow) return null;
                 
                 const isActive = activeCategory === category.id;
                 const isDefault = isDefaultCategory(category);
@@ -645,7 +649,8 @@ const MyPlans = ({ isDarkMode }) => {
                     style={{ 
                       cursor: deleteMode && !isDefault ? 'pointer' : 'default',
                       width: isMobile ? 'calc(50% - 0.375rem)' : 'auto',
-                      minWidth: isMobile ? 'calc(50% - 0.375rem)' : 'auto'
+                      minWidth: isMobile ? 'calc(50% - 0.375rem)' : 'auto',
+                      flexShrink: 0
                     }}
                   >
                     {editingCategory === category.id && !isDefault ? (
@@ -748,14 +753,15 @@ const MyPlans = ({ isDarkMode }) => {
                     isDarkMode
                       ? 'border-gray-700 hover:border-gray-600 text-gray-400 hover:text-gray-300 hover:bg-gray-800'
                       : 'border-gray-400 hover:border-gray-500 text-gray-600 hover:text-gray-700 hover:bg-gray-100'
-                  } font-medium flex items-center gap-1 sm:gap-1.5 whitespace-nowrap`}
+                  } font-medium flex items-center justify-center gap-1 sm:gap-1.5 whitespace-nowrap`}
                   style={{ 
+                    width: typeof window !== 'undefined' && window.innerWidth < 768 ? 'calc(50% - 0.375rem)' : 'fit-content',
                     minWidth: typeof window !== 'undefined' && window.innerWidth < 768 ? 'calc(50% - 0.375rem)' : 'fit-content'
                   }}
                 >
-                  <FiPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-                  <span className="hidden sm:inline">Add Category</span>
-                  <span className="sm:hidden">Add</span>
+                  <FiPlus className="w-5 h-5 sm:w-4 sm:h-4 md:w-5 md:h-5 flex-shrink-0" />
+                  <span className="hidden md:inline">Add Category</span>
+                  <span className="hidden sm:inline md:hidden">Add</span>
                 </button>
               ) : (
                 <>

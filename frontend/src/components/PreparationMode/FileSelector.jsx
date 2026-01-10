@@ -140,7 +140,7 @@ export default function FileSelector({ materials, selectedFiles, onSelect, onDes
                   {/* File Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 sm:gap-2">
-                      <span className="text-base sm:text-lg flex-shrink-0">{getFileIcon(material.filename)}</span>
+                      <span className="text-base sm:text-xl md:text-2xl lg:text-3xl flex-shrink-0">{getFileIcon(material.filename)}</span>
                       <p className={`font-medium text-xs sm:text-sm md:text-base break-words ${isDarkMode ? 'text-white' : 'text-gray-900'}`} title={material.filename}>
                         <span className="hidden sm:inline line-clamp-1">{material.filename}</span>
                         <span className="sm:hidden">{truncateFileName(material.filename, 25)}</span>
