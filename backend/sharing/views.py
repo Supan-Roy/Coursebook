@@ -83,7 +83,7 @@ class ShareLinkUpdatePrivacyView(APIView):
         share_link = get_object_or_404(ShareLink, id=pk, user=request.user)
         privacy = request.data.get('privacy')
         
-        if privacy not in [ShareLink.PRIVACY_PUBLIC, ShareLink.PRIVACY_COURSEBOOK_USERS]:
+        if privacy not in [ShareLink.PRIVACY_PRIVATE, ShareLink.PRIVACY_PUBLIC, ShareLink.PRIVACY_COURSEBOOK_USERS]:
             return Response(
                 {"detail": "Invalid privacy setting."},
                 status=status.HTTP_400_BAD_REQUEST
@@ -110,7 +110,14 @@ class SharedContentView(APIView):
             )
         
         # Check privacy
-        if share_link.privacy == ShareLink.PRIVACY_COURSEBOOK_USERS:
+        if share_link.privacy == ShareLink.PRIVACY_PRIVATE:
+            # Private shares are only accessible to the owner
+            if not request.user.is_authenticated or request.user.id != share_link.user.id:
+                return Response(
+                    {"detail": "This share is private. Access denied."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+        elif share_link.privacy == ShareLink.PRIVACY_COURSEBOOK_USERS:
             if not request.user.is_authenticated:
                 return Response(
                     {"detail": "This share requires Coursebook account. Please log in."},

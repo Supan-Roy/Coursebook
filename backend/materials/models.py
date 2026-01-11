@@ -8,6 +8,16 @@ from courses.models import Course
 
 
 class Material(models.Model):
+    PRIVACY_PRIVATE = "private"
+    PRIVACY_PUBLIC = "public"
+    PRIVACY_COURSEBOOK_USERS = "coursebook_users"
+    
+    PRIVACY_CHOICES = [
+        (PRIVACY_PRIVATE, "Private - Only me"),
+        (PRIVACY_PUBLIC, "Public - Anyone with the link"),
+        (PRIVACY_COURSEBOOK_USERS, "Coursebook Users Only"),
+    ]
+    
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="materials")
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="materials")
@@ -18,6 +28,9 @@ class Material(models.Model):
     storage_key = models.CharField(max_length=255)
     uploaded_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
+    # Privacy field - default to private
+    privacy = models.CharField(max_length=20, choices=PRIVACY_CHOICES, default=PRIVACY_PRIVATE, db_index=True)
     
     # Trash bin fields
     is_deleted = models.BooleanField(default=False, db_index=True)

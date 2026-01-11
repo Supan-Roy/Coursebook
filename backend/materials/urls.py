@@ -10,7 +10,8 @@ from .views import (
     MaterialRestoreView,
     MaterialPermanentDeleteView,
     EmptyTrashView,
-    PublicMaterialServeView
+    PublicMaterialServeView,
+    MaterialPrivacyUpdateView
 )
 
 urlpatterns = [
@@ -18,6 +19,7 @@ urlpatterns = [
     path("upload/", FileUploadView.as_view(), name="file-upload"),
     path("upload-material/", MaterialUploadView.as_view(), name="material-upload"),
     path("<uuid:id>/extract/", MaterialExtractContentView.as_view(), name="material-extract"),
+    path("<uuid:id>/privacy/", MaterialPrivacyUpdateView.as_view(), name="material-privacy-update"),
     path("<uuid:id>/", MaterialDetailView.as_view(), name="material-detail"),
     path("trash/", TrashBinListView.as_view(), name="trash-bin-list"),
     path("trash/empty/", EmptyTrashView.as_view(), name="trash-empty"),

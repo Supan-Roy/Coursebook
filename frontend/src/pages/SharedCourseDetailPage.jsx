@@ -49,7 +49,8 @@ export default function SharedCourseDetailPage() {
     } catch (err) {
       console.error('Failed to load shared content:', err);
       if (err.response?.status === 403) {
-        setError('This share requires a Coursebook account. Please log in to view.');
+        // Use the error message from backend (could be private or coursebook_users)
+        setError(err.response?.data?.detail || 'Access denied. This share may be private or require a Coursebook account.');
       } else if (err.response?.status === 410) {
         setError('This share link has expired.');
       } else {
@@ -150,6 +151,14 @@ export default function SharedCourseDetailPage() {
                   className="px-6 py-2 bg-sky-500 text-white rounded-lg hover:bg-sky-600 transition-colors"
                 >
                   Sign In
+                </button>
+              )}
+              {error.includes('private') && (
+                <button
+                  onClick={() => navigate('/dashboard')}
+                  className="px-6 py-2 bg-sky-500 text-white rounded-lg hover:bg-sky-600 transition-colors"
+                >
+                  Go to Dashboard
                 </button>
               )}
               <button

@@ -11,6 +11,9 @@ import Toast from '../components/Toast';
 import Sidebar from '../components/Sidebar';
 import UploadQueue from '../components/UploadQueue';
 import MarkdownViewer from '../components/MarkdownViewer';
+import MaterialPrivacyDialog from '../components/MaterialPrivacyDialog';
+import api from '../services/api';
+import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
 const BACKEND_BASE_URL = API_BASE_URL.replace(/\/api$/, '');
@@ -29,6 +32,8 @@ export default function CourseDetailPage() {
   const [showPreparationMode, setShowPreparationMode] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, title: '', message: '', onConfirm: null });
   const [alertDialog, setAlertDialog] = useState({ isOpen: false, title: '', message: '', type: 'info' });
+  const [showPrivacyDialog, setShowPrivacyDialog] = useState(false);
+  const [selectedMaterialForPrivacy, setSelectedMaterialForPrivacy] = useState(null);
   const [selectedSummary, setSelectedSummary] = useState(null);
   const [editingSummary, setEditingSummary] = useState(null);
   const [toast, setToast] = useState(null);
@@ -123,6 +128,45 @@ export default function CourseDetailPage() {
     } catch (err) {
       console.error('Failed to download file:', err);
       setToast({ message: 'Failed to download file', type: 'error' });
+    }
+  };
+
+  const handleViewFile = async (material) => {
+    try {
+      // Use authenticated request to fetch the file
+      const token = localStorage.getItem('access_token');
+      const fileUrl = `${BACKEND_BASE_URL}/materials/files/${material.id}/`;
+      
+      const response = await axios.get(fileUrl, {
+        responseType: 'blob',
+        headers: token ? {
+          'Authorization': `Bearer ${token}`
+        } : {}
+      });
+      
+      const blob = response.data;
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      // Note: We don't revoke the URL immediately as the new window needs it
+      // The browser will clean it up when the window is closed
+    } catch (err) {
+      console.error('Failed to open file:', err);
+      let errorMessage = 'Failed to open file';
+      if (err.response?.status === 403) {
+        errorMessage = err.response?.data?.detail || 'You do not have permission to access this file';
+      } else if (err.response?.status === 404) {
+        errorMessage = 'File not found';
+      } else if (err.response?.data) {
+        // Try to extract error message from blob response
+        try {
+          const text = await err.response.data.text();
+          const json = JSON.parse(text);
+          errorMessage = json.detail || errorMessage;
+        } catch {
+          errorMessage = err.response.data.detail || errorMessage;
+        }
+      }
+      setToast({ message: errorMessage, type: 'error' });
     }
   };
 
@@ -894,7 +938,7 @@ export default function CourseDetailPage() {
                     if (isSelectionMode) {
                       toggleMaterialSelection(material.id);
                     } else {
-                      window.open(`${BACKEND_BASE_URL}/materials/files/${material.id}/`, '_blank');
+                      handleViewFile(material);
                     }
                   }}
                   className={`group flex items-center justify-between p-2 sm:p-3 md:p-4 rounded-lg border transition-all ${
@@ -955,28 +999,17 @@ export default function CourseDetailPage() {
                         </svg>
                       </button>
                       <button
-                        onClick={async (e) => {
+                        onClick={(e) => {
                           e.stopPropagation();
-                          const shareUrl = `${BACKEND_BASE_URL}/materials/files/${material.id}/`;
-                          if (navigator.share) {
-                            try {
-                              await navigator.share({
-                                title: material.filename,
-                                text: `Check out this file: ${material.filename}`,
-                                url: shareUrl,
-                              });
-                            } catch (err) {
-                              // User cancelled or share failed - silently handle
-                            }
-                          }
-                          // No clipboard fallback - only use system share dialog
+                          setSelectedMaterialForPrivacy(material);
+                          setShowPrivacyDialog(true);
                         }}
                         className={`p-1.5 sm:p-2 rounded-lg transition-all ${
                           isDarkMode
                             ? 'hover:bg-green-500/20 text-gray-400 hover:text-green-400'
                             : 'hover:bg-green-100 text-gray-500 hover:text-green-600'
                         }`}
-                        title="Share file"
+                        title="Share settings"
                       >
                         <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
@@ -1273,6 +1306,20 @@ export default function CourseDetailPage() {
         message={alertDialog.message}
         type={alertDialog.type}
         onClose={() => setAlertDialog({ ...alertDialog, isOpen: false })}
+      />
+
+      {/* Material Privacy Dialog */}
+      <MaterialPrivacyDialog
+        isOpen={showPrivacyDialog}
+        onClose={() => {
+          setShowPrivacyDialog(false);
+          setSelectedMaterialForPrivacy(null);
+        }}
+        material={selectedMaterialForPrivacy}
+        onSuccess={() => {
+          loadCourseData(); // Reload materials to get updated privacy
+        }}
+        isDarkMode={isDarkMode}
       />
 
       {/* Upload Queue */}

@@ -12,10 +12,12 @@ from materials.models import Material
 class ShareLink(models.Model):
     """Model for sharing semesters, courses, or materials"""
     
+    PRIVACY_PRIVATE = "private"
     PRIVACY_PUBLIC = "public"
     PRIVACY_COURSEBOOK_USERS = "coursebook_users"
     
     PRIVACY_CHOICES = [
+        (PRIVACY_PRIVATE, "Private - Only me"),
         (PRIVACY_PUBLIC, "Public - Anyone with the link"),
         (PRIVACY_COURSEBOOK_USERS, "Coursebook Users Only"),
     ]

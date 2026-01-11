@@ -19,6 +19,7 @@ class MaterialSerializer(serializers.ModelSerializer):
             "updated_at",
             "is_deleted",
             "deleted_at",
+            "privacy",
         ]
         read_only_fields = ["id", "uploaded_at", "updated_at", "is_deleted", "deleted_at"]
 

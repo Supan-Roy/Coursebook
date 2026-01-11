@@ -227,6 +227,11 @@ export const materialService = {
     return response.data;
   },
 
+  async updatePrivacy(id, privacy) {
+    const response = await api.patch(`/materials/${id}/privacy/`, { privacy });
+    return response.data;
+  },
+
   async permanentDelete(id) {
     await api.delete(`/materials/${id}/permanent-delete/`);
   },

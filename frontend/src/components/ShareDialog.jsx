@@ -97,6 +97,7 @@ export default function ShareDialog({ isOpen, onClose, type, data, onSuccess, is
                     : 'bg-white border-gray-400 text-gray-900 hover:border-gray-500 focus:border-sky-500'
                 }`}
               >
+                <option value="private" className={isDarkMode ? 'bg-gray-900' : 'bg-white'}>Private - Only me</option>
                 <option value="public" className={isDarkMode ? 'bg-gray-900' : 'bg-white'}>Public - Anyone with the link</option>
                 <option value="coursebook_users" className={isDarkMode ? 'bg-gray-900' : 'bg-white'}>Coursebook Users Only</option>
               </select>

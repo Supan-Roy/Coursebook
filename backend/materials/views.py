@@ -1,14 +1,99 @@
 from django.http import HttpResponse, Http404
 import requests
 from rest_framework.views import APIView
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework import authentication
 # ...existing code...
 
+class OptionalJWTAuthentication(authentication.BaseAuthentication):
+    """Authentication that attempts JWT but doesn't fail if token is invalid/missing"""
+    def authenticate(self, request):
+        jwt_auth = JWTAuthentication()
+        try:
+            return jwt_auth.authenticate(request)
+        except Exception:
+            # If authentication fails, return None to allow unauthenticated access
+            return None
+
 class PublicMaterialServeView(APIView):
-    """Serve material file publicly via /files/<uuid:id>/"""
-    permission_classes = []  # Public access
+    """Serve material file with privacy checks via /files/<uuid:id>/"""
+    permission_classes = []  # Public access, but we check privacy manually
+    authentication_classes = [OptionalJWTAuthentication]  # Try to authenticate but don't require it
 
     def get(self, request, id):
+        from rest_framework.exceptions import PermissionDenied
+        from sharing.models import ShareLink
+        
         material = get_object_or_404(Material, id=id, is_deleted=False)
+        
+        # IMPORTANT: Owner can always access their own files, regardless of privacy
+        # Check authentication token from headers (for API requests) or session
+        is_owner = False
+        if request.user.is_authenticated:
+            is_owner = request.user.id == material.user.id
+        
+        # If owner, allow access immediately (bypass all privacy checks)
+        if is_owner:
+            cloudinary_url = material.storage_url
+            if not cloudinary_url:
+                raise Http404("File not found")
+            try:
+                resp = requests.get(cloudinary_url, stream=True)
+                resp.raise_for_status()
+            except Exception:
+                raise Http404("File not found or unavailable")
+            response = HttpResponse(resp.raw, content_type=material.content_type)
+            response['Content-Disposition'] = f'inline; filename="{material.filename}"'
+            return response
+        
+        # For non-owners, check privacy settings
+        # Check if material's course/semester is shared via Sharing Room
+        # If shared, use Sharing Room privacy (overrides material privacy)
+        course = material.course
+        share_link = None
+        
+        # Check for course-level share
+        course_share = ShareLink.objects.filter(
+            course=course,
+            user=material.user,
+            share_type=ShareLink.SHARE_TYPE_COURSE
+        ).first()
+        
+        if course_share and not course_share.is_expired():
+            share_link = course_share
+        else:
+            # Check for semester-level share
+            if course.semester:
+                semester_share = ShareLink.objects.filter(
+                    user=material.user,
+                    share_type=ShareLink.SHARE_TYPE_SEMESTER,
+                    semester_name=course.semester
+                ).first()
+                
+                if semester_share and not semester_share.is_expired():
+                    share_link = semester_share
+        
+        # Determine effective privacy
+        if share_link:
+            # Sharing Room privacy overrides material privacy
+            # Map ShareLink privacy to Material privacy (they use same values)
+            effective_privacy = share_link.privacy
+        else:
+            # Use material's own privacy setting
+            effective_privacy = material.privacy
+        
+        # Check access based on effective privacy (only for non-owners)
+        # Handle both Material and ShareLink privacy constants (both use "private", "public", "coursebook_users")
+        if effective_privacy == Material.PRIVACY_PRIVATE or effective_privacy == "private":
+            # Private files are only accessible to owner (already checked above)
+            # Return custom HTML error page
+            return self._render_private_file_error(material)
+        elif effective_privacy == Material.PRIVACY_COURSEBOOK_USERS:
+            # Only authenticated Coursebook users can access
+            if not request.user.is_authenticated:
+                return self._render_coursebook_users_error(material)
+        # else: PRIVACY_PUBLIC - anyone can access
+        
         cloudinary_url = material.storage_url
         if not cloudinary_url:
             raise Http404("File not found")
@@ -20,6 +105,499 @@ class PublicMaterialServeView(APIView):
         response = HttpResponse(resp.raw, content_type=material.content_type)
         response['Content-Disposition'] = f'inline; filename="{material.filename}"'
         return response
+    
+    def _render_private_file_error(self, material):
+        """Render a custom HTML error page for private files"""
+        from django.conf import settings
+        frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:5173')
+        dashboard_url = f"{frontend_url}/dashboard"
+        
+        html_content = f"""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Private File - Coursebook</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sofia+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {{
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }}
+        
+        body {{
+            font-family: 'Sofia Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            background: #000000;
+            transition: background-color 0.2s;
+        }}
+        
+        @media (prefers-color-scheme: light) {{
+            body {{
+                background: #f9fafb;
+            }}
+        }}
+        
+        .container {{
+            width: 100%;
+            max-width: 28rem;
+        }}
+        
+        .card {{
+            background: #111827;
+            border: 1px solid #1f2937;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transition: background-color 0.2s, border-color 0.2s;
+        }}
+        
+        @media (min-width: 640px) {{
+            .card {{
+                border-radius: 1rem;
+                padding: 2rem;
+            }}
+        }}
+        
+        @media (prefers-color-scheme: light) {{
+            .card {{
+                background: #ffffff;
+                border-color: transparent;
+            }}
+        }}
+        
+        .logo-container {{
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0;
+            margin-bottom: 1.5rem;
+            cursor: pointer;
+        }}
+        
+        .logo-container:hover {{
+            opacity: 0.8;
+        }}
+        
+        .logo-img {{
+            width: 2rem;
+            height: 2rem;
+            flex-shrink: 0;
+        }}
+        
+        @media (min-width: 640px) {{
+            .logo-img {{
+                width: 2.5rem;
+                height: 2.5rem;
+            }}
+        }}
+        
+        @media (min-width: 768px) {{
+            .logo-img {{
+                width: 3rem;
+                height: 3rem;
+            }}
+        }}
+        
+        .logo-text {{
+            width: 10rem;
+            height: 2.5rem;
+            flex-shrink: 0;
+            margin-left: -0.25rem;
+            color: #ffffff;
+        }}
+        
+        @media (min-width: 640px) {{
+            .logo-text {{
+                width: 12rem;
+                height: 3rem;
+                margin-left: -0.125rem;
+            }}
+        }}
+        
+        @media (min-width: 768px) {{
+            .logo-text {{
+                width: 14rem;
+                height: 3.5rem;
+                margin-left: 0;
+            }}
+        }}
+        
+        @media (min-width: 1024px) {{
+            .logo-text {{
+                width: 16rem;
+                height: 4rem;
+            }}
+        }}
+        
+        .logo-text text {{
+            font-family: 'Sofia Sans', sans-serif;
+        }}
+        
+        @media (prefers-color-scheme: light) {{
+            .logo-text {{
+                color: #000000;
+            }}
+        }}
+        
+        .icon-container {{
+            width: 4rem;
+            height: 4rem;
+            margin: 0 auto 1.5rem;
+            background: rgba(239, 68, 68, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }}
+        
+        .icon {{
+            width: 2rem;
+            height: 2rem;
+            color: #ef4444;
+        }}
+        
+        h1 {{
+            font-family: 'Sofia Sans', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: #ffffff;
+            text-align: center;
+        }}
+        
+        @media (prefers-color-scheme: light) {{
+            h1 {{
+                color: #111827;
+            }}
+        }}
+        
+        .message {{
+            font-family: 'Sofia Sans', sans-serif;
+            font-size: 0.875rem;
+            color: #d1d5db;
+            line-height: 1.5;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }}
+        
+        @media (prefers-color-scheme: light) {{
+            .message {{
+                color: #4b5563;
+            }}
+        }}
+        
+        .button {{
+            font-family: 'Sofia Sans', sans-serif;
+            display: inline-block;
+            width: 100%;
+            padding: 0.625rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #ffffff;
+            background: #0ea5e9;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            transition: background-color 0.2s;
+        }}
+        
+        .button:hover {{
+            background: #0284c7;
+        }}
+        
+        .button:active {{
+            background: #0369a1;
+        }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="logo-container">
+                <img src="{frontend_url}/coursebook.svg" alt="Coursebook" class="logo-img" onerror="this.style.display='none'" />
+                <svg class="logo-text" viewBox="0 0 300 60" xmlns="http://www.w3.org/2000/svg">
+                    <text x="150" y="40" text-anchor="middle" fill="currentColor" font-size="44" font-weight="700" font-family="Sofia Sans, sans-serif" letter-spacing="1">Coursebook</text>
+                </svg>
+            </div>
+            
+            <div class="icon-container">
+                <svg class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+            </div>
+            
+            <h1>Access Denied</h1>
+            <p class="message">
+                This file is private. Access denied.
+            </p>
+            
+            <a href="{dashboard_url}" class="button">Go to Dashboard</a>
+        </div>
+    </div>
+</body>
+</html>
+        """
+        response = HttpResponse(html_content, content_type='text/html')
+        response.status_code = 403
+        return response
+    
+    def _render_coursebook_users_error(self, material):
+        """Render a custom HTML error page for coursebook_users-only files"""
+        from django.conf import settings
+        frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:5173')
+        login_url = f"{frontend_url}/login"
+        
+        html_content = f"""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Required - Coursebook</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sofia+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {{
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }}
+        
+        body {{
+            font-family: 'Sofia Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            background: #000000;
+            transition: background-color 0.2s;
+        }}
+        
+        @media (prefers-color-scheme: light) {{
+            body {{
+                background: #f9fafb;
+            }}
+        }}
+        
+        .container {{
+            width: 100%;
+            max-width: 28rem;
+        }}
+        
+        .card {{
+            background: #111827;
+            border: 1px solid #1f2937;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transition: background-color 0.2s, border-color 0.2s;
+        }}
+        
+        @media (min-width: 640px) {{
+            .card {{
+                border-radius: 1rem;
+                padding: 2rem;
+            }}
+        }}
+        
+        @media (prefers-color-scheme: light) {{
+            .card {{
+                background: #ffffff;
+                border-color: transparent;
+            }}
+        }}
+        
+        .logo-container {{
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0;
+            margin-bottom: 1.5rem;
+            cursor: pointer;
+        }}
+        
+        .logo-container:hover {{
+            opacity: 0.8;
+        }}
+        
+        .logo-img {{
+            width: 2rem;
+            height: 2rem;
+            flex-shrink: 0;
+        }}
+        
+        @media (min-width: 640px) {{
+            .logo-img {{
+                width: 2.5rem;
+                height: 2.5rem;
+            }}
+        }}
+        
+        @media (min-width: 768px) {{
+            .logo-img {{
+                width: 3rem;
+                height: 3rem;
+            }}
+        }}
+        
+        .logo-text {{
+            width: 10rem;
+            height: 2.5rem;
+            flex-shrink: 0;
+            margin-left: -0.25rem;
+            color: #ffffff;
+        }}
+        
+        @media (min-width: 640px) {{
+            .logo-text {{
+                width: 12rem;
+                height: 3rem;
+                margin-left: -0.125rem;
+            }}
+        }}
+        
+        @media (min-width: 768px) {{
+            .logo-text {{
+                width: 14rem;
+                height: 3.5rem;
+                margin-left: 0;
+            }}
+        }}
+        
+        @media (min-width: 1024px) {{
+            .logo-text {{
+                width: 16rem;
+                height: 4rem;
+            }}
+        }}
+        
+        .logo-text text {{
+            font-family: 'Sofia Sans', sans-serif;
+        }}
+        
+        @media (prefers-color-scheme: light) {{
+            .logo-text {{
+                color: #000000;
+            }}
+        }}
+        
+        .icon-container {{
+            width: 4rem;
+            height: 4rem;
+            margin: 0 auto 1.5rem;
+            background: rgba(14, 165, 233, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }}
+        
+        .icon {{
+            width: 2rem;
+            height: 2rem;
+            color: #0ea5e9;
+        }}
+        
+        h1 {{
+            font-family: 'Sofia Sans', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: #ffffff;
+            text-align: center;
+        }}
+        
+        @media (prefers-color-scheme: light) {{
+            h1 {{
+                color: #111827;
+            }}
+        }}
+        
+        .message {{
+            font-family: 'Sofia Sans', sans-serif;
+            font-size: 0.875rem;
+            color: #d1d5db;
+            line-height: 1.5;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }}
+        
+        @media (prefers-color-scheme: light) {{
+            .message {{
+                color: #4b5563;
+            }}
+        }}
+        
+        .button {{
+            font-family: 'Sofia Sans', sans-serif;
+            display: inline-block;
+            width: 100%;
+            padding: 0.625rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #ffffff;
+            background: #0ea5e9;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            transition: background-color 0.2s;
+        }}
+        
+        .button:hover {{
+            background: #0284c7;
+        }}
+        
+        .button:active {{
+            background: #0369a1;
+        }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="logo-container">
+                <img src="{frontend_url}/coursebook.svg" alt="Coursebook" class="logo-img" onerror="this.style.display='none'" />
+                <svg class="logo-text" viewBox="0 0 300 60" xmlns="http://www.w3.org/2000/svg">
+                    <text x="150" y="40" text-anchor="middle" fill="currentColor" font-size="44" font-weight="700" font-family="Sofia Sans, sans-serif" letter-spacing="1">Coursebook</text>
+                </svg>
+            </div>
+            
+            <div class="icon-container">
+                <svg class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+            </div>
+            
+            <h1>Login Required</h1>
+            <p class="message">
+                This file is only accessible to Coursebook users. Please log in to continue.
+            </p>
+            
+            <a href="{login_url}" class="button">Sign In</a>
+        </div>
+    </div>
+</body>
+</html>
+        """
+        response = HttpResponse(html_content, content_type='text/html')
+        response.status_code = 403
+        return response
+
 import os
 import re
 from pathlib import Path
@@ -80,6 +658,26 @@ class MaterialDetailView(generics.RetrieveDestroyAPIView):
     def perform_destroy(self, instance):
         """Soft delete - move to trash instead of permanent deletion"""
         instance.soft_delete()
+
+
+class MaterialPrivacyUpdateView(APIView):
+    """Update privacy setting of a material"""
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def patch(self, request, id):
+        material = get_object_or_404(Material, id=id, user=request.user, is_deleted=False)
+        privacy = request.data.get('privacy')
+        
+        if privacy not in [Material.PRIVACY_PRIVATE, Material.PRIVACY_PUBLIC, Material.PRIVACY_COURSEBOOK_USERS]:
+            return Response(
+                {"detail": "Invalid privacy setting. Must be 'private', 'public', or 'coursebook_users'."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        material.privacy = privacy
+        material.save(update_fields=['privacy'])
+        
+        return Response(MaterialSerializer(material).data, status=status.HTTP_200_OK)
 
 
 class MaterialExtractContentView(APIView):
