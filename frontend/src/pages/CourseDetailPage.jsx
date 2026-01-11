@@ -112,11 +112,18 @@ export default function CourseDetailPage() {
 
   const handleDownload = async (material) => {
     try {
+      // Use authenticated request to download the file
+      const token = localStorage.getItem('access_token');
       const fileUrl = `${BACKEND_BASE_URL}/materials/files/${material.id}/`;
-      const response = await fetch(fileUrl);
-      if (!response.ok) throw new Error('Failed to download file');
       
-      const blob = await response.blob();
+      const response = await axios.get(fileUrl, {
+        responseType: 'blob',
+        headers: token ? {
+          'Authorization': `Bearer ${token}`
+        } : {}
+      });
+      
+      const blob = response.data;
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -127,7 +134,13 @@ export default function CourseDetailPage() {
       document.body.removeChild(a);
     } catch (err) {
       console.error('Failed to download file:', err);
-      setToast({ message: 'Failed to download file', type: 'error' });
+      let errorMessage = 'Failed to download file';
+      if (err.response?.status === 403) {
+        errorMessage = err.response?.data?.detail || 'You do not have permission to download this file';
+      } else if (err.response?.status === 404) {
+        errorMessage = 'File not found';
+      }
+      setToast({ message: errorMessage, type: 'error' });
     }
   };
 

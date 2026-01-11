@@ -4,6 +4,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { sharingService } from '../services';
 import CoursebookTextLogo from '../components/CoursebookTextLogo';
+import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
 const BACKEND_BASE_URL = API_BASE_URL.replace(/\/api$/, '');
@@ -103,11 +104,18 @@ export default function SharedCourseDetailPage() {
 
   const handleDownload = async (material) => {
     try {
+      // Use authenticated request if user is logged in (allows owner to download their own files)
+      const token = localStorage.getItem('access_token');
       const fileUrl = `${BACKEND_BASE_URL}/materials/files/${material.id}/`;
-      const response = await fetch(fileUrl);
-      if (!response.ok) throw new Error('Failed to download file');
       
-      const blob = await response.blob();
+      const response = await axios.get(fileUrl, {
+        responseType: 'blob',
+        headers: token ? {
+          'Authorization': `Bearer ${token}`
+        } : {}
+      });
+      
+      const blob = response.data;
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
