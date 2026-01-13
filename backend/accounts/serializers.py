@@ -12,7 +12,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class RegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, min_length=8)
+    password = serializers.CharField(write_only=True, min_length=6, max_length=32)
     last_name = serializers.CharField(required=False, allow_blank=True, max_length=150)
 
     class Meta:
@@ -61,4 +61,4 @@ class PasswordResetRequestSerializer(serializers.Serializer):
 
 class PasswordResetSerializer(serializers.Serializer):
     token = serializers.CharField()
-    new_password = serializers.CharField(write_only=True, min_length=8)
+    new_password = serializers.CharField(write_only=True, min_length=6, max_length=32)

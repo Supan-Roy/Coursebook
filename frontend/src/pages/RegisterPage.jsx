@@ -41,8 +41,8 @@ export default function RegisterPage() {
       return;
     }
 
-    if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters');
+    if (formData.password.length < 6 || formData.password.length > 32) {
+      setError('Password must be between 6 and 32 characters');
       return;
     }
 
@@ -154,7 +154,7 @@ export default function RegisterPage() {
 
               <div>
                 <label htmlFor="last_name" className={`block text-xs font-semibold mb-1.5 ${isDarkMode ? 'text-white' : 'text-gray-700'}`}>
-                  LAST NAME <span className="text-gray-500 font-normal">(optional)</span>
+                  LAST NAME
                 </label>
                 <input
                   id="last_name"
@@ -226,7 +226,7 @@ export default function RegisterPage() {
                   )}
                 </button>
               </div>
-              <p className={`mt-1.5 text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>Minimum 8 characters</p>
+              <p className={`mt-1.5 text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>6-32 characters</p>
             </div>
 
             <div>
