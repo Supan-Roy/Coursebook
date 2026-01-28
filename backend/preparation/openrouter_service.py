@@ -24,7 +24,10 @@ class OpenRouterService:
         
         self.enabled = bool(self.api_key)
         self.base_url = "https://openrouter.ai/api/v1/chat/completions"
-        self.model = "xiaomi/mimo-v2-flash:free"  # Free model with good quality
+        self.model = "meta-llama/llama-3.2-3b-instruct:free"
+        self.temperature = 0.3
+        self.top_p = 0.9
+        self.max_tokens = 600
 
         # Referer and title must match what you registered at OpenRouter
         self.http_referer = os.environ.get(
@@ -140,7 +143,9 @@ Notes:"""
                 json={
                     "model": self.model,
                     "messages": [{"role": "user", "content": prompt}],
-                    "max_tokens": max(2000, min(8000, max_words * 4))  # Increased limit: ~1 token = 0.75 words, so 8000 tokens ≈ 6000 words
+                    "temperature": self.temperature,
+                    "top_p": self.top_p,
+                    "max_tokens": self.max_tokens,
                 },
                 timeout=60
             )
@@ -245,7 +250,9 @@ Generate only valid JSON array, no other text."""
                 json={
                     "model": self.model,
                     "messages": [{"role": "user", "content": prompt}],
-                    "max_tokens": 3000
+                    "temperature": self.temperature,
+                    "top_p": self.top_p,
+                    "max_tokens": self.max_tokens,
                 },
                 timeout=60
             )

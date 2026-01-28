@@ -13,7 +13,7 @@ print("Testing OpenRouter API key...\n")
 print(f"Key: {api_key[:6]}...{api_key[-4:]} (masked)\n")
 
 # Test 1: Simple request to free model
-print("Test 1: Simple request to xiaomi/mimo-v2-flash:free")
+print("Test 1: Simple request to meta-llama/llama-3.2-3b-instruct:free")
 print("="*70)
 
 response = requests.post(
@@ -25,14 +25,16 @@ response = requests.post(
         "X-Title": "Coursebook"
     },
     json={
-        "model": "xiaomi/mimo-v2-flash:free",
+        "model": "meta-llama/llama-3.2-3b-instruct:free",
         "messages": [
             {
                 "role": "user",
                 "content": "Generate 2 multiple choice questions about photosynthesis"
             }
         ],
-        "max_tokens": 500
+        "temperature": 0.3,
+        "top_p": 0.9,
+        "max_tokens": 600
     },
     timeout=30
 )
@@ -62,7 +64,7 @@ print("="*70)
 
 # List some free models available
 free_models = [
-    "xiaomi/mimo-v2-flash:free",
+    "meta-llama/llama-3.2-3b-instruct:free",
     "google/gemini-2.0-flash-lite:free",
     "meta-llama/llama-3-8b-instruct:free",
 ]
