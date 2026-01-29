@@ -13,7 +13,7 @@ print("Testing OpenRouter API key...\n")
 print(f"Key: {api_key[:6]}...{api_key[-4:]} (masked)\n")
 
 # Test 1: Simple request to free model
-print("Test 1: Simple request to meta-llama/llama-3.2-3b-instruct:free")
+print("Test 1: Simple request to meta-llama/llama-3.3-70b-instruct:free")
 print("="*70)
 
 response = requests.post(
@@ -25,7 +25,7 @@ response = requests.post(
         "X-Title": "Coursebook"
     },
     json={
-        "model": "meta-llama/llama-3.2-3b-instruct:free",
+        "model": "meta-llama/llama-3.3-70b-instruct:free",
         "messages": [
             {
                 "role": "user",
@@ -64,9 +64,7 @@ print("="*70)
 
 # List some free models available
 free_models = [
-    "meta-llama/llama-3.2-3b-instruct:free",
-    "google/gemini-2.0-flash-lite:free",
-    "meta-llama/llama-3-8b-instruct:free",
+    "meta-llama/llama-3.3-70b-instruct:free",
 ]
 
 print(f"\nFree models available on OpenRouter:")

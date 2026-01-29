@@ -24,10 +24,11 @@ class OpenRouterService:
         
         self.enabled = bool(self.api_key)
         self.base_url = "https://openrouter.ai/api/v1/chat/completions"
-        self.model = "meta-llama/llama-3.2-3b-instruct:free"
+        self.model = "meta-llama/llama-3.3-70b-instruct:free"
+        self.fallback_models = []
         self.temperature = 0.3
         self.top_p = 0.9
-        self.max_tokens = 600
+        self.max_tokens = 2000
 
         # Referer and title must match what you registered at OpenRouter
         self.http_referer = os.environ.get(
@@ -43,6 +44,79 @@ class OpenRouterService:
             logger.info("OpenRouter service initialized successfully")
         else:
             logger.warning("OpenRouter API key not configured")
+
+    def _request_with_fallback(self, prompt: str) -> Dict:
+        models_to_try = [self.model] + self.fallback_models
+        last_error = None
+
+        for model in models_to_try:
+            response = requests.post(
+                url=self.base_url,
+                headers={
+                    "Authorization": f"Bearer {self.api_key}",
+                    "Content-Type": "application/json",
+                    "HTTP-Referer": self.http_referer,
+                    "X-Title": self.app_title,
+                },
+                json={
+                    "model": model,
+                    "messages": [{"role": "user", "content": prompt}],
+                    "temperature": self.temperature,
+                    "top_p": self.top_p,
+                    "max_tokens": self.max_tokens,
+                },
+                timeout=60,
+            )
+
+            if response.status_code == 200:
+                result = response.json()
+                choices = result.get("choices")
+                if not isinstance(choices, list) or not choices:
+                    error_info = result.get("error")
+                    if isinstance(error_info, dict):
+                        error_msg = error_info.get("message")
+                    else:
+                        error_msg = error_info
+                    if not error_msg:
+                        error_msg = "OpenRouter response missing choices"
+                    logger.warning(
+                        "OpenRouter response missing choices for model %s: %s",
+                        model,
+                        error_msg,
+                    )
+                    last_error = error_msg
+                    continue
+
+                first_choice = choices[0] if isinstance(choices[0], dict) else {}
+                message = first_choice.get("message")
+                if not isinstance(message, dict) or "content" not in message:
+                    error_msg = "OpenRouter response missing message content"
+                    logger.warning(
+                        "OpenRouter response missing message content for model %s",
+                        model,
+                    )
+                    last_error = error_msg
+                    continue
+
+                result["model_used"] = model
+                return {"success": True, "result": result}
+
+            error_msg = response.text
+            logger.warning(
+                "OpenRouter error with model %s (status %s): %s",
+                model,
+                response.status_code,
+                error_msg[:200],
+            )
+            last_error = error_msg
+
+            if response.status_code not in {429, 502, 503, 504}:
+                break
+
+        return {
+            "success": False,
+            "error": f"Failed to generate response: {str(last_error)[:100]}",
+        }
     
     def generate_summary(
         self,
@@ -132,26 +206,9 @@ Instructions:
 
 Notes:"""
             
-            response = requests.post(
-                url=self.base_url,
-                headers={
-                    "Authorization": f"Bearer {self.api_key}",
-                    "Content-Type": "application/json",
-                    "HTTP-Referer": self.http_referer,
-                    "X-Title": self.app_title,
-                },
-                json={
-                    "model": self.model,
-                    "messages": [{"role": "user", "content": prompt}],
-                    "temperature": self.temperature,
-                    "top_p": self.top_p,
-                    "max_tokens": self.max_tokens,
-                },
-                timeout=60
-            )
-            
-            if response.status_code == 200:
-                result = response.json()
+            response_data = self._request_with_fallback(prompt)
+            if response_data["success"]:
+                result = response_data["result"]
                 summary = result['choices'][0]['message']['content'].strip()
                 
                 # Check if response was truncated (OpenRouter may indicate this)
@@ -161,7 +218,12 @@ Notes:"""
                 
                 word_count = len(summary.split())
                 
-                logger.info(f"Generated summary: {word_count} words via OpenRouter (finish_reason: {finish_reason})")
+                logger.info(
+                    "Generated summary: %s words via OpenRouter (model: %s, finish_reason: %s)",
+                    word_count,
+                    result.get("model_used", self.model),
+                    finish_reason,
+                )
                 
                 return {
                     'success': True,
@@ -170,12 +232,8 @@ Notes:"""
                     'error': None
                 }
             else:
-                error_msg = response.text
-                logger.error(
-                    "OpenRouter error (status %s): %s",
-                    response.status_code,
-                    error_msg[:200],
-                )
+                error_msg = response_data.get("error", "Unknown error")
+                logger.error("OpenRouter error: %s", error_msg)
                 return {
                     'success': False,
                     'summary': '',
@@ -239,26 +297,9 @@ Format each question as JSON:
 
 Generate only valid JSON array, no other text."""
             
-            response = requests.post(
-                url=self.base_url,
-                headers={
-                    "Authorization": f"Bearer {self.api_key}",
-                    "Content-Type": "application/json",
-                    "HTTP-Referer": self.http_referer,
-                    "X-Title": self.app_title,
-                },
-                json={
-                    "model": self.model,
-                    "messages": [{"role": "user", "content": prompt}],
-                    "temperature": self.temperature,
-                    "top_p": self.top_p,
-                    "max_tokens": self.max_tokens,
-                },
-                timeout=60
-            )
-            
-            if response.status_code == 200:
-                result = response.json()
+            response_data = self._request_with_fallback(prompt)
+            if response_data["success"]:
+                result = response_data["result"]
                 response_text = result['choices'][0]['message']['content'].strip()
                 
                 # Parse JSON response
@@ -289,7 +330,11 @@ Generate only valid JSON array, no other text."""
                             nq.setdefault('id', idx)
                             normalized.append(nq)
 
-                        logger.info(f"Generated {len(normalized)} quiz questions via OpenRouter")
+                        logger.info(
+                            "Generated %s quiz questions via OpenRouter (model: %s)",
+                            len(normalized),
+                            result.get("model_used", self.model),
+                        )
                         
                         return {
                             'success': True,
@@ -307,12 +352,8 @@ Generate only valid JSON array, no other text."""
                     'error': 'Failed to parse quiz format'
                 }
             else:
-                error_msg = response.text
-                logger.error(
-                    "OpenRouter error (status %s): %s",
-                    response.status_code,
-                    error_msg[:200],
-                )
+                error_msg = response_data.get("error", "Unknown error")
+                logger.error("OpenRouter error: %s", error_msg)
                 return {
                     'success': False,
                     'questions': [],
