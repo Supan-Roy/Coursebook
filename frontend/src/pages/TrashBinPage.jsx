@@ -8,6 +8,7 @@ import Sidebar from '../components/Sidebar';
 import ConfirmDialog from '../components/ConfirmDialog';
 import Toast from '../components/Toast';
 import { FiTrash2, FiRefreshCw, FiClock, FiAlertCircle } from 'react-icons/fi';
+import { useDelayedLoading } from '../hooks/useDelayedLoading';
 
 export default function TrashBinPage() {
   const [trashedMaterials, setTrashedMaterials] = useState([]);
@@ -44,6 +45,7 @@ export default function TrashBinPage() {
   }, [showProfileMenu]);
 
   const loadTrashData = async () => {
+    setLoading(true);
     try {
       const data = await materialService.getTrash();
       setTrashedMaterials(data);
@@ -166,14 +168,7 @@ export default function TrashBinPage() {
     // Truncate name and add ellipsis + extension
     return nameWithoutExt.substring(0, availableSpace) + '...' + extension;
   };
-
-  if (loading) {
-    return (
-      <div className={`min-h-screen flex items-center justify-center ${isDarkMode ? 'bg-[#0B1120]' : 'bg-gray-50'}`}>
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-sky-500 border-t-transparent"></div>
-      </div>
-    );
-  }
+  const showSectionSkeleton = useDelayedLoading(loading, { delay: 250, minVisible: 200 });
 
   return (
     <div className={`min-h-screen transition-colors duration-200 flex ${isDarkMode ? 'bg-black text-white' : 'bg-gray-50 text-gray-900'}`}>
@@ -328,14 +323,34 @@ export default function TrashBinPage() {
 
         {/* Content */}
         <div className={`rounded-2xl border ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200 shadow-sm'}`}>
-          {loading && (
-            <div className="p-12 text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-500 mx-auto"></div>
-              <p className={`mt-4 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Loading trash...</p>
+          {showSectionSkeleton && (
+            <div className="p-6 sm:p-8 space-y-3 animate-pulse">
+              {[1, 2, 3, 4].map((item) => (
+                <div
+                  key={item}
+                  className={`py-2.5 px-3 rounded-lg border ${
+                    isDarkMode ? 'border-gray-700 bg-gray-900/40' : 'border-gray-200 bg-gray-50'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 flex-1">
+                      <div className={`w-10 h-10 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`} />
+                      <div className="flex-1 min-w-0">
+                        <div className={`h-4 w-48 max-w-full rounded ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`} />
+                        <div className={`h-3 w-28 mt-2 rounded ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`} />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-8 h-8 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`} />
+                      <div className={`w-8 h-8 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`} />
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
 
-          {!loading && trashedMaterials.length === 0 && (
+          {!loading && !showSectionSkeleton && trashedMaterials.length === 0 && (
             <div className={`rounded-xl p-12 text-center border-2 border-dashed ${
               isDarkMode 
                 ? 'bg-gray-900/50 border-gray-800' 
@@ -369,7 +384,7 @@ export default function TrashBinPage() {
         </div>
 
         {/* Items Section */}
-        {!loading && trashedMaterials.length > 0 && (
+        {!loading && !showSectionSkeleton && trashedMaterials.length > 0 && (
           <div className={`mt-8 rounded-xl border p-6 ${
             isDarkMode 
               ? 'bg-gray-900/50 border-gray-800' 

@@ -95,6 +95,7 @@ export default function DashboardPage() {
     // Load semester order from localStorage
     return JSON.parse(localStorage.getItem('semesterOrder') || '[]');
   });
+  const [currentSemesterPage, setCurrentSemesterPage] = useState(1);
   const { isDarkMode, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
@@ -417,6 +418,23 @@ export default function DashboardPage() {
       return b.localeCompare(a);
     });
   }
+
+  const semestersPerPage = 5;
+  const visibleSemesterList = useMemo(
+    () => semesterList.filter(semesterName => !pendingDeletion || pendingDeletion.name !== semesterName),
+    [semesterList, pendingDeletion]
+  );
+  const totalSemesterPages = Math.max(1, Math.ceil(visibleSemesterList.length / semestersPerPage));
+  const paginatedSemesterList = useMemo(() => {
+    const startIndex = (currentSemesterPage - 1) * semestersPerPage;
+    return visibleSemesterList.slice(startIndex, startIndex + semestersPerPage);
+  }, [visibleSemesterList, currentSemesterPage]);
+
+  useEffect(() => {
+    if (currentSemesterPage > totalSemesterPages) {
+      setCurrentSemesterPage(totalSemesterPages);
+    }
+  }, [currentSemesterPage, totalSemesterPages]);
 
   const handleDeleteCourse = async (courseId) => {
     setConfirmDialog({
@@ -1334,7 +1352,7 @@ export default function DashboardPage() {
             <SkeletonCard isDarkMode={isDarkMode} variant="semester" />
             <SkeletonCard isDarkMode={isDarkMode} variant="semester" />
           </div>
-        ) : semesterList.length === 0 ? (
+        ) : visibleSemesterList.length === 0 ? (
               <div className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8 border transition-colors ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200'}`}>
                 <div className={`text-center py-8 sm:py-12 lg:py-16 border-2 border-dashed rounded-lg sm:rounded-xl ${isDarkMode ? 'border-gray-700' : 'border-gray-300'}`}>
               <svg
@@ -1355,9 +1373,8 @@ export default function DashboardPage() {
             </div>
           </div>
         ) : (
-          semesterList
-            .filter(semesterName => !pendingDeletion || pendingDeletion.name !== semesterName)
-            .map((semesterName) => (
+          <>
+          {paginatedSemesterList.map((semesterName) => (
             <div 
               key={semesterName}
                   className={`rounded-lg sm:rounded-xl md:rounded-2xl p-2 sm:p-2.5 md:p-3 lg:p-4 xl:p-6 mb-2.5 sm:mb-3 md:mb-4 lg:mb-6 border transition-all hover:shadow-lg w-full ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200'}`}
@@ -1732,7 +1749,40 @@ export default function DashboardPage() {
                 )}
               </div>
             </div>
-          ))
+          ))}
+
+          {totalSemesterPages > 1 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-6 sm:mb-8">
+              <p className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                Page {currentSemesterPage} of {totalSemesterPages}
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentSemesterPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentSemesterPage === 1}
+                  className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
+                    currentSemesterPage === 1
+                      ? 'opacity-40 cursor-not-allowed'
+                      : ''
+                  } ${isDarkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                >
+                  Previous
+                </button>
+                <button
+                  onClick={() => setCurrentSemesterPage(prev => Math.min(prev + 1, totalSemesterPages))}
+                  disabled={currentSemesterPage === totalSemesterPages}
+                  className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
+                    currentSemesterPage === totalSemesterPages
+                      ? 'opacity-40 cursor-not-allowed'
+                      : ''
+                  } ${isDarkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
+          </>
         )}
           </>
         ) : activeTab === 'toolkit' ? (

@@ -14,6 +14,7 @@ import MarkdownViewer from '../components/MarkdownViewer';
 import MaterialPrivacyDialog from '../components/MaterialPrivacyDialog';
 import api from '../services/api';
 import axios from 'axios';
+import { useDelayedLoading } from '../hooks/useDelayedLoading';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
 const BACKEND_BASE_URL = API_BASE_URL.replace(/\/api$/, '');
@@ -94,6 +95,7 @@ export default function CourseDetailPage() {
   }, [uploadQueue]);
 
   const loadCourseData = async () => {
+    setLoading(true);
     try {
       const [courseData, materialsData, summariesData] = await Promise.all([
         courseService.getById(courseId),
@@ -579,20 +581,9 @@ export default function CourseDetailPage() {
     return nameWithoutExt.substring(0, availableSpace) + '...' + extension;
   };
 
-  if (loading) {
-    return (
-      <div className={`min-h-screen ${isDarkMode ? 'bg-black' : 'bg-gray-50'}`}>
-        <div className="flex items-center justify-center h-screen">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-500 mx-auto"></div>
-            <p className={`mt-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Loading...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const showSectionSkeleton = useDelayedLoading(loading, { delay: 250, minVisible: 200 });
 
-  if (!course) {
+  if (!course && !loading) {
     return (
       <div className={`min-h-screen ${isDarkMode ? 'bg-black' : 'bg-gray-50'}`}>
         <div className="flex items-center justify-center h-screen">
@@ -798,29 +789,41 @@ export default function CourseDetailPage() {
       {/* Main Content */}
       <main className={`max-w-7xl mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 py-2.5 sm:py-3 md:py-4 lg:py-6 xl:py-8 ${uploadQueue.length > 0 ? 'pb-32 sm:pb-24' : ''} transition-all`}>
         {/* Course Header */}
-        <div className={`rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 lg:p-8 mb-4 sm:mb-6 md:mb-8 border bg-gradient-to-br from-blue-600 to-blue-700 border-blue-500`}>
-          <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4">
-            <div className="flex-1 min-w-0">
-              <h1 className={`text-2xl sm:text-3xl md:text-4xl font-bold mb-1.5 sm:mb-2 text-white drop-shadow-md break-words`} title={course.code}>
-                <span className="hidden md:inline">{course.code}</span>
-                <span className="md:hidden">{truncateText(course.code, 10)}</span>
-              </h1>
-              {course.title && (
-                <p className={`text-sm sm:text-base md:text-lg text-white/90 break-words`} title={course.title}>
-                  <span className="hidden md:inline">{course.title}</span>
-                  <span className="md:hidden">{truncateText(course.title, 50)}</span>
-                </p>
-              )}
+        {showSectionSkeleton && !course ? (
+          <div className="rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 lg:p-8 mb-4 sm:mb-6 md:mb-8 border bg-gradient-to-br from-blue-600/80 to-blue-700/80 border-blue-500/70 animate-pulse">
+            <div className="flex items-start justify-between gap-3 sm:gap-4">
+              <div className="flex-1 min-w-0">
+                <div className="h-8 sm:h-10 w-52 sm:w-72 bg-white/30 rounded" />
+                <div className="h-5 w-44 sm:w-64 bg-white/20 rounded mt-3" />
+              </div>
+              <div className="w-14 h-14 rounded-xl bg-white/20 flex-shrink-0" />
             </div>
-            <svg width="56" height="56" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0">
-              <path d="M4 19.5C4 18.837 4.26339 18.2011 4.73223 17.7322C5.20107 17.2634 5.83696 17 6.5 17H20" stroke="white" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" opacity="0.9"/>
-              <path d="M6.5 3H20V21H6.5C5.83696 21 5.20107 20.7366 4.73223 20.2678C4.26339 19.7989 4 19.163 4 18.5V5.5C4 4.83696 4.26339 4.20107 4.73223 3.73223C5.20107 3.26339 5.83696 3 6.5 3Z" stroke="white" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" opacity="0.9"/>
-              <path d="M9 7H16" stroke="white" strokeWidth="1.2" strokeLinecap="round" opacity="0.7"/>
-              <path d="M9 11H16" stroke="white" strokeWidth="1.2" strokeLinecap="round" opacity="0.7"/>
-              <path d="M9 15H14" stroke="white" strokeWidth="1.2" strokeLinecap="round" opacity="0.7"/>
-            </svg>
           </div>
-        </div>
+        ) : course ? (
+          <div className={`rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 lg:p-8 mb-4 sm:mb-6 md:mb-8 border bg-gradient-to-br from-blue-600 to-blue-700 border-blue-500`}>
+            <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4">
+              <div className="flex-1 min-w-0">
+                <h1 className={`text-2xl sm:text-3xl md:text-4xl font-bold mb-1.5 sm:mb-2 text-white drop-shadow-md break-words`} title={course.code}>
+                  <span className="hidden md:inline">{course.code}</span>
+                  <span className="md:hidden">{truncateText(course.code, 10)}</span>
+                </h1>
+                {course.title && (
+                  <p className={`text-sm sm:text-base md:text-lg text-white/90 break-words`} title={course.title}>
+                    <span className="hidden md:inline">{course.title}</span>
+                    <span className="md:hidden">{truncateText(course.title, 50)}</span>
+                  </p>
+                )}
+              </div>
+              <svg width="56" height="56" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0">
+                <path d="M4 19.5C4 18.837 4.26339 18.2011 4.73223 17.7322C5.20107 17.2634 5.83696 17 6.5 17H20" stroke="white" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" opacity="0.9"/>
+                <path d="M6.5 3H20V21H6.5C5.83696 21 5.20107 20.7366 4.73223 20.2678C4.26339 19.7989 4 19.163 4 18.5V5.5C4 4.83696 4.26339 4.20107 4.73223 3.73223C5.20107 3.26339 5.83696 3 6.5 3Z" stroke="white" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" opacity="0.9"/>
+                <path d="M9 7H16" stroke="white" strokeWidth="1.2" strokeLinecap="round" opacity="0.7"/>
+                <path d="M9 11H16" stroke="white" strokeWidth="1.2" strokeLinecap="round" opacity="0.7"/>
+                <path d="M9 15H14" stroke="white" strokeWidth="1.2" strokeLinecap="round" opacity="0.7"/>
+              </svg>
+            </div>
+          </div>
+        ) : null}
 
         {/* Upload Button and Preparation Mode */}
         <div className="mb-4 sm:mb-6 md:mb-8 flex flex-wrap gap-2">
@@ -924,7 +927,31 @@ export default function CourseDetailPage() {
             )}
           </div>
 
-          {materials.length === 0 ? (
+          {showSectionSkeleton ? (
+            <div className="space-y-2 sm:space-y-3 max-h-[50vh] sm:max-h-[55vh] md:max-h-[60vh] lg:max-h-[65vh] overflow-y-auto pr-1 sm:pr-2">
+              {[1, 2, 3, 4].map((item) => (
+                <div
+                  key={item}
+                  className={`group flex items-center justify-between p-2 sm:p-3 md:p-4 rounded-lg border animate-pulse ${
+                    isDarkMode ? 'border-gray-700/50 bg-gray-900/30' : 'border-gray-200 bg-gray-50'
+                  }`}
+                >
+                  <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 lg:gap-4 flex-1 min-w-0">
+                    <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`} />
+                    <div className="flex-1 min-w-0">
+                      <div className={`h-4 w-40 max-w-full rounded ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`} />
+                      <div className={`h-3 w-24 mt-2 rounded ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`} />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+                    <div className={`w-8 h-8 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`} />
+                    <div className={`w-8 h-8 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`} />
+                    <div className={`w-8 h-8 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : !loading && materials.length === 0 ? (
             <div className={`text-center py-12 sm:py-16 border-2 border-dashed rounded-xl ${isDarkMode ? 'border-gray-700' : 'border-gray-300'}`}>
               <svg
                 className={`mx-auto h-10 w-10 sm:h-12 sm:w-12 ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}
@@ -1058,7 +1085,23 @@ export default function CourseDetailPage() {
             📝 Saved Notes ({summaries.length})
           </h2>
 
-          {summaries.length === 0 ? (
+          {showSectionSkeleton ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((item) => (
+                <div
+                  key={item}
+                  className={`p-4 rounded-lg border animate-pulse ${
+                    isDarkMode ? 'border-gray-700 bg-gray-800/40' : 'border-gray-200 bg-gray-50'
+                  }`}
+                >
+                  <div className={`h-4 w-44 rounded ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`} />
+                  <div className={`h-3 w-28 mt-2 rounded ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`} />
+                  <div className={`h-3 w-full mt-3 rounded ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`} />
+                  <div className={`h-3 w-4/5 mt-2 rounded ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`} />
+                </div>
+              ))}
+            </div>
+          ) : !loading && summaries.length === 0 ? (
             <div className={`text-center py-12 sm:py-16 border-2 border-dashed rounded-xl ${isDarkMode ? 'border-gray-700' : 'border-gray-300'}`}>
               <svg
                 className={`mx-auto h-10 w-10 sm:h-12 sm:w-12 ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}
