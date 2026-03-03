@@ -2,6 +2,8 @@ from django.contrib import admin
 from django.urls import include, path
 from django.conf import settings
 from django.conf.urls.static import static
+from django.http import JsonResponse
+from django.shortcuts import render
 from rest_framework import permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -35,6 +37,20 @@ class RootView(APIView):
         })
 
 
+def api_not_found_view(request, unmatched=None):
+    return JsonResponse(
+        {
+            "detail": "Not found.",
+            "path": request.path,
+        },
+        status=404,
+    )
+
+
+def themed_not_found_view(request, unmatched=None):
+    return render(request, "404.html", status=404)
+
+
 urlpatterns = [
     path("", RootView.as_view(), name="root"),
     path("admin/", admin.site.urls),
@@ -54,3 +70,13 @@ urlpatterns = [
 # Serve media files in development
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+# Catch-all API 404 response
+urlpatterns += [
+    path("api/<path:unmatched>", api_not_found_view, name="api-not-found"),
+]
+
+# Catch-all HTML 404 page for all other unmatched paths
+urlpatterns += [
+    path("<path:unmatched>", themed_not_found_view, name="html-not-found"),
+]

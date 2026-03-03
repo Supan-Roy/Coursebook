@@ -25,6 +25,7 @@ import DeleteAccountConfirmPage from './pages/DeleteAccountConfirmPage';
 import SharedContentPage from './pages/SharedContentPage';
 import SharedCourseDetailPage from './pages/SharedCourseDetailPage';
 import HelpSupportPage from './pages/HelpSupportPage';
+import NotFoundPage from './pages/NotFoundPage';
 
 function App() {
   return (
@@ -98,6 +99,7 @@ function App() {
           <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
           <Route path="/terms-of-service" element={<TermsOfServicePage />} />
           <Route path="/cookie-policy" element={<CookiePolicyPage />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
         </BrowserRouter>
       </AuthProvider>

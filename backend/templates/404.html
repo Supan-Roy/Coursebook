@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Page doesn't exist | Coursebook</title>
+  <style>
+    :root {
+      --bg: #f9fafb;
+      --text: #111827;
+      --muted: #4b5563;
+      --card: #ffffff;
+      --border: #e5e7eb;
+      --header-from: #f3f4f6;
+      --header-via: #e5e7eb;
+      --header-to: #f3f4f6;
+      --accent: #0ea5e9;
+      --accent-hover: #0284c7;
+      --secondary-bg: #f3f4f6;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #000000;
+        --text: #ffffff;
+        --muted: #9ca3af;
+        --card: rgba(17, 24, 39, 0.6);
+        --border: rgba(55, 65, 81, 0.8);
+        --header-from: #111827;
+        --header-via: #1f2937;
+        --header-to: #111827;
+        --accent: #38bdf8;
+        --accent-hover: #0ea5e9;
+        --secondary-bg: #1f2937;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      height: 64px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(to right, var(--header-from), var(--header-via), var(--header-to));
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+      padding: 0 24px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+      color: inherit;
+      opacity: 1;
+      transition: opacity 0.2s ease;
+    }
+
+    .brand:hover {
+      opacity: 0.8;
+    }
+
+    .brand img {
+      width: 34px;
+      height: 34px;
+    }
+
+    .brand span {
+      font-size: 1.35rem;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -0.01em;
+    }
+
+    .content {
+      min-height: calc(100vh - 64px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 760px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      border-radius: 18px;
+      padding: 40px 28px;
+      text-align: center;
+      backdrop-filter: blur(8px);
+    }
+
+    .code {
+      margin: 0 0 8px;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0.08em;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: clamp(1.8rem, 2vw + 1rem, 2.4rem);
+      line-height: 1.2;
+    }
+
+    p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.6;
+    }
+
+    .actions {
+      margin-top: 28px;
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      border-radius: 10px;
+      padding: 10px 20px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border: 1px solid transparent;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #ffffff;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+    }
+
+    .btn-secondary {
+      border-color: var(--border);
+      background: var(--secondary-bg);
+      color: var(--text);
+    }
+
+    .btn-secondary:hover {
+      filter: brightness(0.95);
+    }
+
+    @media (max-width: 640px) {
+      .header {
+        padding: 0 16px;
+      }
+
+      .brand span {
+        font-size: 1.2rem;
+      }
+
+      .content {
+        padding: 16px;
+      }
+
+      .actions {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <a class="brand" href="/dashboard" title="Go to Dashboard">
+      <img src="/coursebook.svg" alt="Coursebook" />
+      <span>Coursebook</span>
+    </a>
+  </header>
+
+  <main class="content">
+    <section class="card">
+      <p class="code">404</p>
+      <h1>Page doesn't exist</h1>
+      <p>The page you're looking for could not be found.</p>
+
+      <div class="actions">
+        <a class="btn btn-secondary" href="javascript:history.back()">Go Back</a>
+        <a class="btn btn-primary" href="/dashboard">Go to Dashboard</a>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
