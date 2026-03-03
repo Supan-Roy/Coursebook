@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -9,8 +9,11 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import AlertDialog from '../components/AlertDialog';
 import Sidebar from '../components/Sidebar';
 import MyPlans from '../components/TodoList';
+import SkeletonCard from '../components/SkeletonCard';
+import SkeletonStats from '../components/SkeletonStats';
 import WorkspacePage from './WorkspacePage';
 import ProgressPage from './ProgressPage';
+import { useDelayedLoading } from '../hooks/useDelayedLoading';
 import DocumentToPDF from '../components/Toolkit/DocumentToPDF';
 import AddPageNumbers from '../components/Toolkit/AddPageNumbers';
 import MergePDFs from '../components/Toolkit/MergePDFs';
@@ -205,6 +208,8 @@ export default function DashboardPage() {
       setUsage(null);
       return;
     }
+
+    setLoading(true);
     
     try {
       setError(null);
@@ -826,23 +831,32 @@ export default function DashboardPage() {
   };
 
   const searchResults = getSearchResults();
+  const showSectionSkeleton = useDelayedLoading(loading, { delay: 250, minVisible: 200 });
+
+  const nonRoutineMaterials = useMemo(() => {
+    return materials.filter((material) => {
+      const course = courses.find((c) => c.id === material.course);
+      return course && course.code !== 'ROUTINE';
+    });
+  }, [materials, courses]);
+
+  const recentMaterials = useMemo(() => {
+    return [...nonRoutineMaterials]
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      .slice(0, 5);
+  }, [nonRoutineMaterials]);
+
+  const materialCountByCourse = useMemo(() => {
+    return materials.reduce((acc, material) => {
+      acc[material.course] = (acc[material.course] || 0) + 1;
+      return acc;
+    }, {});
+  }, [materials]);
 
   const getStoragePercentage = () => {
     if (!usage) return 0;
     return (usage.used_bytes / usage.quota_bytes) * 100;
   };
-
-  if (loading) {
-    return (
-      <div className={`min-h-screen flex items-center justify-center transition-colors ${isDarkMode ? 'bg-black' : 'bg-gray-50'}`}>
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-sky-400 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className={`mt-4 transition-colors ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Loading...</p>
-          {error && <p className="mt-2 text-red-500 text-sm">{error}</p>}
-        </div>
-      </div>
-    );
-  }
 
   if (error) {
     return (
@@ -1315,7 +1329,12 @@ export default function DashboardPage() {
         </div>
 
         {/* Semesters Section */}
-        {semesterList.length === 0 ? (
+        {showSectionSkeleton ? (
+          <div className="transition-opacity duration-200">
+            <SkeletonCard isDarkMode={isDarkMode} variant="semester" />
+            <SkeletonCard isDarkMode={isDarkMode} variant="semester" />
+          </div>
+        ) : semesterList.length === 0 ? (
               <div className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8 border transition-colors ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200'}`}>
                 <div className={`text-center py-8 sm:py-12 lg:py-16 border-2 border-dashed rounded-lg sm:rounded-xl ${isDarkMode ? 'border-gray-700' : 'border-gray-300'}`}>
               <svg
@@ -1626,9 +1645,9 @@ export default function DashboardPage() {
                               </p>
                             )}
                              <div className="flex items-center justify-between pt-2 sm:pt-2.5 md:pt-3 lg:pt-4 border-t border-white/20 mt-auto">
-                               <span className="text-[10px] sm:text-xs md:text-sm lg:text-base font-medium text-white/80">
-                          {materials.filter((m) => m.course === course.id).length} {materials.filter((m) => m.course === course.id).length === 1 ? 'file' : 'files'}
-                        </span>
+                              <span className="text-[10px] sm:text-xs md:text-sm lg:text-base font-medium text-white/80">
+                                {materialCountByCourse[course.id] || 0} {(materialCountByCourse[course.id] || 0) === 1 ? 'file' : 'files'}
+                              </span>
                       </div>
                     </>
                   )}
@@ -1888,10 +1907,13 @@ export default function DashboardPage() {
             <div className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 border transition-colors ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200'}`}>
           <h2 className={`text-base sm:text-lg font-bold mb-4 sm:mb-6 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Recent Files</h2>
 
-          {materials.filter(m => {
-            const course = courses.find(c => c.id === m.course);
-            return course && course.code !== 'ROUTINE';
-          }).length === 0 ? (
+          {showSectionSkeleton ? (
+            <div className="space-y-3 transition-opacity duration-200">
+              <SkeletonCard isDarkMode={isDarkMode} variant="recent-file" />
+              <SkeletonCard isDarkMode={isDarkMode} variant="recent-file" />
+              <SkeletonCard isDarkMode={isDarkMode} variant="recent-file" className="hidden sm:flex" />
+            </div>
+          ) : nonRoutineMaterials.length === 0 ? (
             <div className={`text-center py-16 border-2 border-dashed rounded-xl ${isDarkMode ? 'border-gray-700' : 'border-gray-300'}`}>
               <svg
                 className={`mx-auto h-12 w-12 ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}
@@ -1911,14 +1933,7 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {materials
-                .filter((m) => {
-                  const course = courses.find((c) => c.id === m.course);
-                return course && course.code !== 'ROUTINE';
-                })
-                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-                .slice(0, 5)
-                .map((material) => (
+              {recentMaterials.map((material) => (
                   <a
                   key={material.id}
                     href={`${BACKEND_BASE_URL}/materials/files/${material.id}/`}
@@ -1960,7 +1975,9 @@ export default function DashboardPage() {
         </div>
 
         {/* Storage Usage Card */}
-        {usage && (
+        {showSectionSkeleton ? (
+          <SkeletonStats isDarkMode={isDarkMode} className="mb-6 sm:mb-8 mt-4 sm:mt-6 transition-opacity duration-200" />
+        ) : usage && (
           <div className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8 mt-4 sm:mt-6 border transition-colors ${isDarkMode ? 'glass-card border-gray-700/50' : 'bg-white border-gray-200'}`}>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-4 sm:mb-6">
               <div>
