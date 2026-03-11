@@ -619,6 +619,8 @@ if platform.system() == 'Windows':
 
 from django.conf import settings
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
+from datetime import timedelta
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -628,6 +630,49 @@ from usage.models import StorageUsage
 from common.text_extraction import extract_text_from_path
 from .models import Material
 from .serializers import MaterialSerializer
+
+
+def cleanup_expired_trash(user):
+    """
+    Delete materials from trash that are older than 30 days.
+    Returns count of deleted items.
+    """
+    cutoff_date = timezone.now() - timedelta(days=30)
+    
+    expired_materials = Material.objects.filter(
+        user=user,
+        is_deleted=True,
+        deleted_at__lte=cutoff_date
+    )
+    
+    deleted_count = 0
+    total_size = 0
+    
+    for material in expired_materials:
+        try:
+            # Delete from Cloudinary if present
+            if material.storage_key:
+                try:
+                    from cloudinary.uploader import destroy as cloudinary_destroy
+                    cloudinary_destroy(material.storage_key, resource_type="raw")
+                except Exception:
+                    pass  # Ignore Cloudinary errors
+            
+            total_size += material.size_bytes
+        except Exception:
+            pass
+    
+    # Update storage usage
+    if deleted_count > 0 or total_size > 0:
+        storage_usage, _ = StorageUsage.objects.get_or_create(user=user)
+        storage_usage.used_bytes = max(0, storage_usage.used_bytes - total_size)
+        storage_usage.save()
+    
+    # Delete from database
+    deleted_count = expired_materials.count()
+    expired_materials.delete()
+    
+    return deleted_count
 
 
 class MaterialListCreateView(generics.ListCreateAPIView):
@@ -1143,6 +1188,9 @@ class TrashBinListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
+        # Auto-cleanup expired trash (30+ days old) before listing
+        cleanup_expired_trash(self.request.user)
+        
         qs = Material.objects.filter(user=self.request.user, is_deleted=True)
         course_id = self.request.query_params.get("course_id")
         if course_id:
@@ -1212,6 +1260,10 @@ class EmptyTrashView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def delete(self, request):
+        # First remove any expired items (automatic cleanup)
+        cleanup_expired_trash(request.user)
+        
+        # Then empty the remaining items in trash
         materials = Material.objects.filter(user=request.user, is_deleted=True)
         
         total_size = 0

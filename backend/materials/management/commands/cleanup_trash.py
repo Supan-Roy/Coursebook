@@ -1,6 +1,7 @@
 """
 Management command to clean up expired trash items (older than 30 days).
-Run this daily via cron or task scheduler.
+Note: Expired items are automatically deleted when users access their trash.
+This command is useful for manual cleanup or bulk operations.
 """
 import os
 import logging
