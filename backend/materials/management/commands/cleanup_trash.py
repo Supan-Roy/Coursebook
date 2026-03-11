@@ -3,11 +3,14 @@ Management command to clean up expired trash items (older than 30 days).
 Run this daily via cron or task scheduler.
 """
 import os
+import logging
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 from datetime import timedelta
 from materials.models import Material
 from usage.models import StorageUsage
+
+logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
@@ -42,6 +45,7 @@ class Command(BaseCommand):
         
         if count == 0:
             self.stdout.write(self.style.SUCCESS('No expired materials to delete'))
+            logger.info("[CLEANUP] No expired materials to delete")
             return
         
         if dry_run:
@@ -57,34 +61,48 @@ class Command(BaseCommand):
         # Actually delete
         total_size = 0
         deleted_count = 0
+        failed_count = 0
         
         for material in expired_materials:
-            # Delete physical file
             try:
-                if material.storage_key and os.path.exists(material.storage_key):
-                    os.remove(material.storage_key)
-                    self.stdout.write(f'Deleted file: {material.filename}')
+                # Delete from Cloudinary if using Cloudinary storage
+                if material.storage_key:
+                    try:
+                        from cloudinary.uploader import destroy as cloudinary_destroy
+                        cloudinary_destroy(material.storage_key, resource_type="raw")
+                        self.stdout.write(f'Deleted from Cloudinary: {material.filename}')
+                        logger.info(f"[CLEANUP] Deleted from Cloudinary: {material.filename}")
+                    except Exception as e:
+                        self.stdout.write(
+                            self.style.WARNING(f'Could not delete from Cloudinary {material.filename}: {e}')
+                        )
+                        logger.warning(f"[CLEANUP] Could not delete from Cloudinary {material.filename}: {e}")
+                
+                total_size += material.size_bytes
+                user = material.user
+                
+                # Update storage usage
+                storage_usage, _ = StorageUsage.objects.get_or_create(user=user)
+                storage_usage.used_bytes = max(0, storage_usage.used_bytes - material.size_bytes)
+                storage_usage.save()
+                
+                deleted_count += 1
             except Exception as e:
+                failed_count += 1
                 self.stdout.write(
-                    self.style.WARNING(f'Could not delete file {material.filename}: {e}')
+                    self.style.ERROR(f'Error processing {material.filename}: {e}')
                 )
-            
-            total_size += material.size_bytes
-            user = material.user
-            
-            # Update storage usage
-            storage_usage, _ = StorageUsage.objects.get_or_create(user=user)
-            storage_usage.used_bytes = max(0, storage_usage.used_bytes - material.size_bytes)
-            storage_usage.save()
-            
-            deleted_count += 1
+                logger.error(f"[CLEANUP] Error processing {material.filename}: {e}")
         
         # Delete from database
         expired_materials.delete()
         
-        self.stdout.write(
-            self.style.SUCCESS(
-                f'Successfully deleted {deleted_count} expired materials, '
-                f'freed {total_size / (1024 * 1024):.2f} MB'
-            )
+        success_message = (
+            f'Successfully deleted {deleted_count} expired materials, '
+            f'freed {total_size / (1024 * 1024):.2f} MB'
         )
+        if failed_count > 0:
+            success_message += f', {failed_count} files failed to delete from cloud'
+        
+        self.stdout.write(self.style.SUCCESS(success_message))
+        logger.info(f"[CLEANUP] {success_message}")
