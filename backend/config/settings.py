@@ -2,7 +2,9 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
+import dj_database_url
 import environ
+from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -10,7 +12,7 @@ env = environ.Env(
     # Security: Default to False for production safety. Set to True in .env for development
     DJANGO_DEBUG=(bool, False),
     DJANGO_SECRET_KEY=(str, "dev-secret-key-change"),
-    DJANGO_ALLOWED_HOSTS=(list, ["localhost", "127.0.0.1"]),
+    DJANGO_ALLOWED_HOSTS=(list, ["localhost", "127.0.0.1", ".onrender.com"]),
 )
 
 environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
@@ -18,6 +20,10 @@ environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 SECRET_KEY = env("DJANGO_SECRET_KEY")
 DEBUG = env.bool("DJANGO_DEBUG")
 ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS")
+
+RENDER_EXTERNAL_HOSTNAME = env("RENDER_EXTERNAL_HOSTNAME", default="")
+if RENDER_EXTERNAL_HOSTNAME and RENDER_EXTERNAL_HOSTNAME not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
 # Security: Warn if DEBUG is enabled (should only be used in development)
 if DEBUG:
@@ -81,10 +87,21 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 
+DATABASE_URL = env("DATABASE_URL", default="")
+if not DATABASE_URL and DEBUG:
+    DATABASE_URL = env("LOCAL_DATABASE_URL", default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}")
+if not DATABASE_URL:
+    raise ImproperlyConfigured("DATABASE_URL must be set for production deployment.")
+if DATABASE_URL.startswith("sqlite") and not DEBUG:
+    raise ImproperlyConfigured("SQLite is not supported. Use a PostgreSQL DATABASE_URL.")
+
+db_requires_ssl = (not DEBUG) and DATABASE_URL.startswith(("postgres://", "postgresql://"))
+
 DATABASES = {
-    "default": env.db(
-        "DATABASE_URL",
-        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+    "default": dj_database_url.parse(
+        DATABASE_URL,
+        conn_max_age=600,
+        ssl_require=db_requires_ssl,
     )
 }
 
@@ -108,7 +125,7 @@ TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
@@ -144,6 +161,12 @@ SIMPLE_JWT = {
 # CORS Configuration - Security: Don't allow all origins in production
 CORS_ALLOW_ALL_ORIGINS = env.bool("CORS_ALLOW_ALL_ORIGINS", default=False)
 CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=["http://localhost:3001", "http://127.0.0.1:3001"])
+CORS_ALLOWED_ORIGIN_REGEXES = env.list(
+    "CORS_ALLOWED_ORIGIN_REGEXES",
+    default=[
+        r"^https://.*\\.vercel\\.app$",
+    ],
+)
 CORS_ALLOW_CREDENTIALS = True
 
 
@@ -215,8 +238,8 @@ GOOGLE_OAUTH2_CLIENT_SECRET = env('GOOGLE_OAUTH2_CLIENT_SECRET', default='')
 
 # Production Security Settings
 if not DEBUG:
-    # Only enable SSL redirect if behind a proxy (Railway handles SSL)
-    SECURE_SSL_REDIRECT = env.bool("SECURE_SSL_REDIRECT", default=False)
+    # Render terminates TLS at the proxy and forwards protocol headers.
+    SECURE_SSL_REDIRECT = env.bool("SECURE_SSL_REDIRECT", default=True)
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_BROWSER_XSS_FILTER = True
@@ -225,5 +248,5 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = 31536000  # 1 year
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
-    # Trust proxy headers (Railway uses a proxy)
+    # Trust proxy headers from Render's reverse proxy.
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')

@@ -32,12 +32,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy project files
 COPY . .
 
-# Collect static files
-RUN python manage.py collectstatic --noinput || true
+# Add executable startup script
+RUN chmod +x /app/start.sh
 
-# Expose port
-EXPOSE 8000
+# Render provides PORT at runtime; 10000 is a common default for local container runs.
+ENV PORT=10000
 
-# Run migrations and start server
-CMD python manage.py migrate && gunicorn config.wsgi:application --bind 0.0.0.0:8000
+# Run migrations, collect static, and start Gunicorn
+CMD ["/app/start.sh"]
 
