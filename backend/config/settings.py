@@ -169,6 +169,15 @@ CORS_ALLOWED_ORIGIN_REGEXES = env.list(
 )
 CORS_ALLOW_CREDENTIALS = True
 
+CSRF_TRUSTED_ORIGINS = env.list(
+    "CSRF_TRUSTED_ORIGINS",
+    default=[
+        "http://localhost:3001",
+        "http://127.0.0.1:3001",
+        "https://*.vercel.app",
+    ],
+)
+
 
 # Cloudinary Storage
 INSTALLED_APPS += ["cloudinary", "cloudinary_storage"]
@@ -224,6 +233,10 @@ FRONTEND_URL = env('FRONTEND_URL', default='http://localhost:3001')
 # Allow CORS from frontend URL in production (add after FRONTEND_URL is defined)
 if FRONTEND_URL and FRONTEND_URL not in CORS_ALLOWED_ORIGINS:
     CORS_ALLOWED_ORIGINS.append(FRONTEND_URL)
+
+# Trust frontend origin for CSRF checks on cross-site POST requests.
+if FRONTEND_URL and FRONTEND_URL not in CSRF_TRUSTED_ORIGINS:
+    CSRF_TRUSTED_ORIGINS.append(FRONTEND_URL)
 
 # For development: Use console backend to print emails to console
 if DEBUG and EMAIL_BACKEND == 'django.core.mail.backends.smtp.EmailBackend' and not EMAIL_HOST_USER:
