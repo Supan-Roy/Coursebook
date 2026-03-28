@@ -1,7 +1,9 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { PrivateRoute } from './components/PrivateRoute';
+import { warmUpBackend } from './utils/backendWarmup';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
@@ -28,6 +30,11 @@ import HelpSupportPage from './pages/HelpSupportPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 function App() {
+  useEffect(() => {
+    // Fire-and-forget warm-up request so initial render is never blocked.
+    void warmUpBackend({ retries: 2, initialDelayMs: 600 });
+  }, []);
+
   return (
     <ThemeProvider>
       <AuthProvider>
