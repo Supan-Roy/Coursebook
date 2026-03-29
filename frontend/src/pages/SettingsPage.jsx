@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import Sidebar from '../components/Sidebar';
 import CoursebookTextLogo from '../components/CoursebookTextLogo';
+import notificationService from '../services/notificationService';
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -15,9 +16,22 @@ export default function SettingsPage() {
   const [notifyEmail, setNotifyEmail] = useState(true);
   const [notifyPush, setNotifyPush] = useState(false);
   const [storageAlerts, setStorageAlerts] = useState(true);
+  const [notificationPermission, setNotificationPermission] = useState(null);
   const profileMenuRef = useRef(null);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showMobileGreeting, setShowMobileGreeting] = useState(true);
+
+  // Load notification preferences and set up browser permission tracking
+  useEffect(() => {
+    // Load push notification preference from localStorage
+    const savedPushPref = localStorage.getItem('browser_push_notifications_enabled') === 'true';
+    setNotifyPush(savedPushPref);
+    
+    // Check current browser notification permission
+    if ('Notification' in window) {
+      setNotificationPermission(Notification.permission);
+    }
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('sidebarCollapsed', sidebarCollapsed);
@@ -43,6 +57,35 @@ export default function SettingsPage() {
     window.addEventListener('resize', checkScreenSize);
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
+
+  // Handle browser push notification toggle
+  const handlePushNotificationChange = async (e) => {
+    const isChecked = e.target.checked;
+    
+    if (isChecked) {
+      // Request browser permission when enabling
+      if ('Notification' in window) {
+        const permission = await notificationService.requestPermission();
+        if (permission) {
+          setNotifyPush(true);
+          setNotificationPermission('granted');
+          localStorage.setItem('browser_push_notifications_enabled', 'true');
+          // Show confirmation
+          notificationService.show('Notifications Enabled', {
+            body: 'You will receive push notifications for your to-dos',
+          });
+        } else {
+          setNotifyPush(false);
+          setNotificationPermission(Notification.permission);
+          localStorage.removeItem('browser_push_notifications_enabled');
+        }
+      }
+    } else {
+      // Disable notifications
+      setNotifyPush(false);
+      localStorage.removeItem('browser_push_notifications_enabled');
+    }
+  };
 
 
   return (
@@ -231,15 +274,33 @@ export default function SettingsPage() {
             </div>
             <div className="space-y-1.5 sm:space-y-2 md:space-y-3">
               <label className="flex items-start sm:items-center gap-1.5 sm:gap-2">
-                <input type="checkbox" className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 mt-0.5 sm:mt-0 flex-shrink-0" checked={notifyEmail} onChange={(e) => setNotifyEmail(e.target.value ? e.target.checked : e.target.checked)} />
+                <input type="checkbox" className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 mt-0.5 sm:mt-0 flex-shrink-0" checked={notifyEmail} onChange={(e) => setNotifyEmail(e.target.checked)} />
                 <span className={`text-xs sm:text-sm md:text-base break-words ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>Email updates about new summaries and reminders</span>
               </label>
+              <div className="flex flex-col gap-1">
+                <label className="flex items-start sm:items-center gap-1.5 sm:gap-2">
+                  <input 
+                    type="checkbox" 
+                    className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 mt-0.5 sm:mt-0 flex-shrink-0" 
+                    checked={notifyPush} 
+                    onChange={handlePushNotificationChange}
+                    disabled={notificationPermission === 'denied'}
+                  />
+                  <span className={`text-xs sm:text-sm md:text-base break-words ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>Browser push notifications</span>
+                </label>
+                {notificationPermission === 'denied' && (
+                  <p className={`text-xs ${isDarkMode ? 'text-red-400' : 'text-red-600'} ml-5`}>
+                    Notifications were blocked. Please enable them in your browser settings.
+                  </p>
+                )}
+                {notifyPush && notificationPermission === 'granted' && (
+                  <p className={`text-xs ${isDarkMode ? 'text-green-400' : 'text-green-600'} ml-5`}>
+                    ✓ Enabled. You will get notifications for your to-do reminders.
+                  </p>
+                )}
+              </div>
               <label className="flex items-start sm:items-center gap-1.5 sm:gap-2">
-                <input type="checkbox" className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 mt-0.5 sm:mt-0 flex-shrink-0" checked={notifyPush} onChange={(e) => setNotifyPush(e.target.value ? e.target.checked : e.target.checked)} />
-                <span className={`text-xs sm:text-sm md:text-base break-words ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>Browser push notifications</span>
-              </label>
-              <label className="flex items-start sm:items-center gap-1.5 sm:gap-2">
-                <input type="checkbox" className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 mt-0.5 sm:mt-0 flex-shrink-0" checked={storageAlerts} onChange={(e) => setStorageAlerts(e.target.value ? e.target.checked : e.target.checked)} />
+                <input type="checkbox" className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 mt-0.5 sm:mt-0 flex-shrink-0" checked={storageAlerts} onChange={(e) => setStorageAlerts(e.target.checked)} />
                 <span className={`text-xs sm:text-sm md:text-base break-words ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>Storage limit alerts</span>
               </label>
             </div>

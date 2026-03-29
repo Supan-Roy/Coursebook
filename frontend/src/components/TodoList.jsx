@@ -77,7 +77,14 @@ const MyPlans = ({ isDarkMode }) => {
   useEffect(() => {
     // Restore notification preference if permission still granted
     const savedPref = typeof window !== 'undefined' ? localStorage.getItem(NOTIFICATION_PREF_KEY) : null;
-    if (savedPref === 'true' && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+    const browserPushEnabled = typeof window !== 'undefined' ? localStorage.getItem('browser_push_notifications_enabled') === 'true' : false;
+    
+    // Enable notifications if either preference is set and permission is granted
+    const shouldEnableNotifications = (savedPref === 'true' || browserPushEnabled) && 
+                                     typeof Notification !== 'undefined' && 
+                                     Notification.permission === 'granted';
+    
+    if (shouldEnableNotifications) {
       setNotificationsEnabled(true);
     }
 
@@ -150,12 +157,15 @@ const MyPlans = ({ isDarkMode }) => {
       setNotificationsEnabled(true);
       if (typeof window !== 'undefined') {
         localStorage.setItem(NOTIFICATION_PREF_KEY, 'true');
+        // Also store in browser_push_notifications_enabled so Settings page can see it
+        localStorage.setItem('browser_push_notifications_enabled', 'true');
       }
       notificationService.show('Notifications Enabled', {
         body: 'You will receive notifications for due tasks',
       });
     } else if (typeof window !== 'undefined') {
       localStorage.removeItem(NOTIFICATION_PREF_KEY);
+      localStorage.removeItem('browser_push_notifications_enabled');
     }
   };
 
